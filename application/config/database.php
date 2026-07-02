@@ -75,7 +75,7 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
-	// 'hostname' => 'localhost', if using port 3306
+	// 'hostname' => 'localhost', //if using port 3306
 	'hostname' => '127.0.0.1:3307', // if using port 3307
 	'username' => 'root',
 	'password' => '',
