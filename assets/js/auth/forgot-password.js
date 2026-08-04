@@ -44,14 +44,26 @@ $(document).ready(function(){
             {
                 if(response.status)
                 {
-                    Swal.fire({
-                        position: "top-end",
-                        icon: "success",
-                        title:'Verified',
-                        text:response.message,
-                        showConfirmButton: false,
-                        timer: 1500
+                    const notyf = new Notyf({
+                        position: {
+                            x: 'right',
+                            y: 'top'
+                        }
                     });
+
+                    notyf.success({
+                        message: response.message,
+                        duration: 2000 // 2 seconds
+                    });
+
+                    // Swal.fire({
+                    //     position: "top-end",
+                    //     icon: "success",
+                    //     title:'Verified',
+                    //     text:response.message,
+                    //     showConfirmButton: false,
+                    //     timer: 1500
+                    // });
                     setTimeout(function () {
                         window.location = BASE_URL + 'verify-otp-page';
                     }, 1000);

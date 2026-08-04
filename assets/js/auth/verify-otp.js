@@ -124,16 +124,24 @@ $(document).ready(function(){
             // data: $(this).serialize(),
             data: $.param(formData),
             dataType:"json",
-            success:function(res){
-                if(res.status)
+            success:function(response){
+                if(response.status)
                 {
-                    Swal.fire(
-                        "Success",
-                        res.message,
-                        "success"
-                    ).then(() => {
-                        window.location = BASE_URL + "reset-password-page";
+                    const notyf = new Notyf({
+                        position: {
+                            x: 'right',
+                            y: 'top'
+                        }
                     });
+
+                    notyf.error({
+                        message: response.message,
+                        duration: 3000 // 2 seconds
+                    });
+                    
+                    setTimeout(function () {
+                        window.location = BASE_URL + 'dashboard';
+                    }, 1000);
                 }
                 else
                 {
@@ -144,20 +152,8 @@ $(document).ready(function(){
                             y: 'top'
                         }
                     });
+                    notyf.error(response.message);
 
-                    notyf.error(res.message);
-
-                    // Swal.fire({
-                    //     position: "top-end",
-                    //     icon: "Error",
-                    //     title: res.message,
-                    // });
-
-                    // Swal.fire(
-                    //     "Error",
-                    //     res.message,
-                    //     "error"
-                    // );
                 }
             },
             error: function(xhr, status, error)
@@ -238,23 +234,43 @@ $(document).ready(function(){
 
             success: function (response) {
                 if (response.status) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'OTP Sent',
-                        text: response.message
+                    const notyf = new Notyf({
+                        position: {
+                            x: 'right',
+                            y: 'top'
+                        }
                     });
+
+                    notyf.success({
+                        message: response.message,
+                        duration: 2000 // 2 seconds
+                    });
+                    // Swal.fire({
+                    //     icon: 'success',
+                    //     title: 'OTP Sent',
+                    //     text: response.message
+                    // });
                     startResendTimer();
 
                 } else {
-                    Swal.fire({
-
-                        icon: 'error',
-
-                        title: 'Error',
-
-                        text: response.message
-
+                    const notyf = new Notyf({
+                        position: {
+                            x: 'right',
+                            y: 'top'
+                        }
                     });
+
+                    notyf.error({
+                        message: response.message,
+                        duration: 2000 // 2 seconds
+                    });
+                    
+                    // Swal.fire({
+                    //     icon: 'error',
+                    //     title: 'Error',
+                    //     text: response.message
+
+                    // });
 
                     $('#btnResendOTP')
                         .prop('disabled', false)
