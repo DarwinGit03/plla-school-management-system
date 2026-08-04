@@ -28,7 +28,6 @@ $(document).ready(function () {
                 } 
                 else if(response.remaining == '2')
                 {
-                    
                     const notyf = new Notyf({
                         position: {
                             x: 'right',
@@ -40,7 +39,6 @@ $(document).ready(function () {
                         message: response.message + "\nRemaining attempts: " + response.remaining + 'and your account will be Lock for 5 minutes',
                         duration: 3000 // 2 seconds
                     });
-
                 } 
                 else if(response.remaining == '0')
                 {

@@ -25,18 +25,24 @@ function require_login()
 |--------------------------------------------------------------------------
 */
 
+// function guest_only()
+// {
+//     $CI =& get_instance();
+
+//     if(
+//         $CI->session->userdata('logged_in')
+//     )
+//     {
+//         redirect('dashboard');
+//     }
+// }
 function guest_only()
 {
-    $CI =& get_instance();
-
-    if(
-        $CI->session->userdata('logged_in')
-    )
+    if(get_instance()->session->userdata('user_id'))
     {
         redirect('dashboard');
     }
 }
-
 /*
 |--------------------------------------------------------------------------
 | Current User ID

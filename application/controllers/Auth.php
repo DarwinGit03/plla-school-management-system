@@ -24,7 +24,9 @@ class Auth extends MY_Controller
 
     public function index()
     {
-        $this->session->sess_destroy();
+        // $this->session->sess_destroy();
+
+        $this->guestOnly();
 
         $data['title']      = 'Login';
         $data['page_js']    = 'assets/js/auth/login.js';
