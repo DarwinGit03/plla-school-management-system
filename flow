@@ -1,0 +1,312 @@
+User clicks Login
+        │
+        ▼
+Auth Controller
+        │
+        ▼
+Auth_service::login()
+        │
+        ▼
+Find User
+        │
+        ▼
+Password Correct?
+   ┌──────────────┐
+   │              │
+   ▼              ▼
+ YES             NO
+   │              │
+   ▼              ▼
+Create Session   Log FAILED
+   │              │
+   ▼              ▼
+Log SUCCESS    Return Error
+   │
+   ▼
+Return Success
+
+
+
+Browser
+    │
+    ▼
+Controller
+    │
+    ▼
+Audit_service
+    │
+    ▼
+Audit_log_model
+    │
+    ▼
+audit_logs
+
+--- OTP Flow
+Forgot Password
+        │
+        ▼
+createOTP()
+        │
+        ▼
+Generate 6 Digits
+        │
+        ▼
+Save Database
+        │
+        ▼
+Return OTP
+        │
+        ▼
+Mail Service
+        │
+        ▼
+Email User
+
+
+--- Verify Flow
+User Input OTP
+        │
+        ▼
+verifyOTP()
+        │
+        ▼
+Record Exists?
+        │
+        ▼
+Expired?
+        │
+        ▼
+Correct OTP?
+        │
+        ▼
+SUCCESS
+
+
+Auth Controller
+      │
+      ▼
+Otp_service
+      │
+      ▼
+Password_reset_model
+      │
+      ▼
+password_resets
+
+
+
+- AUTH
+Auth Controller
+       │
+       ▼
+Auth_service
+       │
+       ├─────────────┐
+       ▼             ▼
+Otp_service     Mail_service
+       │             │
+       ▼             ▼
+Password_reset   PHPMailer
+
+
+--- forgot password
+User enters Email
+        │
+        ▼
+Auth Controller
+        │
+        ▼
+Validate Email
+        │
+        ▼
+Auth_service
+        │
+        ▼
+User_model → Check if email exists
+        │
+        ▼
+Otp_service → Create OTP
+        │
+        ▼
+Mail_service → Send OTP
+        │
+        ▼
+Return JSON Response
+
+
+New Flow
+User enters OTP
+        │
+        ▼
+Auth Controller
+        │
+        ▼
+Auth_service
+        │
+        ▼
+Otp_service
+        │
+        ▼
+Password_reset_model
+        │
+        ▼
+Database
+
+
+FORGOT PASSWORD
+      │
+      │ User submits email
+      ▼
+POST /auth/forgot_password
+      │
+      ├── Check email
+      ├── Generate OTP
+      ├── Save OTP
+      ├── Send email
+      └── Save reset_email session
+      │
+      ▼
+Redirect to /verify-otp
+      │
+      │ User enters 6-digit OTP
+      ▼
+POST /auth/verify_otp
+      │
+      ├── Check OTP
+      ├── Check expiration
+      ├── Check attempts
+      │
+      ▼
+OTP VERIFIED
+      │
+      ├── otp_verified = true
+      │
+      ▼
+Redirect to /reset-password
+
+
+
+
+Forgot Password
+        │
+        ▼
+User enters Email
+        │
+        ▼
+Email Exists?
+        │
+    ┌───┴────┐
+    │        │
+   No       Yes
+    │        │
+Error     Generate OTP
+             │
+             ▼
+        Save OTP
+             │
+             ▼
+        Send Email
+             │
+             ▼
+      Redirect Verify OTP
+             │
+             ▼
+      User enters OTP
+             │
+             ▼
+      OTP Valid?
+             │
+      ┌──────┴───────┐
+      │              │
+     No             Yes
+      │              │
+Attempts++      Session:
+                reset_email
+                otp_verified
+                otp_completed
+                     │
+                     ▼
+            Redirect Reset Password
+                     │
+                     ▼
+         User enters New Password
+                     │
+                     ▼
+      Validate Password Strength
+                     │
+                     ▼
+        Password Match?
+                     │
+             ┌───────┴────────┐
+             │                │
+            No               Yes
+             │                │
+      Show Validation     password_hash()
+                             │
+                             ▼
+                    Update users table
+                             │
+                             ▼
+               Delete password_resets record
+                             │
+                             ▼
+             Destroy all reset sessions
+                             │
+                             ▼
+                    Audit Log Success
+                             │
+                             ▼
+                 Redirect Login Page
+
+                 
+User Login
+     │
+     ▼
+Email Exists?
+     │
+     ├── No
+     │     │
+     │     ▼
+     │  Audit Log
+     │
+     ▼
+Password Correct?
+     │
+     ├── YES
+     │      │
+     │      ▼
+     │ Reset Failed Attempts
+     │
+     ▼
+Login Success
+
+
+User Login
+      │
+      ▼
+Create Session
+      │
+      ▼
+last_activity = current time
+      │
+      ▼
+Every Request
+      │
+      ▼
+Check Timeout
+      │
+      ├── Active
+      │       │
+      │       ▼
+      │ Update last_activity
+      │
+      ▼
+Expired?
+      │
+      ├── YES
+      │       │
+      │       ▼
+      │ Audit Log
+      │ Destroy Session
+      │ Redirect Login
+

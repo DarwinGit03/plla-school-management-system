@@ -1,25 +1,22 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Dashboard extends CI_Controller
+class Dashboard extends MY_Controller
 {
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->requireLogin();
+
+        // $this->checkSession();
+    }
+
     public function index()
     {
-        if (!$this->session->userdata('logged_in')) {
-
-            redirect('login');
-        }
-
-        echo "<h1>Dashboard</h1>";
-
-        echo "<hr>";
-
-        echo "Welcome : ".
-             $this->session->userdata('first_name');
-
-        echo "<br>";
-
-        echo "Role : ".
-             $this->session->userdata('role_name');
+        $this->load->view(
+            'dashboard/index',
+            $this->data
+        );
     }
 }

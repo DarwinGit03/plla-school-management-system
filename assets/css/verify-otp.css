@@ -1,0 +1,53 @@
+
+.otp-input{
+    width:50px;
+    height:60px;
+    text-align:center;
+    font-size:24px;
+    font-weight:bold;
+    border-radius:10px;
+}
+
+.otp-input:focus{
+    box-shadow:none;
+}
+
+@keyframes shake {
+
+    0% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-8px);
+    }
+
+    40% {
+        transform: translateX(8px);
+    }
+
+    60% {
+        transform: translateX(-8px);
+    }
+
+    80% {
+        transform: translateX(8px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+
+}
+
+.otp-error {
+
+    animation: shake .4s;
+
+}
+
+.otp-invalid {
+
+    border: 2px solid #dc3545 !important;
+
+}

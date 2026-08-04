@@ -1,0 +1,30 @@
+User Login
+      │
+      ▼
+Find User
+      │
+      ▼
+Account Active?
+      │
+      ▼
+Account Locked?
+      │
+      ▼
+Lock Expired?
+      │
+      ▼
+Verify Password
+      │
+      ▼
+Success?
+     / \
+   Yes  No
+   │     │
+   ▼     ▼
+Reset    Failed Attempts++
+Attempts │
+   │      ▼
+Create   >= Max Attempts?
+Session     │
+            ▼
+       Lock Account

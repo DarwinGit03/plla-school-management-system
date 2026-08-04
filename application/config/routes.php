@@ -53,10 +53,26 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
-$route['default_controller'] = 'auth';
-$route['login'] = 'auth';
+//set in controllers
+
+$route['default_controller'] = 'auth'; //pages
+$route['login'] = 'auth';//pages
+$route['auth/login'] = 'auth/login';
 $route['logout'] = 'auth/logout';
-$route['forgot-password'] = 'auth/forgot_password';
-$route['verify-otp'] = 'auth/verify_otp';
-$route['reset-password'] = 'auth/reset_password';
+$route['forgot-password'] = 'auth/forgot_password'; //pages
+$route['verify-otp-page'] = 'auth/verify_otp_page'; //pages
+$route['auth/verify_otp'] = 'auth/verify_otp';
+
+$route['reset-password'] = 'auth/reset_password'; //pages
+$route['reset-password-page'] = 'auth/reset_password_page'; //pages
 $route['dashboard'] = 'dashboard';
+
+$route['send-otp'] = 'auth/send_otp';
+$route['check-otp'] = 'auth/check_otp';
+$route['auth/save_password'] = 'auth/save_password';
+
+//admin 
+$route['admin/unlock-account/(:num)'] = 'auth/unlockAccount/$1';
+
+//security
+$route['keep-alive'] = 'auth/keepAlive';

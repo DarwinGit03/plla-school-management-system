@@ -1,77 +1,51 @@
-<!doctype html>
-<html>
-<head>
+<?php
+    $this->load->view('layouts/header');
+?>
 
-    <title>Login</title>
-
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-
-</head>
-
-<body class="bg-light">
-
-<div class="container">
-
-    <div class="row justify-content-center mt-5">
-
-        <div class="col-md-4">
-
-            <div class="card">
-
+    <div class="container">
+        <div class="container vh-100 d-flex justify-content-center align-items-center">
+            <div class="card shadow border-0 p-4" style="width:400px;">
                 <div class="card-header text-center">
                     <h3>School Management</h3>
                 </div>
 
                 <div class="card-body">
-
                     <form id="loginForm">
-
                         <div class="mb-3">
-                            <label>Username / Email</label>
+                            <label>Email</label>
                             <input
                                 type="text"
-                                name="username"
+                                name="email"
+                                id="email"
                                 class="form-control">
                         </div>
-
                         <div class="mb-3">
                             <label>Password</label>
                             <input
                                 type="password"
                                 name="password"
+                                id="password"
                                 class="form-control">
                         </div>
-
                         <button
                             id="btnLogin"
                             type="submit"
                             class="btn btn-primary w-100">
                             Login
                         </button>
-                        
                     </form>
-
                 </div>
-
+                <div class="text-center mt-3">
+                    <a href="<?= base_url('forgot-password') ?>">
+                        Forgot Password?
+                    </a>
+                </div>
             </div>
 
         </div>
 
     </div>
 
-</div>
-
-</body>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    const BASE_URL = "<?= base_url(); ?>";
-    //for test
-    const CSRF = { //use reusable for future
-        name: "<?= $this->security->get_csrf_token_name(); ?>",
-        hash: "<?= $this->security->get_csrf_hash(); ?>"
-    };
-</script>
-<script src="<?= base_url('assets/js/auth/login.js'); ?>"></script>
-</html>
+<?php
+    $this->load->view('layouts/footer');
+?>
