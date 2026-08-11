@@ -1,0 +1,21 @@
+/* =========================================================
+   Student Module
+   Bootstrap handles the main layout.
+   These are only small dashboard-specific refinements.
+   ========================================================= */
+
+.student-table th {
+    white-space: nowrap;
+}
+
+.student-table td {
+    white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+
+    .student-table {
+        min-width: 900px;
+    }
+
+}

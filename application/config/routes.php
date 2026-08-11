@@ -71,6 +71,10 @@ $route['send-otp'] = 'auth/send_otp';
 $route['check-otp'] = 'auth/check_otp';
 $route['auth/save_password'] = 'auth/save_password';
 
+
+$route['dashboard'] = 'dashboard/index';
+$route['students'] = 'students/index';
+
 //admin 
 $route['admin/unlock-account/(:num)'] = 'auth/unlockAccount/$1';
 

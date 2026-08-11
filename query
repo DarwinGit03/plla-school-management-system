@@ -1,0 +1,72 @@
+CREATE TABLE student_guardians (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    student_id INT UNSIGNED NOT NULL,
+
+    guardian_type ENUM(
+        'father',
+        'mother',
+        'guardian'
+    ) NOT NULL,
+
+    first_name VARCHAR(100) NOT NULL,
+    middle_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NOT NULL,
+    suffix VARCHAR(20) NULL,
+
+    relationship VARCHAR(100) NULL,
+
+    mobile_no VARCHAR(30) NULL,
+    telephone VARCHAR(30) NULL,
+    email VARCHAR(150) NULL,
+
+    occupation VARCHAR(150) NULL,
+    employer VARCHAR(150) NULL,
+
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NULL,
+
+    PRIMARY KEY (id),
+
+    KEY idx_student_guardians_student_id (student_id),
+
+    CONSTRAINT fk_student_guardians_student
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE student_addresses (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    student_id INT UNSIGNED NOT NULL,
+
+    address_type ENUM(
+        'current',
+        'permanent'
+    ) NOT NULL,
+
+    house_no VARCHAR(100) NULL,
+    street VARCHAR(150) NULL,
+    barangay VARCHAR(150) NULL,
+    city VARCHAR(150) NULL,
+    province VARCHAR(150) NULL,
+    postal_code VARCHAR(20) NULL,
+
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NULL,
+
+    PRIMARY KEY (id),
+
+    KEY idx_student_addresses_student_id (student_id),
+
+    CONSTRAINT fk_student_addresses_student
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
