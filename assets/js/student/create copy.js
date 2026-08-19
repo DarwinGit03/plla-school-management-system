@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
 
 
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-4">
 
                                 <label class="form-label">
                                     Mobile Number
@@ -411,20 +411,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input
                                     type="text"
                                     name="guardians[${index}][occupation]"
-                                    class="form-control">
-
-                            </div>
-
-
-                            <div class="col-12 col-md-4">
-
-                                <label class="form-label">
-                                    Employer
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="guardians[${index}][employer]"
                                     class="form-control">
 
                             </div>
@@ -751,9 +737,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //DROPDOWN YEAR
 
-document.addEventListener(
-    'DOMContentLoaded',
-    function () {
+// document.addEventListener(
+//     'DOMContentLoaded',
+//     function () {
 
         const academicYear =
             document.querySelector(
@@ -767,7 +753,7 @@ document.addEventListener(
 
         const section =
             document.querySelector(
-                '#section_id'
+                '#section'
             );
 
 
@@ -779,16 +765,12 @@ document.addEventListener(
             return;
         }
 
-
         gradeLevel.disabled = true;
 
         section.disabled = true;
 
 
         loadAcademicYears();
-
-        alert()
-
 
         academicYear.addEventListener(
             'change',
@@ -847,7 +829,6 @@ document.addEventListener(
 
         function loadAcademicYears()
         {
-            alert("asdf");
             fetch(
                 BASE_URL +
                 'students/academic_years'
@@ -1056,7 +1037,7 @@ document.addEventListener(
             );
         }
 
-    }
-);
+//     }
+// );
 
 });

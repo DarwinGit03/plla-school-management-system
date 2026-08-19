@@ -6,6 +6,8 @@ class Student_validation
 {
     protected $CI;
 
+    protected $errors = [];
+
 
     public function __construct()
     {
@@ -18,20 +20,92 @@ class Student_validation
 
 
     /**
-     * Set student registration validation rules.
+     * Validate the complete student registration.
+     *
+     * @param array|null $guardians
+     * @return bool
      */
-    public function set_student_rules()
+    public function validate_registration(
+        $guardians = null
+    )
+    {
+        $this->errors = [];
+
+
+        /*
+        |------------------------------------------------------------------
+        | Standard Student Form Validation
+        |------------------------------------------------------------------
+        */
+
+        $this->set_student_detail_rules();
+
+        $this->set_contact_rules();
+
+        $this->set_enrollment_rules();
+
+
+        if (
+            $this->CI->form_validation->run() === false
+        ) {
+
+            $this->errors['student'] =
+                validation_errors(
+                    '',
+                    ''
+                );
+        }
+
+
+        /*
+        |------------------------------------------------------------------
+        | Guardian Validation
+        |------------------------------------------------------------------
+        */
+
+        if ($guardians === null) {
+
+            $guardians =
+                $this->CI->input->post(
+                    'guardians'
+                );
+        }
+
+
+        $guardian_errors =
+            $this->validate_guardians(
+                $guardians
+            );
+
+
+        if (!empty($guardian_errors)) {
+
+            $this->errors['guardians'] =
+                $guardian_errors;
+        }
+
+
+        return empty(
+            $this->errors
+        );
+    }
+
+
+    /**
+     * Set student detail validation rules.
+     */
+    protected function set_student_detail_rules()
     {
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | LRN
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
             'lrn',
             'LRN',
-            'required|trim|numeric',
+            'required|trim|numeric|callback_lrn_unique',
             [
                 'required' =>
                     'The LRN field is required.',
@@ -43,9 +117,9 @@ class Student_validation
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Student Number
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -63,9 +137,9 @@ class Student_validation
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | First Name
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -83,9 +157,9 @@ class Student_validation
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Middle Name
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -100,9 +174,9 @@ class Student_validation
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Last Name
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -117,32 +191,38 @@ class Student_validation
                     'The Surname must contain letters only.'
             ]
         );
+    }
 
 
+    /**
+     * Set student contact validation rules.
+     */
+    protected function set_contact_rules()
+    {
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Mobile Number
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
             'mobile_no',
             'Mobile Number',
-            'trim|numeric|exact_length[10]',
+            'trim|numeric|exact_length[11]',
             [
                 'numeric' =>
                     'The Mobile Number must contain numbers only.',
 
                 'exact_length' =>
-                    'The Mobile Number must contain exactly 10 digits.'
+                    'The Mobile Number must contain exactly 11 digits.'
             ]
         );
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Email
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -154,12 +234,18 @@ class Student_validation
                     'Please enter a valid email address.'
             ]
         );
+    }
 
 
+    /**
+     * Set enrollment validation rules.
+     */
+    protected function set_enrollment_rules()
+    {
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Academic Year
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -174,9 +260,9 @@ class Student_validation
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Grade Level
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -191,9 +277,9 @@ class Student_validation
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Section
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -208,9 +294,9 @@ class Student_validation
 
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Admission Type
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
@@ -226,50 +312,126 @@ class Student_validation
 
 
     /**
-     * Validate guardians.
+     * Validate submitted guardians.
      *
-     * @param array $guardians
-     * @return bool
+     * @param mixed $guardians
+     * @return array
      */
-    public function validate_guardians($guardians)
+    protected function validate_guardians($guardians)
     {
-        if (!is_array($guardians)) {
-            return true;
+        $errors = [];
+
+
+        if (
+            empty($guardians)
+            ||
+            !is_array($guardians)
+        ) {
+            return $errors;
         }
 
 
-        foreach ($guardians as $index => $guardian) {
+        /*
+        |--------------------------------------------------------------------------
+        | Allowed Guardian Types
+        |--------------------------------------------------------------------------
+        */
 
-            $number = $index + 1;
+        $allowed_types = [
+            'father',
+            'mother',
+            'guardian'
+        ];
 
 
-            if (
-                empty(
-                    trim(
-                        $guardian['guardian_type'] ?? ''
-                    )
+        /*
+        |--------------------------------------------------------------------------
+        | Primary Guardian
+        |--------------------------------------------------------------------------
+        */
+
+        $primary_count = 0;
+
+
+        foreach ($guardians as $guardian) {
+
+            if (!empty($guardian['is_primary'])) {
+                $primary_count++;
+            }
+        }
+
+
+        if ($primary_count > 1) {
+
+            $errors['_global']['is_primary'] =
+                'Only one guardian can be the primary contact.';
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Each Guardian
+        |--------------------------------------------------------------------------
+        */
+
+        foreach (
+            $guardians as $index => $guardian
+        ) {
+
+            /*
+            |----------------------------------------------------------------------
+            | Guardian Type
+            |----------------------------------------------------------------------
+            */
+
+            $guardian_type =
+                trim(
+                    $guardian['guardian_type'] ?? ''
+                );
+
+
+            if ($guardian_type === '') {
+
+                $errors[$index]['guardian_type'] =
+                    'Guardian Type is required.';
+
+            } elseif (
+                !in_array(
+                    $guardian_type,
+                    $allowed_types,
+                    true
                 )
             ) {
 
-                return 'Guardian ' .
-                    $number .
-                    ': Guardian Type is required.';
+                $errors[$index]['guardian_type'] =
+                    'Invalid Guardian Type.';
             }
 
 
-            if (
-                empty(
-                    trim(
-                        $guardian['relationship'] ?? ''
-                    )
-                )
-            ) {
+            /*
+            |----------------------------------------------------------------------
+            | Relationship
+            |----------------------------------------------------------------------
+            */
 
-                return 'Guardian ' .
-                    $number .
-                    ': Relationship is required.';
+            $relationship =
+                trim(
+                    $guardian['relationship'] ?? ''
+                );
+
+
+            if ($relationship === '') {
+
+                $errors[$index]['relationship'] =
+                    'Relationship is required.';
             }
 
+
+            /*
+            |----------------------------------------------------------------------
+            | First Name
+            |----------------------------------------------------------------------
+            */
 
             $first_name =
                 trim(
@@ -279,24 +441,26 @@ class Student_validation
 
             if ($first_name === '') {
 
-                return 'Guardian ' .
-                    $number .
-                    ': First Name is required.';
-            }
+                $errors[$index]['first_name'] =
+                    'First Name is required.';
 
-
-            if (
+            } elseif (
                 !preg_match(
                     "/^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/u",
                     $first_name
                 )
             ) {
 
-                return 'Guardian ' .
-                    $number .
-                    ': First Name must contain letters only.';
+                $errors[$index]['first_name'] =
+                    'First Name must contain letters only.';
             }
 
+
+            /*
+            |----------------------------------------------------------------------
+            | Middle Name
+            |----------------------------------------------------------------------
+            */
 
             $middle_name =
                 trim(
@@ -313,11 +477,16 @@ class Student_validation
                 )
             ) {
 
-                return 'Guardian ' .
-                    $number .
-                    ': Middle Name must contain letters only.';
+                $errors[$index]['middle_name'] =
+                    'Middle Name must contain letters only.';
             }
 
+
+            /*
+            |----------------------------------------------------------------------
+            | Last Name
+            |----------------------------------------------------------------------
+            */
 
             $last_name =
                 trim(
@@ -327,24 +496,26 @@ class Student_validation
 
             if ($last_name === '') {
 
-                return 'Guardian ' .
-                    $number .
-                    ': Last Name is required.';
-            }
+                $errors[$index]['last_name'] =
+                    'Last Name is required.';
 
-
-            if (
+            } elseif (
                 !preg_match(
                     "/^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/u",
                     $last_name
                 )
             ) {
 
-                return 'Guardian ' .
-                    $number .
-                    ': Last Name must contain letters only.';
+                $errors[$index]['last_name'] =
+                    'Last Name must contain letters only.';
             }
 
+
+            /*
+            |----------------------------------------------------------------------
+            | Mobile Number
+            |----------------------------------------------------------------------
+            */
 
             $mobile =
                 trim(
@@ -354,24 +525,26 @@ class Student_validation
 
             if ($mobile === '') {
 
-                return 'Guardian ' .
-                    $number .
-                    ': Mobile Number is required.';
-            }
+                $errors[$index]['mobile_no'] =
+                    'Mobile Number is required.';
 
-
-            if (
+            } elseif (
                 !preg_match(
-                    '/^[0-9]{10}$/',
+                    '/^[0-9]{11}$/',
                     $mobile
                 )
             ) {
 
-                return 'Guardian ' .
-                    $number .
-                    ': Mobile Number must contain exactly 10 digits.';
+                $errors[$index]['mobile_no'] =
+                    'Mobile Number must contain exactly 11 digits.';
             }
 
+
+            /*
+            |----------------------------------------------------------------------
+            | Email
+            |----------------------------------------------------------------------
+            */
 
             $email =
                 trim(
@@ -379,40 +552,32 @@ class Student_validation
                 );
 
 
-            if ($email === '') {
-
-                return 'Guardian ' .
-                    $number .
-                    ': Email is required.';
-            }
-
-
             if (
+                $email !== ''
+                &&
                 !filter_var(
                     $email,
                     FILTER_VALIDATE_EMAIL
                 )
             ) {
 
-                return 'Guardian ' .
-                    $number .
-                    ': Please enter a valid email address.';
+                $errors[$index]['email'] =
+                    'Please enter a valid email address.';
             }
         }
 
 
-        return true;
+        return $errors;
     }
 
 
     /**
-     * Set validation error.
+     * Get all validation errors.
+     *
+     * @return array
      */
-    protected function set_error($message)
+    public function get_errors()
     {
-        $this->CI->form_validation->set_message(
-            'guardian_validation',
-            $message
-        );
+        return $this->errors;
     }
 }

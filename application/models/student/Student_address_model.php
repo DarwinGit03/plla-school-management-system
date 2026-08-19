@@ -15,24 +15,9 @@ class Student_address_model extends CI_Model
             ->result();
     }
 
-
-    // public function create($data)
-    // {
-    //     $this->db->insert(
-    //         $this->table,
-    //         $data
-    //     );
-
-    //     if ($this->db->affected_rows() > 0) {
-
-    //         return $this->db->insert_id();
-    //     }
-
-    //     return false;
-    // }
-
     public function create($data)
     {
+        
         $this->db->insert(
             $this->table,
             $data

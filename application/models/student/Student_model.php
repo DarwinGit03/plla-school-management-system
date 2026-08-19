@@ -5,16 +5,6 @@ class Student_model extends CI_Model
 {
     protected $table = 'students';
 
-    /**
-     * Get students for the student list.
-     *
-     * @param array $filters
-     * @param int|null $limit
-     * @param int|null $offset
-     * @return array
-     */
-
-
      /* Functions
         et_students()
         count_students()
@@ -38,7 +28,6 @@ class Student_model extends CI_Model
                 students.status,
                 student_enrollments.academic_year,
                 student_enrollments.grade_level,
-                student_enrollments.program,
                 student_enrollments.section
             ')
             ->from($this->table)
@@ -319,11 +308,49 @@ class Student_model extends CI_Model
         return $student;
     }
 
+
+    /**
+     * Get student information by LRN.
+     *
+     * @param string $lrn
+     * @return object|null
+     */
     public function get_student_by_lrn($lrn)
     {
+        $this->db
+            ->select([
+                's.id',
+                's.lrn',
+                's.first_name',
+                's.middle_name',
+                's.last_name',
+                'e.academic_year',
+                'e.grade_level',
+                'e.section'
+            ]);
+
+        $this->db->from('students s');
+
+        $this->db->join(
+            'student_enrollments e',
+            'e.student_id = s.id',
+            'left'
+        );
+
+        $this->db->where(
+            's.lrn',
+            $lrn
+        );
+
+        $this->db->order_by(
+            'e.id',
+            'DESC'
+        );
+
+        $this->db->limit(1);
+
         return $this->db
-            ->where('lrn', $lrn)
-            ->get('students')
+            ->get()
             ->row();
     }
 

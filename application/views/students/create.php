@@ -43,42 +43,109 @@
 
 
     <!-- =====================================================
-         Validation Errors
+        Validation Errors
     ====================================================== -->
 
-    <!-- < ?php if (validation_errors()): ?>
+    <?php if (!empty($validation_errors)): ?>
 
-        <div class="alert alert-danger">
+        <div
+            class="alert alert-danger alert-dismissible fade show"
+            role="alert">
 
             <div class="fw-semibold mb-2">
                 Please correct the following errors:
             </div>
 
-            < ?= validation_errors(); ?>
+            <ul class="mb-0">
+
+                <?php foreach (
+                    $validation_errors
+                    as $section => $errors
+                ): ?>
+
+                    <?php if ($section === 'student'): ?>
+
+                        <li>
+                            <?= $errors; ?>
+                        </li>
+
+                    <?php elseif ($section === 'guardians'): ?>
+
+                        <?php foreach (
+                            $errors
+                            as $guardianIndex => $guardianErrors
+                        ): ?>
+
+                            <?php if (
+                                $guardianIndex === '_global'
+                            ): ?>
+
+                                <?php foreach (
+                                    $guardianErrors
+                                    as $message
+                                ): ?>
+
+                                    <li>
+                                        <?= html_escape($message); ?>
+                                    </li>
+
+                                <?php endforeach; ?>
+
+                            <?php else: ?>
+
+                                <?php foreach (
+                                    $guardianErrors
+                                    as $field => $message
+                                ): ?>
+
+                                    <li>
+                                        Guardian
+                                        <?= ((int) $guardianIndex + 1); ?>:
+                                        <?= html_escape($message); ?>
+                                    </li>
+
+                                <?php endforeach; ?>
+
+                            <?php endif; ?>
+
+                        <?php endforeach; ?>
+
+                    <?php endif; ?>
+
+                <?php endforeach; ?>
+
+            </ul>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close">
+            </button>
 
         </div>
 
-    < ?php endif; ?> -->
-    
-        <?php if ($this->session->flashdata('error')): ?>
-
-            <div
-                class="alert alert-danger alert-dismissible fade show"
-                role="alert">
-
-                <?= $this->session->flashdata('error'); ?>
-
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert">
-                </button>
-
-            </div>
-
-        <?php endif; ?>
+    <?php endif; ?>
 
 
+    <?php if ($this->session->flashdata('error')): ?>
+
+        <div
+            class="alert alert-danger alert-dismissible fade show"
+            role="alert">
+
+            <?= $this->session->flashdata('error'); ?>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close">
+            </button>
+
+        </div>
+
+    <?php endif; ?>
 
     <!-- =====================================================
          Registration Form
@@ -139,12 +206,11 @@
                             maxlength="20" required
                         >
 
-                        <?= form_error(
+                        <!-- < ?= form_error(
                             'lrn',
                             '<div class="invalid-feedback">',
                             '</div>'
-                        ); ?>
-
+                        ); ?> -->
 
                         <div class="form-check">
                             <input
@@ -242,7 +308,7 @@
                             for="middle_name"
                             class="form-label">
 
-                            Middle Name
+                            Middle Name/M.I
 
                         </label>
 
@@ -282,7 +348,7 @@
 
                     <!-- Suffix -->
 
-                    <div class="col-12 col-md-6 col-lg-4" hidden>
+                    <!-- <div class="col-12 col-md-6 col-lg-4" hidden>
 
                         <label
                             for="suffix"
@@ -303,7 +369,7 @@
 
                             <option
                                 value="Jr."
-                                <?= set_select(
+                                < ?= set_select(
                                     'suffix',
                                     'Jr.'
                                 ); ?>>
@@ -314,7 +380,7 @@
 
                             <option
                                 value="Sr."
-                                <?= set_select(
+                                < ?= set_select(
                                     'suffix',
                                     'Sr.'
                                 ); ?>>
@@ -325,7 +391,7 @@
 
                             <option
                                 value="II"
-                                <?= set_select(
+                                < ?= set_select(
                                     'suffix',
                                     'II'
                                 ); ?>>
@@ -336,7 +402,7 @@
 
                             <option
                                 value="III"
-                                <?= set_select(
+                                < ?= set_select(
                                     'suffix',
                                     'III'
                                 ); ?>>
@@ -347,7 +413,7 @@
 
                         </select>
 
-                    </div>
+                    </div> -->
 
 
                     <!-- Gender -->
@@ -372,29 +438,19 @@
                             <option value="">
                                 Select Gender
                             </option>
-
                             <option
                                 value="Male"
-                                <?= set_select(
-                                    'gender',
-                                    'Male'
-                                ); ?>>
-
+                                <?= set_select('gender', 'Male'); ?>
+                            >
                                 Male
-
                             </option>
 
                             <option
                                 value="Female"
-                                <?= set_select(
-                                    'gender',
-                                    'Female'
-                                ); ?>>
-
+                                <?= set_select('gender', 'Female'); ?>
+                            >
                                 Female
-
                             </option>
-
                         </select>
 
                     </div>
@@ -413,7 +469,7 @@
 
                         </label>
 
-                        <input
+                        <input required
                             type="date"
                             id="birth_date"
                             name="birth_date"
@@ -653,253 +709,9 @@
 
             <div class="card-body">
 
-                <div
-                    id="guardianContainer"
-                    class="row g-3">
+                <div id="guardianContainer" class="row g-3">
 
-
-                    <!-- Guardian 1 -->
-
-                    <div
-                        class="col-12 guardian-item"
-                        data-guardian-index="0">
-
-                        <div class="card border">
-
-                            <div class="card-header bg-light">
-
-                                <div
-                                    class="d-flex justify-content-between align-items-center">
-
-                                    <strong class="guardian-title">
-
-                                        Guardian 1
-
-                                    </strong>
-
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-danger btn-sm remove-guardian">
-
-                                        <i class="fas fa-trash me-1"></i>
-
-                                        Remove
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="card-body">
-
-                                <div class="row g-3">
-
-
-                                    <!-- Guardian Type -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            Guardian Type
-                                            
-                                            <span class="text-danger">*</span>
-
-                                        </label>
-
-                                        <select
-                                            name="guardians[0][guardian_type]"
-                                            class="form-select guardian-type">
-
-                                            <option value="">
-                                            </option>
-                                            
-                                            <option value="father">
-                                                Father
-                                            </option>
-
-                                            <option value="mother">
-                                                Mother
-                                            </option>
-
-                                            <option value="legal_guardian">
-                                                Legal Guardian
-                                            </option>
-
-                                        </select>
-
-                                    </div>
-
-
-                                    <!-- Relationship -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            Relationship
-                                            <span class="text-danger">*</span>
-
-                                        </label>
-
-                                        <input required
-                                            type="text"
-                                            name="guardians[0][relationship]"
-                                            class="form-control guardian-relationship"
-                                            placeholder="Relationship">
-
-                                    </div>
-
-
-                                    <!-- Primary -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label d-block">
-
-                                            Contact Preference
-
-                                        </label>
-
-                                        <div class="form-check mt-2">
-
-                                            <input
-                                                type="checkbox"
-                                                class="form-check-input primary-guardian"
-                                                name="guardians[0][is_primary]"
-                                                value="1">
-
-                                            <label class="form-check-label">
-
-                                                Primary Contact (for emergency)
-
-                                            </label>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <!-- First Name -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            First Name
-                                            <span class="text-danger">*</span>
-
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="guardians[0][first_name]"
-                                            class="form-control">
-
-                                    </div>
-
-
-                                    <!-- Middle Name -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            Middle Name
-
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="guardians[0][middle_name]"
-                                            class="form-control">
-
-                                    </div>
-
-
-                                    <!-- Last Name -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            Last Name
-                                            <span class="text-danger">*</span>
-
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="guardians[0][last_name]"
-                                            class="form-control">
-
-                                    </div>
-
-
-                                    <!-- Mobile -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            Mobile Number
-                                            <span class="text-danger">*</span>
-
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="guardians[0][mobile_no]"
-                                            class="form-control">
-
-                                    </div>
-
-
-                                    <!-- Email -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            Email
-                                            <span class="text-danger">*</span>
-
-                                        </label>
-
-                                        <input
-                                            type="email"
-                                            name="guardians[0][email]"
-                                            class="form-control">
-
-                                    </div>
-
-
-                                    <!-- Occupation -->
-
-                                    <div class="col-12 col-md-4">
-
-                                        <label class="form-label">
-
-                                            Occupation
-
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="guardians[0][occupation]"
-                                            class="form-control">
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
+                    <!-- Guardian dynamic fields here found in javascript -->
 
                 </div>
 
@@ -1246,6 +1058,7 @@
                             name="grade_level"
                             id="grade_level"
                             class="form-select"
+                            required
                             disabled>
 
                             <option value="">
@@ -1274,7 +1087,7 @@
                             id="program"
                             name="program"
                             class="form-control"
-                            value="<?= set_value('program'); ?>"
+                            value="< ?= set_value('program'); ?>"
                             placeholder="e.g. STEM">
 
                     </div> -->
@@ -1297,6 +1110,7 @@
                             name="section"
                             id="section"
                             class="form-select"
+                            required
                             disabled>
 
                             <option value="">
@@ -1323,30 +1137,35 @@
                         <select
                             id="admission_type"
                             name="admission_type"
-                            class="form-select">
+                            class="form-select"
+                            required>
 
                             <option
                                 value="New Student"
                                 <?= set_select(
                                     'admission_type',
-                                    'new',
+                                    'New Student',
                                     true
                                 ); ?>>
-
                                 New Student
-
                             </option>
 
-                            <option value="Transferee">
-
+                            <option
+                                value="Transferee"
+                                <?= set_select(
+                                    'admission_type',
+                                    'Transferee'
+                                ); ?>>
                                 Transferee
-
                             </option>
 
-                            <option value="Returning Student">
-
+                            <option
+                                value="Returning Student"
+                                <?= set_select(
+                                    'admission_type',
+                                    'Returning Student'
+                                ); ?>>
                                 Returning Student
-
                             </option>
 
                         </select>
@@ -1413,9 +1232,133 @@
 
     </form>
 
+    <!-- Duplicate LRN Modal -->
+    <div
+        class="modal fade"
+        id="duplicateLrnModal"
+        tabindex="-1"
+        aria-labelledby="duplicateLrnModalLabel"
+        aria-hidden="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5
+                        class="modal-title"
+                        id="duplicateLrnModalLabel">
+
+                        LRN Already Registered
+
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                    </button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <div class="alert alert-warning">
+
+                        The LRN you entered is already registered in the system.
+
+                    </div>
+
+
+                    <div class="mb-2">
+
+                        <strong>Student:</strong>
+
+                        <span id="duplicateStudentName">
+                        </span>
+
+                    </div>
+
+
+                    <div class="mb-2">
+
+                        <strong>Academic Year:</strong>
+
+                        <span id="duplicateAcademicYear">
+                        </span>
+
+                    </div>
+
+
+                    <div class="mb-2">
+
+                        <strong>Grade Level:</strong>
+
+                        <span id="duplicateGradeLevel">
+                        </span>
+
+                    </div>
+
+
+                    <div class="mb-2">
+
+                        <strong>Section:</strong>
+
+                        <span id="duplicateSection">
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+
+                        Close
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
 
 <script>
+        
+    const submittedGuardians =
+        <?= json_encode($guardians ?? []); ?>;
+
+    const submittedEnrollment = {
+        academic_year:
+            <?= json_encode(
+                set_value('academic_year')
+            ); ?>,
+
+        grade_level:
+            <?= json_encode(
+                set_value('grade_level')
+            ); ?>,
+
+        section:
+            <?= json_encode(
+                set_value('section')
+            ); ?>
+    };
+
+
     const BASE_URL =
         <?= json_encode(base_url()); ?>;
 </script>

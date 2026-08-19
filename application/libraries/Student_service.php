@@ -49,249 +49,30 @@ class Student_service
             ->get_student($id);
     }
 
-    // /**
-    //  * Create student and enrollment.
-    //  *
-    //  * @param array $student_data
-    //  * @param array $enrollment_data
-    //  * @return int|false
-    //  */
-    // public function create_student(
-    //     $student_data,
-    //     $enrollment_data
-    // ) {
-    //     $this->CI->db->trans_start();
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Create Student
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     $student_id =
-    //         $this->CI
-    //             ->Student_model
-    //             ->create_student(
-    //                 $student_data
-    //             );
-
-    //     if (!$student_id) {
-
-    //         $this->CI->db->trans_rollback();
-
-    //         return false;
-    //     }
-
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Create Enrollment
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     $enrollment_data['student_id'] =
-    //         $student_id;
-
-    //     $enrollment_id =
-    //         $this->CI
-    //             ->Student_model
-    //             ->create_enrollment(
-    //                 $enrollment_data
-    //             );
-
-
-    //     if (!$enrollment_id) {
-
-    //         $this->CI->db->trans_rollback();
-
-    //         return false;
-    //     }
-
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Complete Transaction
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     $this->CI->db->trans_complete();
-
-
-    //     if ($this->CI->db->trans_status() === false) {
-
-    //         return false;
-    //     }
-
-
-    //     return $student_id;
-    // }
-
     /**
-     * Create student, enrollment, guardian and addresses.
+     * Create a complete student registration.
      *
-     * All records are saved inside one database transaction.
+     * All related records are saved in one database transaction.
      *
      * @param array $student_data
      * @param array $enrollment_data
-     * @param array $guardian_data
-     * @param array $address_data
+     * @param array $guardians
+     * @param array $addresses
      * @return int|false
      */
-    // public function create_student(
-    //     $student_data,
-    //     $enrollment_data,
-    //     $guardian_data = [],
-    //     $address_data = []
-    // ) {
-    //     $this->CI->db->trans_start();
-
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Create Student
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     $student_id =
-    //         $this->CI
-    //             ->Student_model
-    //             ->create_student(
-    //                 $student_data
-    //             );
-
-
-    //     if (!$student_id) {
-
-    //         $this->CI->db->trans_rollback();
-
-    //         return false;
-    //     }
-
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Create Enrollment
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     $enrollment_data['student_id'] =
-    //         $student_id;
-
-
-    //     $enrollment_id =
-    //         $this->CI
-    //             ->Student_model
-    //             ->create_enrollment(
-    //                 $enrollment_data
-    //             );
-
-
-    //     if (!$enrollment_id) {
-
-    //         $this->CI->db->trans_rollback();
-
-    //         return false;
-    //     }
-
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Create Guardian
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     if (!empty($guardian_data)) {
-
-    //         $guardian_data['student_id'] =
-    //             $student_id;
-
-    //         $guardian_data['created_at'] =
-    //             date('Y-m-d H:i:s');
-
-
-    //         $guardian_id =
-    //             $this->CI
-    //                 ->Student_guardian_model
-    //                 ->create(
-    //                     $guardian_data
-    //                 );
-
-
-    //         if (!$guardian_id) {
-
-    //             $this->CI->db->trans_rollback();
-
-    //             return false;
-    //         }
-    //     }
-
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Create Addresses
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     if (!empty($address_data)) {
-
-    //         foreach ($address_data as $address) {
-
-    //             if (empty($address)) {
-    //                 continue;
-    //             }
-
-
-    //             $address['student_id'] =
-    //                 $student_id;
-
-    //             $address['created_at'] =
-    //                 date('Y-m-d H:i:s');
-
-
-    //             $address_id =
-    //                 $this->CI
-    //                     ->Student_address_model
-    //                     ->create(
-    //                         $address
-    //                     );
-
-
-    //             if (!$address_id) {
-
-    //                 $this->CI->db->trans_rollback();
-
-    //                 return false;
-    //             }
-    //         }
-    //     }
-
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Complete Transaction
-    //     |--------------------------------------------------------------------------
-    //     */
-
-    //     $this->CI->db->trans_complete();
-
-
-    //     if ($this->CI->db->trans_status() === false) {
-
-    //         return false;
-    //     }
-
-
-    //     return $student_id;
-    // }
-
-
     public function create_student(
-    $student_data,
-    $enrollment_data,
-    $guardians = [],
-    $addresses = []
+        array $student_data,
+        array $enrollment_data,
+        array $guardians = [],
+        array $addresses = []
     ) {
-        $this->CI->db->trans_start();
+        /*
+        |--------------------------------------------------------------------------
+        | Start Transaction
+        |--------------------------------------------------------------------------
+        */
+
+        $this->CI->db->trans_begin();
 
 
         /*
@@ -348,144 +129,34 @@ class Student_service
         |--------------------------------------------------------------------------
         */
 
-        // if (!empty($guardians)) {
-
-        //     foreach (
-        //         $guardians as $guardian
-        //     ) {
-
-        //         if (
-        //             empty($guardian['first_name']) &&
-        //             empty($guardian['last_name'])
-        //         ) {
-        //             continue;
-        //         }
-
-
-        //         $guardian['student_id'] =
-        //             $student_id;
-
-
-        //         /*
-        //         | Convert checkbox value.
-        //         */
-
-        //         $guardian['is_primary'] =
-        //             !empty(
-        //                 $guardian['is_primary']
-        //             )
-        //             ? 1
-        //             : 0;
-
-
-        //         $guardian_id =
-        //             $this->CI
-        //                 ->Student_guardian_model
-        //                 ->create(
-        //                     $guardian
-        //                 );
-
-
-        //         if (!$guardian_id) {
-
-        //             $this->CI->db->trans_rollback();
-
-        //             return false;
-        //         }
-
-        //     }
-
-        // }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Guardians
-        |--------------------------------------------------------------------------
-        */
-
-        $primary_count = 0;
-
         foreach ($guardians as $guardian) {
 
-            if (!empty($guardian['is_primary'])) {
+            $guardian['student_id'] =
+                $student_id;
 
-                $primary_count++;
 
+            $guardian['is_primary'] =
+                !empty(
+                    $guardian['is_primary']
+                )
+                    ? 1
+                    : 0;
+
+
+            $guardian_id =
+                $this->CI
+                    ->Student_guardian_model
+                    ->create(
+                        $guardian
+                    );
+
+
+            if (!$guardian_id) {
+
+                $this->CI->db->trans_rollback();
+
+                return false;
             }
-
-        }
-
-
-        if ($primary_count > 1) {
-
-            $this->CI->db->trans_rollback();
-
-            return false;
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Create Guardians
-        |--------------------------------------------------------------------------
-        */
-
-        if (!empty($guardians)) {
-
-            foreach ($guardians as $guardian) {
-
-                /*
-                | Skip completely empty guardian rows.
-                */
-
-                if (
-                    empty($guardian['first_name']) &&
-                    empty($guardian['last_name'])
-                ) {
-                    continue;
-                }
-
-
-                /*
-                | Attach student ID.
-                */
-
-                $guardian['student_id'] =
-                    $student_id;
-
-
-                /*
-                | Normalize primary flag.
-                */
-
-                $guardian['is_primary'] =
-                    !empty($guardian['is_primary'])
-                        ? 1
-                        : 0;
-
-
-                /*
-                | Insert guardian.
-                */
-
-                $guardian_id =
-                    $this->CI
-                        ->Student_guardian_model
-                        ->create(
-                            $guardian
-                        );
-
-
-                if (!$guardian_id) {
-
-                    $this->CI->db->trans_rollback();
-
-                    return false;
-                }
-
-            }
-
         }
 
 
@@ -495,62 +166,52 @@ class Student_service
         |--------------------------------------------------------------------------
         */
 
-        if (!empty($addresses)) {
+        foreach ($addresses as $address) {
 
-            foreach (
-                $addresses as $address
-            ) {
-
-                if (
-                    empty($address['house_no']) &&
-                    empty($address['street']) &&
-                    empty($address['barangay']) &&
-                    empty($address['city']) &&
-                    empty($address['province'])
-                ) {
-                    continue;
-                }
+            $address['student_id'] =
+                $student_id;
 
 
-                $address['student_id'] =
-                    $student_id;
+            $address_id =
+                $this->CI
+                    ->Student_address_model
+                    ->create(
+                        $address
+                    );
 
 
-                $address_id =
-                    $this->CI
-                        ->Student_address_model
-                        ->create(
-                            $address
-                        );
+            if (!$address_id) {
 
+                $this->CI->db->trans_rollback();
 
-                if (!$address_id) {
-
-                    $this->CI->db->trans_rollback();
-
-                    return false;
-                }
-
+                return false;
             }
-
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | Complete Transaction
+        | Check Transaction
         |--------------------------------------------------------------------------
         */
-
-        $this->CI->db->trans_complete();
-
 
         if (
             $this->CI->db->trans_status() === false
         ) {
 
+            $this->CI->db->trans_rollback();
+
             return false;
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commit Transaction
+        |--------------------------------------------------------------------------
+        */
+
+        $this->CI->db->trans_commit();
 
 
         return $student_id;
@@ -590,6 +251,12 @@ class Student_service
             ->get_by_student($student_id);
     }
 
+    /**
+     * Get student by LRN.
+     *
+     * @param string $lrn
+     * @return object|null
+     */
     public function get_student_by_lrn($lrn)
     {
         return $this->CI

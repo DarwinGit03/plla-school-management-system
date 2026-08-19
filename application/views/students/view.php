@@ -1006,7 +1006,7 @@
                         </div>
 
 
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <!-- <div class="col-12 col-md-6 col-lg-4">
 
                             <div class="small text-muted mb-1">
 
@@ -1016,14 +1016,14 @@
 
                             <div class="fw-semibold">
 
-                                <?= html_escape(
+                                < ?= html_escape(
                                     $student->program
                                     ?: '—'
                                 ); ?>
 
                             </div>
 
-                        </div>
+                        </div> -->
 
 
                         <div class="col-12 col-md-6 col-lg-4">
@@ -1224,9 +1224,9 @@
                                         Grade
                                     </th>
 
-                                    <th>
+                                    <!-- <th>
                                         Program
-                                    </th>
+                                    </th> -->
 
                                     <th>
                                         Section

@@ -1,137 +1,237 @@
-
 document.addEventListener('DOMContentLoaded', function () {
 
-    // const lrn =
-    //     document.getElementById('lrn');
+    const lrnInput = document.getElementById('lrn');
+    const studentNoInput = document.getElementById('student_no');
+    const sameAsLrn = document.getElementById('student_no_same_as_lrn');
 
-    // if (!lrn) {
-    //     return;
-    // }
+    /*
+    |--------------------------------------------------------------------------
+    | Student Number ↔ LRN [checkbox]
+    |--------------------------------------------------------------------------
+    */
 
+    if (lrnInput && studentNoInput && sameAsLrn ) {
+        function syncStudentNumber()
+        {
+            if (sameAsLrn.checked) {
 
-    // lrn.addEventListener('input', function () {
+                studentNoInput.value =
+                    lrnInput.value;
 
-    //     const value =
-    //         this.value;
+                studentNoInput.readOnly =
+                    true;
 
-    //     const hasInvalidCharacters =
-    //         /[^0-9]/.test(value);
+            } else {
 
+                studentNoInput.readOnly =
+                    false;
 
-    //     if (hasInvalidCharacters) {
+            }
+        }
 
-    //         this.classList.add(
-    //             'is-invalid'
-    //         );
-
-    //         let error =
-    //             this.parentElement
-    //                 .querySelector(
-    //                     '.js-lrn-error'
-    //                 );
-
-    //         if (!error) {
-
-    //             error =
-    //                 document.createElement(
-    //                     'div'
-    //                 );
-
-    //             error.className =
-    //                 'invalid-feedback js-lrn-error';
-
-    //             this.parentElement.appendChild(
-    //                 error
-    //             );
-    //         }
-
-    //         error.textContent =
-    //             'LRN must contain numbers only.';
-
-    //     } else {
-
-    //         this.classList.remove(
-    //             'is-invalid'
-    //         );
-
-    //         const error =
-    //             this.parentElement
-    //                 .querySelector(
-    //                     '.js-lrn-error'
-    //                 );
-
-    //         if (error) {
-    //             error.remove();
-    //         }
-
-    //     }
-
-    // });
-
-
-
-
-    const lrnInput =
-        document.getElementById('lrn');
-
-    const studentNoInput =
-        document.getElementById('student_no');
-
-    const sameAsLrn =
-        document.getElementById(
-            'student_no_same_as_lrn'
+        sameAsLrn.addEventListener(
+            'change',
+            syncStudentNumber
         );
 
+        lrnInput.addEventListener(
+            'input',
+            function () {
+                if (
+                    sameAsLrn.checked
+                ) {
 
-    if (
-        !lrnInput ||
-        !studentNoInput ||
-        !sameAsLrn
-    ) {
-        return;
+                    studentNoInput.value =
+                        lrnInput.value;
+
+                }
+            }
+        );
+
+        syncStudentNumber();
+
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | LRN CHECKER => EXIST
+    |--------------------------------------------------------------------------
+    */
 
-    function syncStudentNumber()
+    if (!lrnInput) {return;}
+    let lastCheckedLrn = '';
+    function checkLrn()
     {
-        if (sameAsLrn.checked) {
+        const lrn =
+            lrnInput.value.trim();
 
-            studentNoInput.value =
-                lrnInput.value;
 
-            studentNoInput.readOnly =
-                true;
+        if (!lrn) {
 
-        } else {
-
-            studentNoInput.readOnly =
-                false;
+            return;
         }
+
+
+        if (!/^[0-9]+$/.test(lrn)) {
+
+            return;
+        }
+
+
+        if (lrn === lastCheckedLrn) {
+
+            return;
+        }
+
+
+        lastCheckedLrn = lrn;
+
+
+        const formData = [
+
+            {
+                name: 'lrn',
+                value: lrn
+            }
+
+        ];
+
+
+        formData.push({
+
+            name: CSRF.name,
+
+            value: CSRF.hash
+
+        });
+
+
+        $.ajax({
+
+            url:
+                BASE_URL +
+                'students/check-lrn',
+
+            type: 'POST',
+
+            data: formData,
+
+            dataType: 'json',
+
+            success:
+                function (response) {
+
+                    if (
+                        !response.success
+                    ) {
+
+                        return;
+                    }
+
+
+                    if (
+                        response.exists
+                    ) {
+
+                        lrnInput.classList.add(
+                            'is-invalid'
+                        );
+
+
+                        document.getElementById(
+                            'duplicateStudentName'
+                        ).textContent =
+                            response.student.name || '-';
+
+
+                        document.getElementById(
+                            'duplicateAcademicYear'
+                        ).textContent =
+                            response.student.academic_year || '-';
+
+
+                        document.getElementById(
+                            'duplicateGradeLevel'
+                        ).textContent =
+                            response.student.grade_level || '-';
+
+
+                        document.getElementById(
+                            'duplicateSection'
+                        ).textContent =
+                            response.student.section || '-';
+
+
+                        const modalElement =
+                            document.getElementById(
+                                'duplicateLrnModal'
+                            );
+
+
+                        if (
+                            modalElement
+                        ) {
+
+                            const modal =
+                                bootstrap.Modal
+                                    .getOrCreateInstance(
+                                        modalElement
+                                    );
+
+                            modal.show();
+
+                        }
+
+                    } else {
+
+                        lrnInput.classList.remove(
+                            'is-invalid'
+                        );
+
+                    }
+
+                },
+
+            error:
+                function (
+                    xhr,
+                    status,
+                    error
+                ) {
+
+                    console.error(
+                        'LRN check failed:',
+                        status,
+                        error
+                    );
+
+                }
+
+        });
+
     }
-
-
-    sameAsLrn.addEventListener(
-        'change',
-        syncStudentNumber
-    );
-
 
     lrnInput.addEventListener(
         'input',
         function () {
 
-            if (sameAsLrn.checked) {
+            lrnInput.classList.remove(
+                'is-invalid'
+            );
 
-                studentNoInput.value =
-                    lrnInput.value;
-            }
+            lastCheckedLrn = '';
 
         }
     );
 
+    lrnInput.addEventListener(
+        'blur',
+        function () {
 
-    syncStudentNumber();
+            checkLrn();
 
+        }
+    );
 
 
     /*
@@ -208,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Checkbox
+    | Checkbox [/] current COPY permanent Address 
     |--------------------------------------------------------------------------
     */
 
@@ -280,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-
     /*
     |--------------------------------------------------------------------------
     | Dynamic Guardians
@@ -298,10 +397,9 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
 
-    let guardianIndex = 1;
+    let guardianIndex = 0;
 
-
-    function guardianTemplate(index)
+    function guardianTemplate(index, guardian = {})
     {
         return `
             <div
@@ -345,18 +443,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
                                 <select
                                     name="guardians[${index}][guardian_type]"
-                                    class="form-select guardian-type"">
+                                    class="form-select guardian-type">
 
-                                    <option value="father">
+                                    <option value="">Select Guardian Type</option>
+
+                                    <option
+                                        value="father"
+                                        ${guardian.guardian_type === 'father' ? 'selected' : ''}>
                                         Father
                                     </option>
 
-                                    <option value="mother">
+                                    <option
+                                        value="mother"
+                                        ${guardian.guardian_type === 'mother' ? 'selected' : ''}>
                                         Mother
                                     </option>
 
-                                    <option value="legal_guardian">
-                                        Legal Guardian
+                                    <option
+                                        value="guardian"
+                                        ${guardian.guardian_type === 'guardian' ? 'selected' : ''}>
+                                        Guardian
                                     </option>
 
                                 </select>
@@ -374,7 +480,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                     type="text"
                                     name="guardians[${index}][relationship]"
                                     class="form-control guardian-relationship"
-                                    placeholder="Relationship">
+                                    placeholder="Relationship"
+                                    value="${guardian.relationship ?? ''}">
 
                             </div>
 
@@ -391,7 +498,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                         type="checkbox"
                                         class="form-check-input primary-guardian"
                                         name="guardians[${index}][is_primary]"
-                                        value="1">
+                                        value="1"
+                                        ${guardian.is_primary == '1' ? 'checked' : ''}>
 
                                     <label class="form-check-label">
                                         Primary Contact (for emergency)
@@ -411,7 +519,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input
                                     type="text"
                                     name="guardians[${index}][first_name]"
-                                    class="form-control">
+                                    class="form-control"
+                                    value="${guardian.first_name ?? ''}">
+                                    
 
                             </div>
 
@@ -425,7 +535,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input
                                     type="text"
                                     name="guardians[${index}][middle_name]"
-                                    class="form-control">
+                                    class="form-control"
+                                    value="${guardian.middle_name ?? ''}">
 
                             </div>
 
@@ -439,7 +550,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input
                                     type="text"
                                     name="guardians[${index}][last_name]"
-                                    class="form-control">
+                                    class="form-control"
+                                    value="${guardian.last_name ?? ''}">
 
                             </div>
 
@@ -453,7 +565,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input
                                     type="text"
                                     name="guardians[${index}][mobile_no]"
-                                    class="form-control">
+                                    class="form-control"
+                                    value="${guardian.mobile_no ?? ''}">
 
                             </div>
 
@@ -467,7 +580,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input
                                     type="email"
                                     name="guardians[${index}][email]"
-                                    class="form-control">
+                                    class="form-control"
+                                    value="${guardian.email ?? ''}">
 
                             </div>
 
@@ -481,7 +595,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input
                                     type="text"
                                     name="guardians[${index}][occupation]"
-                                    class="form-control">
+                                    class="form-control"
+                                    value="${guardian.occupation ?? ''}">
 
                             </div>
 
@@ -495,6 +610,49 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     }
 
+    function renderGuardians(guardians)
+    {
+        guardianContainer.innerHTML = '';
+
+
+        if (
+            !Array.isArray(guardians) ||
+            guardians.length === 0
+        ) {
+
+            guardianContainer.insertAdjacentHTML(
+                'beforeend',
+                guardianTemplate(0)
+            );
+
+            guardianIndex = 1;
+
+            return;
+        }
+
+
+        guardians.forEach(
+            function (guardian, index) {
+
+                guardianContainer.insertAdjacentHTML(
+                    'beforeend',
+                    guardianTemplate(
+                        index,
+                        guardian
+                    )
+                );
+
+            }
+        );
+
+
+        guardianIndex =
+            guardians.length;
+    }
+
+    renderGuardians(
+        submittedGuardians
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -502,10 +660,7 @@ document.addEventListener('DOMContentLoaded', function () {
     |--------------------------------------------------------------------------
     */
 
-    if (
-        guardianContainer &&
-        addGuardianBtn
-    ) {
+    if (guardianContainer && addGuardianBtn) {
 
         addGuardianBtn.addEventListener(
             'click',
@@ -737,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (
             selectedType ===
-            'legal_guardian'
+            'guardian'
         ) {
 
             relationship.value = '';
@@ -805,12 +960,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         );
 
-//DROPDOWN YEAR
-
-// document.addEventListener(
-//     'DOMContentLoaded',
-//     function () {
-
+//DROPDOWN YEAR, GRADE, SECTION
         const academicYear =
             document.querySelector(
                 '#academic_year'
@@ -836,10 +986,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         gradeLevel.disabled = true;
-
         section.disabled = true;
-
-
         loadAcademicYears();
 
         academicYear.addEventListener(
@@ -942,6 +1089,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     });
 
+
+                    /*
+                    |--------------------------------------------------------------
+                    | Restore submitted Academic Year
+                    |--------------------------------------------------------------
+                    */
+
+                    if (
+                        submittedEnrollment.academic_year
+                    ) {
+
+                        academicYear.value =
+                            submittedEnrollment.academic_year;
+
+                        loadGradeLevels(
+                            submittedEnrollment.academic_year
+                        );
+                    }
+
                 })
                 .catch(error => {
 
@@ -1005,6 +1171,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     gradeLevel.disabled =
                         data.length === 0;
 
+
+                    /*
+                    |--------------------------------------------------------------
+                    | Restore submitted Grade Level
+                    |--------------------------------------------------------------
+                    */
+
+                    if (
+                        submittedEnrollment.grade_level
+                    ) {
+
+                        gradeLevel.value =
+                            submittedEnrollment.grade_level;
+
+                        loadSections(
+                            year,
+                            submittedEnrollment.grade_level
+                        );
+                    }
+
                 })
                 .catch(error => {
 
@@ -1057,7 +1243,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             );
 
                         option.value =
-                            item.id;
+                            item.section;
 
                         option.textContent =
                             item.section;
@@ -1071,6 +1257,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     section.disabled =
                         data.length === 0;
+
+
+                    /*
+                    |--------------------------------------------------------------
+                    | Restore submitted Section
+                    |--------------------------------------------------------------
+                    */
+
+                    if (
+                        submittedEnrollment.section
+                    ) {
+
+                        section.value =
+                            submittedEnrollment.section;
+                    }
 
                 })
                 .catch(error => {
@@ -1106,8 +1307,5 @@ document.addEventListener('DOMContentLoaded', function () {
                 option
             );
         }
-
-//     }
-// );
 
 });

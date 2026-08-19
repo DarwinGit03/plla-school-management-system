@@ -1,0 +1,21 @@
+Student_service
+│
+├── Retrieve data
+│
+├── create_student()
+│   │
+│   ├── BEGIN TRANSACTION
+│   │
+│   ├── Student
+│   │
+│   ├── Enrollment
+│   │
+│   ├── Guardians
+│   │
+│   ├── Addresses
+│   │
+│   ├── COMMIT
+│   │
+│   └── Return student ID
+│
+└── Lookup methods

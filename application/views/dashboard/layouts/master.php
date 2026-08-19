@@ -83,6 +83,13 @@
 <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 
 <script src="<?= base_url('assets/js/dashboard.js'); ?>"></script>
+<script>
+    const CSRF = {
+        name: "<?= $this->security->get_csrf_token_name(); ?>",
+        hash: "<?= $this->security->get_csrf_hash(); ?>"
+    };
+</script>
+
 
 </body>
 

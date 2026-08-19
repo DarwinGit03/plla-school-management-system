@@ -80,3 +80,5 @@ $route['admin/unlock-account/(:num)'] = 'auth/unlockAccount/$1';
 
 //security
 $route['keep-alive'] = 'auth/keepAlive';
+
+$route['students/check-lrn'] = 'students/check_lrn';

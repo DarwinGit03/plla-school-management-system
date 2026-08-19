@@ -19,7 +19,7 @@ class Student_guardian_model extends CI_Model
     public function create($data)
     {
         $this->db->insert(
-            'student_guardians',
+            $this->table,
             $data
         );
 
@@ -34,21 +34,6 @@ class Student_guardian_model extends CI_Model
 
         return $this->db->insert_id();
     }
-    // public function create($data)
-    // {
-    //     $this->db->insert(
-    //         $this->table,
-    //         $data
-    //     );
-
-    //     if ($this->db->affected_rows() > 0) {
-
-    //         return $this->db->insert_id();
-    //     }
-
-    //     return false;
-    // }
-
 
     public function update($id, $data)
     {

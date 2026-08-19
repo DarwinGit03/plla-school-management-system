@@ -281,113 +281,59 @@ class Students extends MY_Controller
             $data
         );
     }
-    
+
     public function create()
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Handle Form Submission
-        |--------------------------------------------------------------------------
-        */
-
         if ($this->input->method() === 'post') {
 
-            /*
-            |--------------------------------------------------------------------------
-            | Get Guardians
-            |--------------------------------------------------------------------------
-            */
-
-            $guardians = $this->input->post('guardians');
-
-            if (!is_array($guardians)) {
-                $guardians = [];
-            }
-
-            log_message(
-                'error',
-                '[STUDENT CREATE] GUARDIANS POST: ' .
-                print_r($guardians, true)
-            );
-
+            // log_message(
+            //     'debug',
+            //     '[STUDENT CREATE] POST request received.'
+            // );
 
             /*
             |--------------------------------------------------------------------------
-            | Validate Registration
+            | Student Validation Rules
             |--------------------------------------------------------------------------
             */
 
-            // if (
-            //     !$this->student_validation
-            //         ->validate_registration($guardians)
-            // ) {
+            $this->student_validation
+                ->set_student_rules();
 
-            //     return $this->show_create_form(
-            //         [
-            //             'guardians' =>
-            //                 $guardians,
+            /*
+            |--------------------------------------------------------------------------
+            | Run Student Validation
+            |--------------------------------------------------------------------------
+            */
 
-            //             'validation_errors' =>
-            //                 $this->student_validation
-            //                     ->get_errors()
-            //         ]
-            //     );
-            // }
+            if ($this->form_validation->run() === false) {
 
-            if (
-                !$this->student_validation
-                    ->validate_registration($guardians)
-            ) {
-
-                $validation_errors =
-                    $this->student_validation
-                        ->get_errors();
-
-
-                $show_lrn_duplicate_modal =
-                    false;
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Detect LRN Duplicate
-                |--------------------------------------------------------------------------
-                */
-
-                if (
-                    !empty($validation_errors['student'])
-                    &&
-                    stripos(
-                        $validation_errors['student'],
-                        'LRN'
-                    ) !== false
-                    &&
-                    stripos(
-                        $validation_errors['student'],
-                        'already'
-                    ) !== false
-                ) {
-
-                    $show_lrn_duplicate_modal =
-                        true;
-                }
-
-
-                return $this->show_create_form(
-                    [
-
-                        'guardians' =>
-                            $guardians,
-
-                        'validation_errors' =>
-                            $validation_errors,
-
-                        'show_lrn_duplicate_modal' =>
-                            $show_lrn_duplicate_modal
-                    ]
+                log_message(
+                    'error',
+                    '[STUDENT CREATE] VALIDATION FAILED: ' .
+                    validation_errors(' | ', ' | ')
                 );
-            }
 
+                 $data = [
+                    'title' => 'Register Student',
+                    'page_title' => 'Register Student',
+                    'page_subtitle' => 'Create a new student record',
+                    'breadcrumb' => [
+                        'Students',
+                        'Register'
+                    ],
+                    'content' => 'students/create',
+                    'guardians' =>
+                        $this->input->post('guardians')
+                ];
+
+                $this->load->view(
+                    'dashboard/layouts/master',
+                    $data
+                );
+
+                return;
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -397,35 +343,29 @@ class Students extends MY_Controller
 
             $student_data = [
 
-                'lrn' =>
-                    trim(
-                        $this->input->post('lrn')
-                    ),
+                'lrn' => trim(
+                    $this->input->post('lrn')
+                ),
 
-                'student_no' =>
-                    trim(
-                        $this->input->post('student_no')
-                    ),
+                'student_no' => trim(
+                    $this->input->post('student_no')
+                ),
 
-                'first_name' =>
-                    trim(
-                        $this->input->post('first_name')
-                    ),
+                'first_name' => trim(
+                    $this->input->post('first_name')
+                ),
 
-                'middle_name' =>
-                    trim(
-                        $this->input->post('middle_name')
-                    ),
+                'middle_name' => trim(
+                    $this->input->post('middle_name')
+                ),
 
-                'last_name' =>
-                    trim(
-                        $this->input->post('last_name')
-                    ),
+                'last_name' => trim(
+                    $this->input->post('last_name')
+                ),
 
-                'suffix' =>
-                    trim(
-                        $this->input->post('suffix')
-                    ),
+                'suffix' => trim(
+                    $this->input->post('suffix')
+                ),
 
                 'birth_date' =>
                     $this->input->post(
@@ -446,19 +386,102 @@ class Students extends MY_Controller
                     $this->input->post(
                         'nationality'
                     )
+
             ];
 
 
             /*
             |--------------------------------------------------------------------------
-            | Current Address
+            | Guardians
             |--------------------------------------------------------------------------
             */
 
+            $guardians =
+                $this->input->post(
+                    'guardians'
+                );
+
+
+            if (!is_array($guardians)) {
+
+                $guardians = [];
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Guardian Validation
+            |--------------------------------------------------------------------------
+            */
+
+            $guardian_validation =
+                $this->student_validation
+                    ->validate_guardians(
+                        $guardians
+                    );
+
+            if ($guardian_validation !== true) {
+
+                $data = [
+
+                    'title' =>
+                        'Register Student',
+
+                    'page_title' =>
+                        'Register Student',
+
+                    'page_subtitle' =>
+                        'Create a new student record',
+
+                    'breadcrumb' => [
+                        'Students',
+                        'Register'
+                    ],
+
+                    'content' =>
+                        'students/create',
+
+                    'guardians' =>
+                        $guardians,
+
+                    'guardian_error' =>
+                        $guardian_validation
+
+                ];
+
+
+                $this->load->view(
+                    'dashboard/layouts/master',
+                    $data
+                );
+
+                return;
+            }
+            // if ($guardian_validation !== true) {
+
+            //     $this->session->set_flashdata(
+            //         'error',
+            //         $guardian_validation
+            //     );
+
+            //     redirect(
+            //         'students/create'
+            //     );
+
+            //     return;
+            // }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Addresses
+            |--------------------------------------------------------------------------
+            */
+            
             $current_address = [
 
-                'address_type' =>
-                    'current',
+                'address_type' => 'current',
 
                 'house_no' =>
                     trim(
@@ -500,20 +523,14 @@ class Students extends MY_Controller
                         $this->input->post(
                             'current_postal_code'
                         )
-                    )
+                    ),
+
             ];
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Permanent Address
-            |--------------------------------------------------------------------------
-            */
-
             $permanent_address = [
 
-                'address_type' =>
-                    'permanent',
+                'address_type' => 'permanent',
 
                 'house_no' =>
                     trim(
@@ -555,7 +572,8 @@ class Students extends MY_Controller
                         $this->input->post(
                             'permanent_postal_code'
                         )
-                    )
+                    ),
+
             ];
 
 
@@ -585,8 +603,10 @@ class Students extends MY_Controller
                 'admission_type' =>
                     $this->input->post(
                         'admission_type'
-                    )
+                    ),
+
             ];
+
 
 
             /*
@@ -596,44 +616,52 @@ class Students extends MY_Controller
             */
 
             $student_id =
-                $this->student_service
-                    ->create_student(
-                        $student_data,
-                        $enrollment_data,
-                        $guardians,
-                        [
-                            $current_address,
-                            $permanent_address
-                        ]
-                    );
+                $this->student_service->create_student(
+                    $student_data,
+                    $enrollment_data,
+                    $guardians,
+                    [
+                        $current_address,
+                        $permanent_address
+                    ]
+                );
 
+            // log_message(
+            //     'debug',
+            //     '[STUDENT CREATE] create_student() returned: ' .
+            //     print_r($student_id, true)
+            // );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Creation Failed
-            |--------------------------------------------------------------------------
-            */
 
             if (!$student_id) {
 
-                $this->session->set_flashdata(
+                log_message(
                     'error',
-                    'Unable to create student. Please check the database operation.'
+                    '[STUDENT CREATE] create_student() FAILED.'
                 );
 
-                return $this->show_create_form([
-                    'guardians' => $guardians,
-                    'validation_errors' => [
-                        'database' =>
-                            'Student creation failed.'
-                    ]
-                ]);
+                $this->session->set_flashdata(
+                    'error',
+                    'Unable to create student.'
+                );
+
+                redirect(
+                    'students/create'
+                );
+
+                return;
             }
+
+            // log_message(
+            //     'info',
+            //     '[STUDENT CREATE] Student successfully created. ID: ' .
+            //     $student_id
+            // );
 
 
             /*
             |--------------------------------------------------------------------------
-            | Creation Successful
+            | Success
             |--------------------------------------------------------------------------
             */
 
@@ -642,57 +670,41 @@ class Students extends MY_Controller
                 'Student successfully registered.'
             );
 
-            return redirect(
+
+            redirect(
                 'students/view/' . $student_id
             );
+
+            return;
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | Display Registration Form
+        | Registration View
         |--------------------------------------------------------------------------
         */
 
-        return $this->show_create_form();
-    }
+        $data = [
 
-    /**
-     * Display the student registration form.
-     *
-     * @param array $extra
-     * @return void
-     */
-    private function show_create_form(
-    array $extra = []
-    ) {
-        $data = array_merge(
+            'title' =>
+                'Register Student',
 
-            [
-                'title' =>
-                    'Register Student',
+            'page_title' =>
+                'Register Student',
 
-                'page_title' =>
-                    'Register Student',
+            'page_subtitle' =>
+                'Create a new student record',
 
-                'page_subtitle' =>
-                    'Create a new student record',
-
-                'breadcrumb' => [
-                    'Students',
-                    'Register'
-                ],
-
-                'content' =>
-                    'students/create',
-
-                'guardians' =>
-                    []
+            'breadcrumb' => [
+                'Students',
+                'Register'
             ],
 
-            $extra
+            'content' =>
+                'students/create'
 
-        );
+        ];
 
 
         $this->load->view(
@@ -987,7 +999,7 @@ class Students extends MY_Controller
 
         if ($student) {
 
-            $this->form_validation->set_message(    
+            $this->form_validation->set_message(
                 'lrn_unique',
                 'This LRN is already registered.'
             );
