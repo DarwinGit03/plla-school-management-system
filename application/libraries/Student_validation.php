@@ -8,6 +8,8 @@ class Student_validation
 
     protected $errors = [];
 
+    protected $student_id = null;
+
 
     public function __construct()
     {
@@ -16,6 +18,8 @@ class Student_validation
         $this->CI->load->library(
             'form_validation'
         );
+
+        $this->CI->form_validation->set_error_delimiters('', '');
     }
 
 
@@ -26,10 +30,13 @@ class Student_validation
      * @return bool
      */
     public function validate_registration(
-        $guardians = null
+        $guardians = null,
+        $student_id = null
     )
     {
         $this->errors = [];
+        
+        $this->student_id = $student_id;
 
 
         /*
@@ -42,8 +49,7 @@ class Student_validation
 
         $this->set_contact_rules();
 
-        $this->set_enrollment_rules();
-
+        // $this->set_address_rules(); -soon
 
         if (
             $this->CI->form_validation->run() === false
@@ -240,76 +246,174 @@ class Student_validation
     /**
      * Set enrollment validation rules.
      */
-    protected function set_enrollment_rules()
+    // protected function set_enrollment_rules()
+    // {
+    //     /*
+    //     |------------------------------------------------------------------
+    //     | Academic Year
+    //     |------------------------------------------------------------------
+    //     */
+
+    //     $this->CI->form_validation->set_rules(
+    //         'academic_year',
+    //         'Academic Year',
+    //         'required|trim',
+    //         [
+    //             'required' =>
+    //                 'Please select an Academic Year.'
+    //         ]
+    //     );
+
+
+    //     /*
+    //     |------------------------------------------------------------------
+    //     | Grade Level
+    //     |------------------------------------------------------------------
+    //     */
+
+    //     $this->CI->form_validation->set_rules(
+    //         'grade_level',
+    //         'Grade Level',
+    //         'required|trim',
+    //         [
+    //             'required' =>
+    //                 'Please select a Grade Level.'
+    //         ]
+    //     );
+
+
+    //     /*
+    //     |------------------------------------------------------------------
+    //     | Section
+    //     |------------------------------------------------------------------
+    //     */
+
+    //     $this->CI->form_validation->set_rules(
+    //         'section',
+    //         'Section',
+    //         'required|trim',
+    //         [
+    //             'required' =>
+    //                 'Please select a Section.'
+    //         ]
+    //     );
+
+
+    //     /*
+    //     |------------------------------------------------------------------
+    //     | Admission Type
+    //     |------------------------------------------------------------------
+    //     */
+
+    //     $this->CI->form_validation->set_rules(
+    //         'admission_type',
+    //         'Admission Type',
+    //         'required|trim',
+    //         [
+    //             'required' =>
+    //                 'Please select an Admission Type.'
+    //         ]
+    //     );
+    // }
+
+    /**
+     * Set student address validation rules.
+     */
+    protected function set_address_rules()
     {
         /*
-        |------------------------------------------------------------------
-        | Academic Year
-        |------------------------------------------------------------------
+        |--------------------------------------------------------------------------
+        | Current Address
+        |--------------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
-            'academic_year',
-            'Academic Year',
-            'required|trim',
+            'current_house_no',
+            'Current House / Building No.',
+            'trim'
+        );
+
+        $this->CI->form_validation->set_rules(
+            'current_street',
+            'Current Street',
+            'trim'
+        );
+
+        $this->CI->form_validation->set_rules(
+            'current_barangay',
+            'Current Barangay',
+            'trim'
+        );
+
+        $this->CI->form_validation->set_rules(
+            'current_city',
+            'Current City / Municipality',
+            'trim'
+        );
+
+        $this->CI->form_validation->set_rules(
+            'current_province',
+            'Current Province',
+            'trim'
+        );
+
+        $this->CI->form_validation->set_rules(
+            'current_postal_code',
+            'Current Postal Code',
+            'trim|numeric',
             [
-                'required' =>
-                    'Please select an Academic Year.'
+                'numeric' =>
+                    'The Current Postal Code must contain numbers only.'
             ]
         );
 
 
         /*
-        |------------------------------------------------------------------
-        | Grade Level
-        |------------------------------------------------------------------
+        |--------------------------------------------------------------------------
+        | Permanent Address
+        |--------------------------------------------------------------------------
         */
 
         $this->CI->form_validation->set_rules(
-            'grade_level',
-            'Grade Level',
-            'required|trim',
-            [
-                'required' =>
-                    'Please select a Grade Level.'
-            ]
+            'permanent_house_no',
+            'Permanent House / Building No.',
+            'trim'
         );
 
-
-        /*
-        |------------------------------------------------------------------
-        | Section
-        |------------------------------------------------------------------
-        */
-
         $this->CI->form_validation->set_rules(
-            'section',
-            'Section',
-            'required|trim',
-            [
-                'required' =>
-                    'Please select a Section.'
-            ]
+            'permanent_street',
+            'Permanent Street',
+            'trim'
         );
 
-
-        /*
-        |------------------------------------------------------------------
-        | Admission Type
-        |------------------------------------------------------------------
-        */
+        $this->CI->form_validation->set_rules(
+            'permanent_barangay',
+            'Permanent Barangay',
+            'trim'
+        );
 
         $this->CI->form_validation->set_rules(
-            'admission_type',
-            'Admission Type',
-            'required|trim',
+            'permanent_city',
+            'Permanent City / Municipality',
+            'trim'
+        );
+
+        $this->CI->form_validation->set_rules(
+            'permanent_province',
+            'Permanent Province',
+            'trim'
+        );
+
+        $this->CI->form_validation->set_rules(
+            'permanent_postal_code',
+            'Permanent Postal Code',
+            'trim|numeric',
             [
-                'required' =>
-                    'Please select an Admission Type.'
+                'numeric' =>
+                    'The Permanent Postal Code must contain numbers only.'
             ]
         );
     }
-
 
     /**
      * Validate submitted guardians.
@@ -552,7 +656,12 @@ class Student_validation
                 );
 
 
-            if (
+            if ($email === '') {
+
+                $errors[$index]['email'] =
+                    'Email address is required.';
+
+            }else if (
                 $email !== ''
                 &&
                 !filter_var(

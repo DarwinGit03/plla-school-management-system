@@ -53,6 +53,8 @@ class Session_service
 
                 'role_id'=>$user->role_id,
 
+                'employee_no'=>$user->employee_no,
+
                 'email'=>$user->email,
 
                 'logged_in'=>true,

@@ -2,11 +2,21 @@
 
     <!-- Mobile Toggle -->
 
-    <button
+    <!-- <button
         class="btn btn-outline-primary d-lg-none me-3"
         type="button"
         data-bs-toggle="offcanvas"
         data-bs-target="#sidebarMobile">
+
+        <i class="fas fa-bars"></i>
+
+    </button> -->
+    <button
+        type="button"
+        class="btn btn-outline-primary d-lg-none"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#sidebarMobile"
+        aria-controls="sidebarMobile">
 
         <i class="fas fa-bars"></i>
 

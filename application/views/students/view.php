@@ -255,22 +255,6 @@
 
                 </li>
 
-                <li class="nav-item">
-
-                    <button
-                        class="nav-link"
-                        data-bs-toggle="tab"
-                        data-bs-target="#address"
-                        type="button">
-
-                        <i class="fas fa-location-dot me-1"></i>
-
-                        Address
-
-                    </button>
-
-                </li>
-
 
                 <li class="nav-item">
 
@@ -374,11 +358,13 @@
              Personal
         ================================================== -->
 
+            
         <div
             class="tab-pane fade show active"
             id="personal">
 
-            <div class="card border-0 shadow-sm">
+            <!-- Personal section -->
+            <div class="card border-0 shadow-sm mb-4">
 
                 <div class="card-header bg-white py-3">
 
@@ -503,17 +489,74 @@
 
                             <div class="fw-semibold">
 
-                                <?= !empty(
-                                    $student->birth_date
-                                )
-                                    ? date(
+                                <?php if (!empty($student->birth_date)): ?>
+
+                                    <?= date(
                                         'F d, Y',
                                         strtotime(
                                             $student->birth_date
                                         )
-                                    )
-                                    : '—';
-                                ?>
+                                    ); ?>
+
+                                <?php else: ?>
+
+                                    —
+
+                                <?php endif; ?>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-6 col-lg-4">
+
+                            <div class="small text-muted mb-1">
+
+                                Age
+
+                            </div>
+
+                            <div class="fw-semibold">
+
+                                <?php if (!empty($student->birth_date)): ?>
+
+                                    <?php
+
+                                    $birth_date =
+                                        new DateTime(
+                                            $student->birth_date
+                                        );
+
+                                    $today =
+                                        new DateTime();
+
+                                    $age =
+                                        $birth_date->diff(
+                                            $today
+                                        );
+
+                                    ?>
+
+                                    <?= $age->y; ?>
+                                    <?= $age->y === 1 ? 'yr' : 'yrs'; ?>
+                                    old
+
+                                    <?php if ($age->d > 0): ?>
+
+                                        &
+
+                                        <?= $age->d; ?>
+
+                                        <?= $age->d === 1 ? 'day' : 'days'; ?>
+
+                                    <?php endif; ?>
+
+                                <?php else: ?>
+
+                                    —
+
+                                <?php endif; ?>
 
                             </div>
 
@@ -559,165 +602,223 @@
 
                         </div>
 
-
-                        <!-- <div class="col-12 col-md-6 col-lg-4">
-
-                            <div class="small text-muted mb-1">
-
-                                Civil Status
-
-                            </div>
-
-                            <div class="fw-semibold">
-
-                                <comment?= html_escape($student->civil_status?: '—'
-                                ); ?>
-
-                            </div>
-
-                        </div> -->
-
                     </div>
 
                 </div>
 
             </div>
+            
+            <!-- Contact section -->
+            <div class="card border-0 shadow-sm mb-4">
 
-        </div>
+                <div class="card-header bg-white py-3">
 
-        
-        <!-- =================================================
-             Address
-        ================================================== -->
-        <div
-            class="tab-pane fade"
-            id="address">
+                    <h5 class="fw-bold mb-0">
 
-            <div class="row g-4">
-                <label for="">Format: Building No./Street/Barangay/City / Municipality/Province/Postal Code</label>
+                        Contact Information
 
-                <?php if (!empty($addresses)): ?>
+                    </h5>
 
-                    <?php foreach ($addresses as $address): ?>
-
-                        <div class="col-12 col-lg-6">
-
-                            <div class="card border-0 shadow-sm h-100">
-
-                                <div class="card-header bg-white">
-
-                                    <h5 class="fw-bold mb-0">
-
-                                        <?= ucfirst(
-                                            html_escape(
-                                                $address->address_type
-                                            )
-                                        ); ?>
-
-                                        Address
-
-                                    </h5>
-                                </div>
+                </div>
 
 
-                                <div class="card-body">
+                <div class="card-body">
 
-                                    <?php
+                    <div class="row g-4">
 
-                                    $address_parts = array_filter([
+                        <div class="col-12 col-md-6 col-lg-4">
 
-                                        $address->house_no,
+                            <div class="small text-muted mb-1">
 
-                                        $address->street,
+                                Contact Number
 
-                                        $address->barangay,
+                            </div>
 
-                                        $address->city,
+                            <div class="fw-semibold">
 
-                                        $address->province,
-
-                                        $address->postal_code
-
-                                    ]);
-
-                                    ?>
-
-                                    <?php if (!empty($address_parts)): ?>
-
-                                        <address class="mb-0">
-
-                                            <?= html_escape(
-                                                implode(
-                                                    ', ',
-                                                    $address_parts
-                                                )
-                                            ); ?>
-
-                                        </address>
-
-                                    <?php else: ?>
-
-                                        <span class="text-muted">
-
-                                            No address information.
-
-                                        </span>
-
-                                    <?php endif; ?>
-
-                                </div>
+                                <?= html_escape(
+                                    $student->mobile_no
+                                    ?: '—'
+                                ); ?>
 
                             </div>
 
                         </div>
 
-                    <?php endforeach; ?>
+                        <div class="col-12 col-md-6 col-lg-4">
 
-                <?php else: ?>
+                            <div class="small text-muted mb-1">
 
-                    <div class="col-12">
+                                Email Address
 
-                        <div class="card border-0 shadow-sm">
+                            </div>
 
-                            <div
-                                class="card-body
-                                    text-center
-                                    py-5">
+                            <div class="fw-semibold">
 
-                                <i
-                                    class="fas
-                                        fa-location-dot
-                                        fa-2x
-                                        text-muted
-                                        mb-3">
-                                </i>
+                                <?php if (!empty($student->email)): ?>
 
-                                <h5 class="fw-bold">
+                                    <a
+                                        href="mailto:<?= html_escape($student->email); ?>"
+                                        class="text-decoration-none">
 
-                                    No Address Information
+                                        <?= html_escape(
+                                            $student->email
+                                        ); ?>
 
-                                </h5>
+                                    </a>
 
-                                <p class="text-muted mb-0">
+                                <?php else: ?>
 
-                                    Address information has not
-                                    been added yet.
+                                    —
 
-                                </p>
+                                <?php endif; ?>
 
                             </div>
 
                         </div>
 
                     </div>
-
-                <?php endif; ?>
-
+                    
+                </div>
+                
             </div>
 
+            <!-- Address section -->
+            <div class="card border-0 shadow-sm mb-4">
+
+                <div class="card-header bg-white py-3">
+
+                    <h5 class="fw-bold mb-0">
+
+                        Address
+
+                    </h5>
+
+                </div>
+
+
+                <div class="card-body">
+                    <div class="row g-4">
+                        
+                        <?php if (!empty($addresses)): ?>
+
+                            <?php foreach ($addresses as $address): ?>
+
+                                <div class="col-12 col-lg-6">
+
+                                    <div class="card border-0 shadow-sm h-100">
+
+                                        <div class=" bg-white">
+
+                                            <div class="small text-muted mb-1">
+
+                                                <?= ucfirst(
+                                                    html_escape(
+                                                        $address->address_type
+                                                    )
+                                                ); ?>
+
+                                            </div>
+                                        </div>
+
+                                    <div class="card-body">
+
+                                        <?php
+
+                                            $address_parts = array_filter([
+
+                                                $address->house_no,
+
+                                                $address->street,
+
+                                                $address->barangay,
+
+                                                $address->city,
+
+                                                $address->province,
+
+                                                $address->postal_code
+
+                                            ]);
+
+                                            ?>
+
+                                        <?php if (!empty($address_parts)): ?>
+                                            
+                                            <div class="fw-semibold">
+                                                <?= html_escape(
+                                                    implode(
+                                                            ', ',
+                                                            $address_parts
+                                                        )
+                                                ); ?>
+
+                                            </div>
+
+                                        <?php else: ?>
+                                            <span class="text-muted">
+                                                No address information.
+
+                                            </span>
+
+                                        <?php endif; ?>
+
+                                    </div>
+
+                                    </div>
+
+                                </div>
+
+                            <?php endforeach; ?>
+
+                        <?php else: ?>
+
+                            <div class="col-12">
+
+                                <div class="card border-0 shadow-sm">
+
+                                    <div
+                                        class="card-body
+                                            text-center
+                                            py-5">
+
+                                        <i
+                                            class="fas
+                                                fa-location-dot
+                                                fa-2x
+                                                text-muted
+                                                mb-3">
+                                        </i>
+
+                                        <h5 class="fw-bold">
+
+                                            No Address Information
+
+                                        </h5>
+
+                                        <p class="text-muted mb-0">
+
+                                            Address information has not
+                                            been added yet.
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        <?php endif; ?>
+
+                    </div>
+                    
+                </div>
+                
+            </div>
+
+
         </div>
-
-
 
         <!-- =================================================
              Guardian
@@ -1246,67 +1347,128 @@
 
                             <tbody>
 
+                            <?php if (!empty($enrollment_history)): ?>
+
+                                <?php foreach (
+                                    $enrollment_history
+                                    as $enrollment
+                                ): ?>
+
+                                    <tr>
+
+                                        <td>
+
+                                            <?= html_escape(
+                                                $enrollment->academic_year
+                                                ?: '—'
+                                            ); ?>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <?= html_escape(
+                                                $enrollment->grade_level
+                                                ?: '—'
+                                            ); ?>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <?= html_escape(
+                                                $enrollment->section
+                                                ?: '—'
+                                            ); ?>
+
+                                        </td>
+
+
+                                        <td class="text-capitalize">
+
+                                            <?= html_escape(
+                                                $enrollment->admission_type
+                                                ?: '—'
+                                            ); ?>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <?php if (
+                                                $enrollment->status === 'active'
+                                            ): ?>
+
+                                                <span
+                                                    class="badge text-bg-success">
+
+                                                    Active
+
+                                                </span>
+
+                                            <?php elseif (
+                                                $enrollment->status === 'completed'
+                                            ): ?>
+
+                                                <span
+                                                    class="badge text-bg-secondary">
+
+                                                    Completed
+
+                                                </span>
+
+                                            <?php elseif (
+                                                $enrollment->status === 'dropped'
+                                            ): ?>
+
+                                                <span
+                                                    class="badge text-bg-danger">
+
+                                                    Dropped
+
+                                                </span>
+
+                                            <?php else: ?>
+
+                                                <span
+                                                    class="badge text-bg-secondary">
+
+                                                    <?= html_escape(
+                                                        ucfirst(
+                                                            $enrollment->status
+                                                        )
+                                                    ); ?>
+
+                                                </span>
+
+                                            <?php endif; ?>
+
+                                        </td>
+
+                                    </tr>
+
+                                <?php endforeach; ?>
+
+                            <?php else: ?>
+
                                 <tr>
 
-                                    <td>
+                                    <td
+                                        colspan="5"
+                                        class="text-center py-4 text-muted">
 
-                                        <?= html_escape(
-                                            $student->academic_year
-                                            ?: '—'
-                                        ); ?>
-
-                                    </td>
-
-                                    <td>
-
-                                        <?= html_escape(
-                                            $student->grade_level
-                                            ?: '—'
-                                        ); ?>
-
-                                    </td>
-
-                                    <td>
-
-                                        <?= html_escape(
-                                            $student->program
-                                            ?: '—'
-                                        ); ?>
-
-                                    </td>
-
-                                    <td>
-
-                                        <?= html_escape(
-                                            $student->section
-                                            ?: '—'
-                                        ); ?>
-
-                                    </td>
-
-                                    <td class="text-capitalize">
-
-                                        <?= html_escape(
-                                            $student->admission_type
-                                            ?: '—'
-                                        ); ?>
-
-                                    </td>
-
-                                    <td>
-
-                                        <span
-                                            class="badge text-bg-success">
-
-                                            Active
-
-                                        </span>
+                                        No enrollment history found.
 
                                     </td>
 
                                 </tr>
 
-                            </tbody>
+                            <?php endif; ?>
+
+                        </tbody>
 
                         </table>
 

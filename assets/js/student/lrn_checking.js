@@ -4,16 +4,14 @@ document.addEventListener(
 
         const lrnInput = document.getElementById('lrn');
 
+        /*
+        |--------------------------------------------------------------------------
+        | LRN CHECKER => EXIST
+        |--------------------------------------------------------------------------
+        */
 
-        if (!lrnInput) {
-
-            return;
-        }
-
-
+        if (!lrnInput) {return;}
         let lastCheckedLrn = '';
-
-
         function checkLrn()
         {
             const lrn =
@@ -87,9 +85,6 @@ document.addEventListener(
                             response.exists
                         ) {
 
-                            showLrnDuplicateModal(
-                                lrn
-                            );
                             lrnInput.classList.add(
                                 'is-invalid'
                             );
@@ -168,7 +163,6 @@ document.addEventListener(
 
         }
 
-
         lrnInput.addEventListener(
             'input',
             function () {
@@ -182,54 +176,28 @@ document.addEventListener(
             }
         );
 
+        // lrnInput.addEventListener(
+        //     'input',
+        //     function () {
+        //         checkLrn();
 
-        lrnInput.addEventListener(
-            'blur',
-            function () {
+        //     }
+        // );
 
+        let initialLrnValue = "";
+
+        lrnInput.addEventListener('focus', (e) => {
+            initialLrnValue = e.target.value;
+        });
+
+        //Call only the function once has change specially in edit
+
+        lrnInput.addEventListener('blur', (e) => {
+            const currentValue = e.target.value;
+            
+            if (currentValue !== initialLrnValue) {
                 checkLrn();
-
             }
-        );
-
-        
-
-
-        function showLrnDuplicateModal(lrn)
-        {
-            const lrnDisplay =
-                document.querySelector(
-                    '#duplicateLrn'
-                );
-
-
-            if (lrnDisplay) {
-
-                lrnDisplay.textContent =
-                    lrn;
-
-            }
-
-
-            const modalElement =
-                document.querySelector(
-                    '#lrnDuplicateModal'
-                );
-
-
-            if (!modalElement) {
-                return;
-            }
-
-
-            const modal =
-                bootstrap.Modal.getOrCreateInstance(
-                    modalElement
-                );
-
-
-            modal.show();
-        }
-
+        });
     }
 );

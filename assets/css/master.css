@@ -1,0 +1,191 @@
+/* ==========================================================
+   PLLA DASHBOARD
+========================================================== */
+
+:root{
+
+    --sidebar-width:260px;
+
+    --sidebar-bg:#1E293B;
+
+    --sidebar-hover:#334155;
+
+    --body:#F8FAFC;
+
+    --border:#E5E7EB;
+
+}
+
+
+/* ==========================================================
+   BODY
+========================================================== */
+
+html,
+body{
+
+    min-height:100%;
+
+}
+
+
+body{
+
+    margin:0;
+
+    background:var(--body);
+
+    font-family:"Segoe UI",sans-serif;
+
+    overflow-x:hidden;
+
+}
+
+
+/* ==========================================================
+   CONTENT
+========================================================== */
+
+#content{
+
+    margin-left:var(--sidebar-width);
+
+    min-height:100vh;
+
+}
+
+
+/* ==========================================================
+   DESKTOP SIDEBAR
+========================================================== */
+
+#sidebarDesktop{
+
+    width:var(--sidebar-width);
+
+    background:var(--sidebar-bg);
+
+}
+
+
+/* ==========================================================
+   SIDEBAR LINKS
+========================================================== */
+
+#sidebarDesktop .nav-link,
+#sidebarMobile .nav-link{
+
+    border-radius:6px;
+
+    margin:2px 10px;
+
+    padding:10px 12px;
+
+}
+
+
+#sidebarDesktop .nav-link:hover,
+#sidebarMobile .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+}
+
+
+/* ==========================================================
+   SUBMENU
+========================================================== */
+
+#sidebarDesktop .collapse .nav-link,
+#sidebarMobile .collapse .nav-link{
+
+    font-size:.92rem;
+
+    padding-left:42px;
+
+}
+
+
+/* ==========================================================
+   MOBILE OFFCANVAS
+========================================================== */
+
+#sidebarMobile{
+
+    background:var(--sidebar-bg);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width:991.98px){
+
+    #content{
+
+        margin-left:0;
+
+    }
+
+}
+
+
+/* ==========================================================
+   NAVBAR
+========================================================== */
+
+.navbar{
+
+    height:70px;
+
+    background:#fff;
+
+    border-bottom:1px solid var(--border);
+
+}
+
+
+/* ==========================================================
+   CARDS
+========================================================== */
+
+.card{
+
+    border:none;
+
+    border-radius:15px;
+
+    box-shadow:
+        0 .125rem .5rem rgba(0,0,0,.05);
+
+}
+
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+footer{
+
+    background:#fff;
+
+    border-top:1px solid var(--border);
+
+}
+
+#sidebarDesktop .collapse .nav-link.submenu-active,
+.offcanvas .collapse .nav-link.submenu-active{
+
+    background:#334155;
+
+    color:#fff;
+
+    font-weight:600;
+
+    border-radius:.35rem;
+
+}

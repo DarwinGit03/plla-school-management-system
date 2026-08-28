@@ -1,0 +1,655 @@
+/* ==========================================================
+   PLLA School Management System
+   Dashboard Theme
+========================================================== */
+
+
+/* ==========================================================
+   Variables
+========================================================== */
+
+:root{
+
+    --sidebar-width:260px;
+
+    --sidebar-bg:#1E293B;
+
+    --sidebar-hover:#334155;
+
+    --sidebar-active:#2563EB;
+
+    --sidebar-text:#CBD5E1;
+
+    --primary:#2563EB;
+
+    --body:#F8FAFC;
+
+    --card:#FFFFFF;
+
+    --border:#E5E7EB;
+
+}
+
+
+/* ==========================================================
+   Global
+========================================================== */
+
+html,
+body{
+
+    height:100%;
+
+}
+
+
+body{
+
+    margin:0;
+
+    background:var(--body);
+
+    font-family:"Segoe UI",sans-serif;
+
+    overflow-x:hidden;
+
+}
+
+
+/* ==========================================================
+   Main Application Layout
+========================================================== */
+
+#app{
+
+    min-height:100vh;
+
+}
+
+
+/* ==========================================================
+   Main Content
+========================================================== */
+
+#content{
+
+    min-width:0;
+
+    min-height:100vh;
+
+    margin-left:var(--sidebar-width);
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+
+/* ==========================================================
+   Navbar
+========================================================== */
+
+.navbar{
+
+    height:70px;
+
+    background:#fff;
+
+    border-bottom:1px solid var(--border);
+
+    flex-shrink:0;
+
+}
+
+
+/* ==========================================================
+   Main
+========================================================== */
+
+main{
+
+    flex:1;
+
+}
+
+
+/* ==========================================================
+   Desktop Sidebar
+========================================================== */
+
+#sidebarDesktop{
+
+    width:var(--sidebar-width);
+
+    background:var(--sidebar-bg);
+
+    color:#fff;
+
+    height:100vh;
+
+    position:fixed;
+
+    top:0;
+
+    left:0;
+
+    bottom:0;
+
+    z-index:1030;
+
+    display:flex;
+
+    flex-direction:column;
+
+    flex-shrink:0;
+
+}
+
+
+/* ==========================================================
+   Sidebar Logo
+========================================================== */
+
+#sidebarDesktop img{
+
+    border-radius:10px;
+
+}
+
+
+#sidebarDesktop h5{
+
+    font-size:1.1rem;
+
+}
+
+
+#sidebarDesktop small{
+
+    color:#CBD5E1;
+
+}
+
+
+/* ==========================================================
+   Sidebar Borders
+========================================================== */
+
+#sidebarDesktop .border-top,
+#sidebarDesktop .border-bottom{
+
+    border-color:
+        rgba(255,255,255,.08) !important;
+
+}
+
+
+/* ==========================================================
+   Sidebar Navigation Container
+========================================================== */
+
+#sidebarDesktop > .flex-grow-1{
+
+    min-height:0;
+
+    overflow-y:auto;
+
+    overflow-x:hidden;
+
+    padding-top:.75rem;
+
+    padding-bottom:.75rem;
+
+}
+
+
+/* ==========================================================
+   Sidebar Scrollbar
+========================================================== */
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar{
+
+    width:6px;
+
+}
+
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar-track{
+
+    background:transparent;
+
+}
+
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar-thumb{
+
+    background:#475569;
+
+    border-radius:10px;
+
+}
+
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar-thumb:hover{
+
+    background:#64748B;
+
+}
+
+
+/* Firefox */
+
+#sidebarDesktop > .flex-grow-1{
+
+    scrollbar-width:thin;
+
+    scrollbar-color:#475569 transparent;
+
+}
+
+
+/* ==========================================================
+   Sidebar Navigation
+========================================================== */
+
+#sidebarDesktop .nav{
+
+    padding-left:0;
+
+}
+
+
+/* ==========================================================
+   Main Menu Links
+========================================================== */
+
+#sidebarDesktop .nav-link{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    color:var(--sidebar-text);
+
+    border-radius:.5rem;
+
+    margin:.15rem .75rem;
+
+    padding:.75rem 1rem;
+
+    transition:
+        background-color .2s ease,
+        color .2s ease;
+
+}
+
+
+#sidebarDesktop .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+#sidebarDesktop .nav-link.active{
+
+    background:var(--sidebar-active);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Sidebar Icons
+========================================================== */
+
+#sidebarDesktop .nav-link i{
+
+    flex-shrink:0;
+
+}
+
+
+/* ==========================================================
+   Sidebar Chevron
+========================================================== */
+
+#sidebarDesktop .nav-link .fa-chevron-down{
+
+    font-size:.75rem;
+
+    margin-left:auto;
+
+    transition:
+        transform .2s ease;
+
+}
+
+
+/* Rotate chevron when menu is open */
+
+#sidebarDesktop .nav-link[aria-expanded="true"]
+.fa-chevron-down{
+
+    transform:rotate(180deg);
+
+}
+
+
+/* ==========================================================
+   Sidebar Sub Menu
+========================================================== */
+
+#sidebarDesktop .collapse .nav-link{
+
+    color:var(--sidebar-text);
+
+    font-size:.92rem;
+
+    padding:.65rem 1rem .65rem 2.75rem;
+
+}
+
+
+#sidebarDesktop .collapse .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Active Sub Menu
+========================================================== */
+
+#sidebarDesktop .collapse .nav-link.active{
+
+    background:transparent;
+
+    color:#fff;
+
+    font-weight:600;
+
+}
+
+
+/* Small indicator for active submenu */
+
+#sidebarDesktop .collapse .nav-link.active::before{
+
+    content:"";
+
+    width:5px;
+
+    height:5px;
+
+    border-radius:50%;
+
+    background:var(--sidebar-active);
+
+    margin-right:.5rem;
+
+    flex-shrink:0;
+
+}
+
+
+/* ==========================================================
+   Sidebar Footer
+========================================================== */
+
+#sidebarDesktop > .border-top{
+
+    flex-shrink:0;
+
+    background:var(--sidebar-bg);
+
+}
+
+
+/* ==========================================================
+   Cards
+========================================================== */
+
+.card{
+
+    border:none;
+
+    border-radius:15px;
+
+    box-shadow:
+        0 .125rem .5rem rgba(0,0,0,.05);
+
+}
+
+
+/* ==========================================================
+   Footer
+========================================================== */
+
+footer{
+
+    background:#fff;
+
+    border-top:1px solid var(--border);
+
+}
+
+
+/* ==========================================================
+   Mobile Sidebar
+========================================================== */
+
+.offcanvas{
+
+    width:270px;
+
+    background:var(--sidebar-bg);
+
+}
+
+
+.offcanvas-header{
+
+    background:var(--sidebar-bg);
+
+    color:#fff;
+
+    border-color:
+        rgba(255,255,255,.08) !important;
+
+}
+
+
+.offcanvas-body{
+
+    background:var(--sidebar-bg);
+
+    overflow-y:auto;
+
+}
+
+
+/* ==========================================================
+   Mobile Sidebar Menu
+========================================================== */
+
+.offcanvas .nav-link{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    color:var(--sidebar-text);
+
+    padding:.75rem 1rem;
+
+    border-radius:.5rem;
+
+    margin:.15rem .75rem;
+
+}
+
+
+.offcanvas .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+.offcanvas .nav-link.active{
+
+    background:var(--sidebar-active);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Mobile Sub Menu
+========================================================== */
+
+.offcanvas .collapse .nav-link{
+
+    font-size:.92rem;
+
+    padding-left:2.75rem;
+
+}
+
+
+/* ==========================================================
+   Responsive
+========================================================== */
+
+@media (max-width:991.98px){
+
+    #sidebarDesktop{
+
+        display:none !important;
+
+    }
+
+
+    #content{
+
+        margin-left:0;
+
+    }
+
+}
+
+
+/* ==========================================================
+   Large Screens
+========================================================== */
+
+@media (min-width:992px){
+
+    .offcanvas{
+
+        display:none;
+
+    }
+
+}
+
+/* ==========================================================
+   Sidebar Parent Menu
+========================================================== */
+
+#sidebarDesktop .sidebar-parent,
+.offcanvas .sidebar-parent{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+}
+
+
+/* ==========================================================
+   Sidebar Chevron
+========================================================== */
+
+.sidebar-chevron{
+
+    font-size:.75rem;
+
+    transition:transform .2s ease;
+
+}
+
+
+/* Rotate arrow when menu is open */
+
+.sidebar-parent[aria-expanded="true"]
+.sidebar-chevron{
+
+    transform:rotate(180deg);
+
+}
+
+
+/* ==========================================================
+   Sidebar Submenu
+========================================================== */
+
+#sidebarDesktop .collapse .nav-link,
+.offcanvas .collapse .nav-link{
+
+    display:block;
+
+    color:#CBD5E1;
+
+    font-size:.92rem;
+
+    padding:.65rem 1rem .65rem 2.75rem;
+
+    margin:.1rem .75rem;
+
+}
+
+
+/* ==========================================================
+   Sidebar Submenu Hover
+========================================================== */
+
+#sidebarDesktop .collapse .nav-link:hover,
+.offcanvas .collapse .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Sidebar Parent Hover
+========================================================== */
+
+#sidebarDesktop .sidebar-parent:hover,
+.offcanvas .sidebar-parent:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff !important;
+
+}

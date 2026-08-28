@@ -15,30 +15,47 @@ class Student_address_model extends CI_Model
             ->result();
     }
 
+
+    public function get_by_id($id)
+    {
+        return $this->db
+            ->where('id', $id)
+            ->get($this->table)
+            ->row();
+    }
+
+
     public function create($data)
     {
-        
         $this->db->insert(
             $this->table,
             $data
         );
 
-
         if (
             $this->db->affected_rows() <= 0
         ) {
-
             return false;
         }
-
 
         return $this->db->insert_id();
     }
 
-    public function update($id, $data)
-    {
+
+    public function update(
+        $id,
+        $student_id,
+        $data
+    ) {
         return $this->db
-            ->where('id', $id)
+            ->where(
+                'id',
+                $id
+            )
+            ->where(
+                'student_id',
+                $student_id
+            )
             ->update(
                 $this->table,
                 $data

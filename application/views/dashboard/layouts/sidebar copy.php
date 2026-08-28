@@ -1,160 +1,103 @@
-<aside id="sidebar" class="sidebar">
+<!-- ===============================
+     Mobile Sidebar
+================================ -->
 
-    <div class="sidebar-brand">
+<div
+    class="offcanvas offcanvas-start"
+    tabindex="-1"
+    id="sidebarMobile"
+    aria-labelledby="sidebarMobileLabel">
 
-        <div class="logo">
+    <div class="offcanvas-header border-bottom">
 
-            <i class="fas fa-graduation-cap"></i>
+        <h5
+            class="fw-bold mb-0"
+            id="sidebarMobileLabel">
 
-        </div>
+            PLLA
 
-        <div class="brand-text">
+        </h5>
 
-            <h5>PLLA</h5>
+        <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close">
+        </button>
 
-            <small>School Management</small>
+    </div>
+
+    <div class="offcanvas-body p-0">
+
+        <?php
+            $this->load->view(
+                'dashboard/layouts/sidebar_menu'
+            );
+        ?>
+
+    </div>
+
+</div>
+
+
+<!-- ===============================
+     Desktop Sidebar
+================================ -->
+
+<aside
+    id="sidebarDesktop"
+    class="d-none d-lg-flex flex-column">
+
+    <div class="p-4 border-bottom">
+
+        <div class="d-flex align-items-center">
+
+            <img
+                src="<?= base_url('assets/images/logo.png'); ?>"
+                width="45"
+                class="me-3"
+                alt="Logo">
+
+            <div>
+
+                <h5 class="mb-0 text-white fw-bold">
+
+                    PLLA
+
+                </h5>
+
+                <small class="text-light">
+
+                    School Management
+
+                </small>
+
+            </div>
 
         </div>
 
     </div>
-    <ul class="sidebar-menu">
-        <li class="menu-title">
-            MAIN
-        </li>
-        <li>
-            <a href="#">
-                <i class="fas fa-home"></i>
-                <span class="menu-text">
-                    Dashboard
-                </span>
-            </a>
-        </li>
-        <li class="menu-title">
-            ACADEMICS
-        </li>
-        <li>
-            <a href="#">
-                <i class="fas fa-user-graduate"></i>
-                Students
 
-            </a>
 
-        </li>
+    <div class="flex-grow-1 overflow-auto py-3">
 
-        <li>
+        <?php
+            $this->load->view(
+                'dashboard/layouts/sidebar_menu'
+            );
+        ?>
 
-            <a href="#">
+    </div>
 
-                <i class="fas fa-chalkboard-teacher"></i>
 
-                Faculty
+    <div class="border-top p-3">
 
-            </a>
+        <small class="text-secondary">
 
-        </li>
+            Version 1.0.0
 
-        <li>
+        </small>
 
-            <a href="#">
-
-                <i class="fas fa-building"></i>
-
-                Departments
-
-            </a>
-
-        </li>
-
-        <li>
-
-            <a href="#">
-
-                <i class="fas fa-book-open"></i>
-
-                Programs
-
-            </a>
-
-        </li>
-
-        <li>
-
-            <a href="#">
-
-                <i class="fas fa-book"></i>
-
-                Subjects
-
-            </a>
-
-        </li>
-
-        <li>
-
-            <a href="#">
-
-                <i class="fas fa-sitemap"></i>
-
-                Curriculum
-
-            </a>
-
-        </li>
-
-        <li class="menu-title">
-
-            SYSTEM
-
-        </li>
-
-        <li>
-
-            <a href="#">
-
-                <i class="fas fa-users-cog"></i>
-
-                Users
-
-            </a>
-
-        </li>
-
-        <li>
-
-            <a href="#">
-
-                <i class="fas fa-user-shield"></i>
-
-                Roles
-
-            </a>
-
-        </li>
-
-        <li>
-
-            <a href="#">
-
-                <i class="fas fa-history"></i>
-
-                Audit Logs
-
-            </a>
-
-        </li>
-
-        <li>
-
-            <a href="#">
-
-                <i class="fas fa-cogs"></i>
-
-                Settings
-
-            </a>
-
-        </li>
-
-    </ul>
+    </div>
 
 </aside>

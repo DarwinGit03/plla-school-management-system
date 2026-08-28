@@ -244,6 +244,75 @@ class Student_model extends CI_Model
         return false;
     }
 
+    public function update_student($id, $data)
+    {
+        return $this->db
+            ->where('id', $id)
+            ->update(
+                $this->table,
+                $data
+            );
+    }
+
+    public function update_current_enrollment(
+    $student_id,
+    array $data
+    ) {
+        $enrollment =
+            $this->db
+                ->where(
+                    'student_id',
+                    $student_id
+                )
+                ->where(
+                    'status',
+                    'active'
+                )
+                ->get(
+                    'student_enrollments'
+                )
+                ->row();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | No Active Enrollment
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$enrollment) {
+
+            $data['student_id'] =
+                $student_id;
+
+            $data['status'] =
+                'active';
+
+
+            return $this->db->insert(
+                'student_enrollments',
+                $data
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Existing Enrollment
+        |--------------------------------------------------------------------------
+        */
+
+        return $this->db
+            ->where(
+                'id',
+                $enrollment->id
+            )
+            ->update(
+                'student_enrollments',
+                $data
+            );
+    }
+
 
     /**
      * Create student enrollment.
@@ -263,6 +332,52 @@ class Student_model extends CI_Model
         }
 
         return false;
+    }
+
+    public function update_enrollment(
+        $student_id,
+        array $data
+    ) {
+        $enrollment =
+            $this->db
+                ->where(
+                    'student_id',
+                    $student_id
+                )
+                ->where(
+                    'status',
+                    'active'
+                )
+                ->order_by(
+                    'id',
+                    'DESC'
+                )
+                ->limit(1)
+                ->get(
+                    'student_enrollments'
+                )
+                ->row();
+
+        if (!$enrollment) {
+
+            $data['student_id'] =
+                $student_id;
+
+            return $this->db->insert(
+                'student_enrollments',
+                $data
+            );
+        }
+
+        return $this->db
+            ->where(
+                'id',
+                $enrollment->id
+            )
+            ->update(
+                'student_enrollments',
+                $data
+            );
     }
 
     /**
@@ -308,6 +423,37 @@ class Student_model extends CI_Model
         return $student;
     }
 
+    /**
+     * Get complete enrollment history for a student.
+     *
+     * @param int $student_id
+     * @return array
+     */
+    public function get_enrollment_history($student_id)
+    {
+        return $this->db
+            ->select('
+                id,
+                student_id,
+                academic_year,
+                grade_level,
+                section,
+                admission_type,
+                status,
+                enrolled_at
+            ')
+            ->where(
+                'student_id',
+                $student_id
+            )
+            ->order_by(
+                'id',
+                'DESC'
+            )
+            ->get('student_enrollments')
+            ->result();
+    }
+
 
     /**
      * Get student information by LRN.
@@ -340,6 +486,12 @@ class Student_model extends CI_Model
         $this->db->where(
             's.lrn',
             $lrn
+        );
+
+        $this->db->where(
+            's.deleted_at IS NULL',
+            null,
+            false
         );
 
         $this->db->order_by(

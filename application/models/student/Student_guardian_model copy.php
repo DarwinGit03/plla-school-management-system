@@ -5,7 +5,6 @@ class Student_guardian_model extends CI_Model
 {
     protected $table = 'student_guardians';
 
-
     public function get_by_student($student_id)
     {
         return $this->db
@@ -15,7 +14,6 @@ class Student_guardian_model extends CI_Model
             ->get($this->table)
             ->result();
     }
-
 
     public function get_by_id($id)
     {
@@ -33,15 +31,17 @@ class Student_guardian_model extends CI_Model
             $data
         );
 
+
         if (
             $this->db->affected_rows() <= 0
         ) {
+
             return false;
         }
 
+
         return $this->db->insert_id();
     }
-
 
     public function update($id, $data)
     {

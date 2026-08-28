@@ -1,0 +1,255 @@
+/* ==========================================================
+   PLLA School Management System
+   Dashboard Theme
+========================================================== */
+
+/* ===========================
+   Variables
+=========================== */
+
+:root{
+    --sidebar-width:260px;
+    --sidebar-bg:#1E293B;
+    --sidebar-hover:#334155;
+    --primary:#2563EB;
+    --body:#F8FAFC;
+    --card:#FFFFFF;
+    --border:#E5E7EB;
+}
+
+/* ===========================
+   Global
+=========================== */
+
+html,
+body{
+    height:100%;
+}
+
+body{
+    margin:0;
+    background:var(--body);
+    font-family:"Segoe UI",sans-serif;
+    overflow-x:hidden;
+}
+
+/* ===========================
+   Main Layout
+=========================== */
+
+#app{
+    display:flex;
+    min-height:100vh;
+}
+
+#content{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+}
+
+/* ===========================
+   Desktop Sidebar
+=========================== */
+
+#sidebarDesktop{
+
+    width:var(--sidebar-width);
+
+    background:var(--sidebar-bg);
+
+    color:#fff;
+
+    min-height:100vh;
+
+    flex-shrink:0;
+}
+
+#sidebarDesktop img{
+
+    border-radius:10px;
+}
+
+#sidebarDesktop h5{
+
+    font-size:1.1rem;
+}
+
+#sidebarDesktop small{
+
+    color:#CBD5E1;
+}
+
+#sidebarDesktop .border-top,
+#sidebarDesktop .border-bottom{
+
+    border-color:rgba(255,255,255,.08) !important;
+}
+
+/* ===========================
+   Navbar
+=========================== */
+
+.navbar{
+
+    height:70px;
+
+    background:#fff;
+
+    border-bottom:1px solid var(--border);
+}
+
+/* ===========================
+   Main
+=========================== */
+
+main{
+
+    flex:1;
+}
+
+/* ===========================
+   Cards
+=========================== */
+
+.card{
+
+    border:none;
+
+    border-radius:15px;
+
+    box-shadow:0 0.125rem 0.5rem rgba(0,0,0,.05);
+}
+
+/* ===========================
+   Footer
+=========================== */
+
+footer{
+
+    background:#fff;
+
+    border-top:1px solid var(--border);
+}
+
+/* ===========================
+   Sidebar Menu
+=========================== */
+
+#sidebarDesktop .nav-link{
+
+    color:#CBD5E1;
+
+    border-radius:.5rem;
+
+    margin:.15rem .75rem;
+
+    padding:.75rem 1rem;
+
+    transition:.25s;
+}
+
+#sidebarDesktop .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+}
+
+#sidebarDesktop .nav-link.active{
+
+    background:var(--primary);
+
+    color:#fff;
+}
+/* ==========================================
+   Sidebar Menu
+========================================== */
+
+#sidebarDesktop .nav{
+
+    padding-left:0;
+
+}
+
+#sidebarDesktop .nav-link{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+}
+
+#sidebarDesktop .collapse .nav-link{
+
+    color:#CBD5E1;
+
+    font-size:.92rem;
+
+    padding-left:2.75rem;
+
+}
+
+#sidebarDesktop .collapse .nav-link:hover{
+
+    background:#334155;
+
+}   
+
+/* ===========================
+   Responsive
+=========================== */
+
+@media (max-width:991.98px){
+
+    #sidebarDesktop{
+
+        display:none !important;
+    }
+
+}
+
+/* Mobile Sidebar */
+
+.offcanvas{
+
+    width:270px;
+}
+
+.offcanvas-body{
+
+    background:#1E293B;
+}
+
+.offcanvas-header{
+
+    background:#1E293B;
+}
+
+.offcanvas .nav-link{
+
+    color:#CBD5E1;
+
+    padding:.85rem 1.2rem;
+
+    border-radius:.5rem;
+
+    margin:.25rem .75rem;
+}
+
+.offcanvas .nav-link:hover{
+
+    background:#334155;
+
+    color:#fff;
+}
+
+.offcanvas .nav-link.active{
+
+    background:#2563EB;
+
+    color:#fff;
+}

@@ -1,0 +1,666 @@
+/* ==========================================================
+   PLLA School Management System
+   Dashboard Theme
+========================================================== */
+
+
+/* ==========================================================
+   Variables
+========================================================== */
+
+:root{
+
+    --sidebar-width:260px;
+
+    --sidebar-bg:#1E293B;
+
+    --sidebar-hover:#334155;
+
+    --sidebar-active:#2563EB;
+
+    --sidebar-text:#CBD5E1;
+
+    --primary:#2563EB;
+
+    --body:#F8FAFC;
+
+    --card:#FFFFFF;
+
+    --border:#E5E7EB;
+
+}
+
+
+/* ==========================================================
+   Global
+========================================================== */
+
+html,
+body{
+
+    height:100%;
+
+}
+
+
+body{
+
+    margin:0;
+
+    background:var(--body);
+
+    font-family:"Segoe UI",sans-serif;
+
+    overflow-x:hidden;
+
+}
+
+
+/* ==========================================================
+   Main Application Layout
+========================================================== */
+
+#app{
+
+    min-height:100vh;
+
+}
+
+
+/* ==========================================================
+   Main Content
+========================================================== */
+
+#content{
+
+    min-width:0;
+
+    min-height:100vh;
+
+    margin-left:var(--sidebar-width);
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+
+/* ==========================================================
+   Navbar
+========================================================== */
+
+.navbar{
+
+    height:70px;
+
+    background:#fff;
+
+    border-bottom:1px solid var(--border);
+
+    flex-shrink:0;
+
+}
+
+
+/* ==========================================================
+   Main
+========================================================== */
+
+main{
+
+    flex:1;
+
+}
+
+
+/* ==========================================================
+   Desktop Sidebar
+========================================================== */
+
+#sidebarDesktop{
+
+    width:var(--sidebar-width);
+
+    background:var(--sidebar-bg);
+
+    color:#fff;
+
+    height:100vh;
+
+    position:fixed;
+
+    top:0;
+
+    left:0;
+
+    bottom:0;
+
+    z-index:1030;
+
+    display:flex;
+
+    flex-direction:column;
+
+    flex-shrink:0;
+
+}
+
+
+/* ==========================================================
+   Desktop Logo
+========================================================== */
+
+#sidebarDesktop img{
+
+    border-radius:10px;
+
+}
+
+
+#sidebarDesktop h5{
+
+    font-size:1.1rem;
+
+}
+
+
+#sidebarDesktop small{
+
+    color:#CBD5E1;
+
+}
+
+
+/* ==========================================================
+   Sidebar Borders
+========================================================== */
+
+#sidebarDesktop .border-top,
+#sidebarDesktop .border-bottom{
+
+    border-color:
+        rgba(255,255,255,.08) !important;
+
+}
+
+
+/* ==========================================================
+   Desktop Navigation Container
+========================================================== */
+
+#sidebarDesktop > .flex-grow-1{
+
+    min-height:0;
+
+    overflow-y:auto;
+
+    overflow-x:hidden;
+
+    padding-top:.75rem;
+
+    padding-bottom:.75rem;
+
+}
+
+
+/* ==========================================================
+   Desktop Scrollbar
+========================================================== */
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar{
+
+    width:6px;
+
+}
+
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar-track{
+
+    background:transparent;
+
+}
+
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar-thumb{
+
+    background:#475569;
+
+    border-radius:10px;
+
+}
+
+
+#sidebarDesktop > .flex-grow-1::-webkit-scrollbar-thumb:hover{
+
+    background:#64748B;
+
+}
+
+
+#sidebarDesktop > .flex-grow-1{
+
+    scrollbar-width:thin;
+
+    scrollbar-color:#475569 transparent;
+
+}
+
+
+/* ==========================================================
+   Sidebar Navigation
+========================================================== */
+
+.sidebar-menu{
+
+    padding-left:0;
+
+}
+
+
+/* ==========================================================
+   Main Menu Links
+========================================================== */
+
+#sidebarDesktop .sidebar-menu > .nav-item > .nav-link{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    color:var(--sidebar-text);
+
+    border-radius:.5rem;
+
+    margin:.15rem .75rem;
+
+    padding:.75rem 1rem;
+
+    transition:
+        background-color .2s ease,
+        color .2s ease;
+
+}
+
+
+#sidebarDesktop .sidebar-menu > .nav-item > .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+#sidebarDesktop .sidebar-menu > .nav-item > .nav-link.active{
+
+    background:var(--sidebar-active);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Parent Menu
+========================================================== */
+
+.sidebar-parent{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+}
+
+
+.sidebar-parent > span{
+
+    display:flex;
+
+    align-items:center;
+
+}
+
+
+/* ==========================================================
+   Chevron
+========================================================== */
+
+.sidebar-chevron{
+
+    font-size:.75rem;
+
+    margin-left:auto;
+
+    transition:
+        transform .2s ease;
+
+}
+
+
+.sidebar-parent[aria-expanded="true"]
+.sidebar-chevron{
+
+    transform:rotate(180deg);
+
+}
+
+
+/* ==========================================================
+   Active Parent
+========================================================== */
+
+#sidebarDesktop .sidebar-parent.active-parent{
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Desktop Submenu
+========================================================== */
+
+#sidebarDesktop .sidebar-submenu .nav-link{
+
+    display:block;
+
+    color:var(--sidebar-text);
+
+    font-size:.92rem;
+
+    padding:.65rem 1rem .65rem 2.75rem;
+
+    margin:.1rem .75rem;
+
+    border-radius:.5rem;
+
+}
+
+
+#sidebarDesktop .sidebar-submenu .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Active Submenu
+========================================================== */
+
+#sidebarDesktop .sidebar-submenu .submenu-active{
+
+    color:#fff;
+
+    font-weight:600;
+
+    background:transparent;
+
+}
+
+
+/* ==========================================================
+   Sidebar Footer
+========================================================== */
+
+#sidebarDesktop > .border-top{
+
+    flex-shrink:0;
+
+    background:var(--sidebar-bg);
+
+}
+
+
+/* ==========================================================
+   Cards
+========================================================== */
+
+.card{
+
+    border:none;
+
+    border-radius:15px;
+
+    box-shadow:
+        0 .125rem .5rem rgba(0,0,0,.05);
+
+}
+
+
+/* ==========================================================
+   Footer
+========================================================== */
+
+footer{
+
+    background:#fff;
+
+    border-top:1px solid var(--border);
+
+}
+
+
+/* ==========================================================
+   Mobile Sidebar
+========================================================== */
+
+#sidebarMobile{
+
+    width:270px;
+
+    background:var(--sidebar-bg);
+
+    color:#fff;
+
+}
+
+
+#sidebarMobile .offcanvas-header{
+
+    background:var(--sidebar-bg);
+
+    color:#fff;
+
+    border-color:
+        rgba(255,255,255,.08) !important;
+
+}
+
+
+#sidebarMobile .offcanvas-title{
+
+    color:#fff;
+
+}
+
+
+#sidebarMobile .btn-close{
+
+    filter:invert(1);
+
+}
+
+
+#sidebarMobile .offcanvas-body{
+
+    background:var(--sidebar-bg);
+
+    overflow-y:auto;
+
+    overflow-x:hidden;
+
+}
+
+
+/* ==========================================================
+   Mobile Navigation
+========================================================== */
+
+#sidebarMobile .sidebar-menu{
+
+    padding-top:.75rem;
+
+    padding-bottom:.75rem;
+
+}
+
+
+/* ==========================================================
+   Mobile Main Menu Links
+========================================================== */
+
+#sidebarMobile .sidebar-menu > .nav-item > .nav-link{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    color:var(--sidebar-text);
+
+    padding:.75rem 1rem;
+
+    margin:.15rem .75rem;
+
+    border-radius:.5rem;
+
+}
+
+
+#sidebarMobile .sidebar-menu > .nav-item > .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+#sidebarMobile .sidebar-menu > .nav-item > .nav-link.active{
+
+    background:var(--sidebar-active);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Mobile Parent Menu
+========================================================== */
+
+#sidebarMobile .sidebar-parent{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+}
+
+
+#sidebarMobile .sidebar-parent > span{
+
+    display:flex;
+
+    align-items:center;
+
+}
+
+
+/* ==========================================================
+   Mobile Submenu
+========================================================== */
+
+#sidebarMobile .sidebar-submenu{
+
+    padding-bottom:.25rem;
+
+}
+
+
+#sidebarMobile .sidebar-submenu .nav-link{
+
+    display:block;
+
+    color:var(--sidebar-text);
+
+    font-size:.92rem;
+
+    padding:.65rem 1rem .65rem 2.75rem;
+
+    margin:.1rem .75rem;
+
+    border-radius:.5rem;
+
+}
+
+
+#sidebarMobile .sidebar-submenu .nav-link:hover{
+
+    background:var(--sidebar-hover);
+
+    color:#fff;
+
+}
+
+
+/* ==========================================================
+   Mobile Active Submenu
+========================================================== */
+
+#sidebarMobile .sidebar-submenu .submenu-active{
+
+    color:#fff;
+
+    font-weight:600;
+
+}
+
+
+/* ==========================================================
+   Responsive
+========================================================== */
+
+@media (max-width:991.98px){
+
+    #sidebarDesktop{
+
+        display:none !important;
+
+    }
+
+
+    #content{
+
+        margin-left:0;
+
+    }
+
+}
+
+
+/* ==========================================================
+   Desktop Only
+========================================================== */
+
+@media (min-width:992px){
+
+    #sidebarMobile{
+
+        display:none !important;
+
+    }
+
+}

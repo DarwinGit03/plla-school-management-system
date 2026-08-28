@@ -111,38 +111,17 @@
 
                     <div class="col-6 col-lg-2">
 
-                        <label class="form-label small fw-semibold">
-
+                        <label for="academic_year" class="form-label small fw-semibold">
                             Academic Year
-
                         </label>
 
                         <select
                             name="academic_year"
+                            id="academic_year"
                             class="form-select">
 
                             <option value="">
-                                All
-                            </option>
-
-                            <option
-                                value="2025-2026"
-                                <?= $filters['academic_year'] === '2025-2026'
-                                    ? 'selected'
-                                    : ''; ?>>
-
-                                2025-2026
-
-                            </option>
-
-                            <option
-                                value="2024-2025"
-                                <?= $filters['academic_year'] === '2024-2025'
-                                    ? 'selected'
-                                    : ''; ?>>
-
-                                2024-2025
-
+                                
                             </option>
 
                         </select>
@@ -154,33 +133,43 @@
 
                     <div class="col-6 col-lg-2">
 
+                    <label class="form-label small fw-semibold">
+                        Grade Level
+                    </label>
+
+                    <select
+                        name="grade_level"
+                        id="grade_level"
+                        class="form-select"
+                        disabled>
+
+                        <option value="">
+                            
+                        </option>
+
+                    </select>
+
+                </div>
+
+                    <!-- Section -->
+
+                    <div class="col-6 col-lg-2">
+
                         <label class="form-label small fw-semibold">
 
-                            Grade Level
+                            Section
 
                         </label>
 
                         <select
-                            name="grade_level"
-                            class="form-select">
+                            name="section"
+                            id="section"
+                            class="form-select"
+                            disabled>
 
                             <option value="">
-                                All
+                              
                             </option>
-
-                            <?php for ($i = 1; $i <= 12; $i++): ?>
-
-                                <option
-                                    value="Grade <?= $i; ?>"
-                                    <?= $filters['grade_level'] === "Grade {$i}"
-                                        ? 'selected'
-                                        : ''; ?>>
-
-                                    Grade <?= $i; ?>
-
-                                </option>
-
-                            <?php endfor; ?>
 
                         </select>
 
@@ -547,20 +536,111 @@
 
                 </small>
 
-
                 <nav aria-label="Student pagination">
+
+                    <?php
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Build Query String
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $query_params = [];
+
+                    foreach ($filters as $key => $value) {
+
+                        if ($value !== '') {
+
+                            $query_params[$key] = $value;
+                        }
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Previous Page
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $previous_params =
+                        $query_params;
+
+                    $previous_params['page'] =
+                        $current_page - 1;
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Next Page
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $next_params =
+                        $query_params;
+
+                    $next_params['page'] =
+                        $current_page + 1;
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Generate URLs
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $previous_url =
+                        site_url('students') .
+                        '?' .
+                        http_build_query(
+                            $previous_params
+                        );
+
+
+                    $next_url =
+                        site_url('students') .
+                        '?' .
+                        http_build_query(
+                            $next_params
+                        );
+
+                    ?>
 
                     <ul class="pagination pagination-sm mb-0">
 
-                        <li class="page-item disabled">
 
-                            <span class="page-link">
+                        <!-- Previous -->
 
-                                Previous
+                        <li
+                            class="page-item
+                                <?= $current_page <= 1
+                                    ? 'disabled'
+                                    : ''; ?>">
 
-                            </span>
+                            <?php if ($current_page <= 1): ?>
+
+                                <span class="page-link">
+                                    Previous
+                                </span>
+
+                            <?php else: ?>
+
+                                <a
+                                    class="page-link"
+                                    href="<?= html_escape(
+                                        $previous_url
+                                    ); ?>">
+
+                                    Previous
+
+                                </a>
+
+                            <?php endif; ?>
 
                         </li>
+
+
+                        <!-- Current Page -->
 
                         <li class="page-item active">
 
@@ -572,15 +652,42 @@
 
                         </li>
 
-                        <li class="page-item">
 
-                            <a
-                                class="page-link"
-                                href="?page=<?= $current_page + 1; ?>">
+                        <!-- Next -->
 
-                                Next
+                        <li
+                            class="page-item
+                                <?= (
+                                    $total_pages === 0
+                                    ||
+                                    $current_page >= $total_pages
+                                )
+                                    ? 'disabled'
+                                    : ''; ?>">
 
-                            </a>
+                            <?php if (
+                                $total_pages === 0
+                                ||
+                                $current_page >= $total_pages
+                            ): ?>
+
+                                <span class="page-link">
+                                    Next
+                                </span>
+
+                            <?php else: ?>
+
+                                <a
+                                    class="page-link"
+                                    href="<?= html_escape(
+                                        $next_url
+                                    ); ?>">
+
+                                    Next
+
+                                </a>
+
+                            <?php endif; ?>
 
                         </li>
 
@@ -595,3 +702,31 @@
     </div>
 
 </div>
+<script>
+
+    const classAssignmentMode = 'filter';
+
+    const submittedEnrollment = {
+        academic_year:
+            <?= json_encode(
+                $filters['academic_year'] ?? ''
+            ); ?>,
+
+        grade_level:
+            <?= json_encode(
+                $filters['grade_level'] ?? ''
+            ); ?>,
+
+        section:
+            <?= json_encode(
+                $filters['section'] ?? ''
+            ); ?>
+    };
+
+    const BASE_URL =
+        "<?= base_url(); ?>";
+</script>
+
+<script src="<?= base_url(
+    'assets/js/student/class_assignment.js'
+); ?>"></script>

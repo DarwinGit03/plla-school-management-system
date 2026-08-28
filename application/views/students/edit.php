@@ -1,3 +1,10 @@
+<?php
+    // $is_admin = $this->session->userdata('role_id') === '3' || $this->session->userdata('role_id') === '2';
+    
+    $role_id = (int) $this->session->userdata('role_id');
+    $is_admin = in_array($role_id, [1, 2], true);
+?>
+
 <div class="container-fluid">
 
     <!-- =====================================================
@@ -15,27 +22,21 @@
         <div>
 
             <h1 class="h3 fw-bold mb-1">
-
-                Initial Enrollment
-
+                Edit Student
             </h1>
 
             <p class="text-muted mb-0">
-
-                Create a new student record.
-
+                Update student information.
             </p>
 
         </div>
 
-
         <a
-            href="<?= site_url('students'); ?>"
+            href="<?= site_url('students/view/' . $student->id); ?>"
             class="btn btn-outline-secondary">
 
             <i class="fas fa-arrow-left me-1"></i>
-
-            Back to Students
+            Back to Profile
 
         </a>
 
@@ -43,7 +44,7 @@
 
 
     <!-- =====================================================
-        Validation Errors
+         Validation Errors
     ====================================================== -->
 
     <?php if (!empty($validation_errors)): ?>
@@ -58,45 +59,35 @@
 
             <ul class="mb-0">
 
-                <?php foreach (
-                    $validation_errors
-                    as $section => $errors
-                ): ?>
+                <?php foreach ($validation_errors as $section => $errors): ?>
 
-                    <?php if ($section === 'student'): ?>
+                    <?php if (is_string($errors)): ?>
 
                         <li>
-                            <?= $errors; ?>
+                            <?= html_escape($errors); ?>
                         </li>
 
-                    <?php elseif ($section === 'guardians'): ?>
+                    <?php elseif (is_array($errors)): ?>
 
-                        <?php foreach (
-                            $errors
-                            as $guardianIndex => $guardianErrors
-                        ): ?>
+                        <?php foreach ($errors as $guardianIndex => $guardianErrors): ?>
 
-                            <?php if (
-                                $guardianIndex === '_global'
-                            ): ?>
+                            <?php if ($guardianIndex === '_global'): ?>
 
-                                <?php foreach (
-                                    $guardianErrors
-                                    as $message
-                                ): ?>
+                                <?php if (is_array($guardianErrors)): ?>
 
-                                    <li>
-                                        <?= html_escape($message); ?>
-                                    </li>
+                                    <?php foreach ($guardianErrors as $message): ?>
 
-                                <?php endforeach; ?>
+                                        <li>
+                                            <?= html_escape($message); ?>
+                                        </li>
 
-                            <?php else: ?>
+                                    <?php endforeach; ?>
 
-                                <?php foreach (
-                                    $guardianErrors
-                                    as $field => $message
-                                ): ?>
+                                <?php endif; ?>
+
+                            <?php elseif (is_array($guardianErrors)): ?>
+
+                                <?php foreach ($guardianErrors as $field => $message): ?>
 
                                     <li>
                                         Guardian
@@ -105,6 +96,12 @@
                                     </li>
 
                                 <?php endforeach; ?>
+
+                            <?php else: ?>
+
+                                <li>
+                                    <?= html_escape($guardianErrors); ?>
+                                </li>
 
                             <?php endif; ?>
 
@@ -128,13 +125,13 @@
     <?php endif; ?>
 
 
-    <?php if ($this->session->flashdata('error')): ?>
+    <?php if (!empty($database_error)): ?>
 
         <div
             class="alert alert-danger alert-dismissible fade show"
             role="alert">
 
-            <?= $this->session->flashdata('error'); ?>
+            <?= html_escape($database_error); ?>
 
             <button
                 type="button"
@@ -147,20 +144,23 @@
 
     <?php endif; ?>
 
+
     <!-- =====================================================
-         Registration Form
+         Edit Form
     ====================================================== -->
 
     <form
         method="post"
-        action="<?= site_url('students/create'); ?>">
+        action="<?= site_url('students/edit/' . $student->id); ?>">
 
         <input
-        type="hidden"
-        name="<?= $this->security->get_csrf_token_name(); ?>"
-        value="<?= $this->security->get_csrf_hash(); ?>">
+            type="hidden"
+            name="<?= $this->security->get_csrf_token_name(); ?>"
+            value="<?= $this->security->get_csrf_hash(); ?>">
+
+
         <!-- =================================================
-             Personal Information
+             Student Information
         ================================================== -->
 
         <div class="card border-0 shadow-sm mb-4">
@@ -182,6 +182,7 @@
 
                 <div class="row g-3">
 
+
                     <!-- LRN -->
 
                     <div class="col-12 col-md-6 col-lg-4">
@@ -191,42 +192,43 @@
                             class="form-label">
 
                             LRN
+                            <span class="text-danger">*</span>
 
                         </label>
-                        <span class="text-danger">*</span>
-
-                          <input
+                        <input
                             type="text"
                             name="lrn"
                             id="lrn"
-                            class="form-control <?= form_error('lrn') ? 'is-invalid' : ''; ?>"
-                            value="<?= set_value('lrn'); ?>"
+                            class="form-control"
+                            value="<?= html_escape(
+                                set_value(
+                                    'lrn',
+                                    $student->lrn ?? ''
+                                )
+                            ); ?>"
+                            <?= !$is_admin ? 'readonly' : '' ?>
                             autocomplete="off"
                             inputmode="numeric"
-                            maxlength="20" required
-                        >
+                            maxlength="20"
+                            required>
 
-                        <!-- < ?= form_error(
-                            'lrn',
-                            '<div class="invalid-feedback">',
-                            '</div>'
-                        ); ?> -->
-
-                        <div class="form-check">
+                            <div class="form-check">
                             <input
                                 class="form-check-input"
                                 type="checkbox"
                                 id="student_no_same_as_lrn"
                                 name="student_no_same_as_lrn"
+                                <?= !$is_admin ? 'disabled' : '' ?>
                                 value="1"
                                 <?= set_checkbox(
                                     'student_no_same_as_lrn',
                                     '1'
-                                ); ?>>
+                                ); ?>
+                                >
 
                             <label
-                                class="form-check-label"
-                                for="student_no_same_as_lrn">
+                                class="form-check-label">
+                                <!-- for="student_no_same_as_lrn"> -->
 
                                 Student No. is the same as LRN
 
@@ -235,6 +237,7 @@
                         </div>
 
                     </div>
+
 
                     <!-- Student Number -->
 
@@ -245,34 +248,40 @@
                             class="form-label">
 
                             Student No.
+                            <span class="text-danger">*</span>
 
                         </label>
-                        <span class="text-danger">*</span>
 
-                        <input required
+                        <input
                             type="text"
                             name="student_no"
                             id="student_no"
-                            class="form-control <?= form_error('student_no') ? 'is-invalid' : ''; ?>"
-                            value="<?= set_value('student_no'); ?>"
+                            class="form-control"
+                            value="<?= html_escape(
+                                set_value(
+                                    'student_no',
+                                    $student->student_no ?? ''
+                                )
+                            ); ?>"
+                            <?= !$is_admin ? 'readonly' : '' ?>
                             autocomplete="off"
                             inputmode="numeric"
                             maxlength="20"
-                            pattern="[0-9]+" required>
-
-                        <?php if (form_error('student_no')): ?>
-
-                            <div class="invalid-feedback">
-
-                                <?= form_error('student_no'); ?>
-
-                            </div>
-
-                        <?php endif; ?>
+                            >
 
                     </div>
 
+
                     <div class="col-12 col-md-6 col-lg-4">
+                        <?php if (!empty($student)): ?>
+
+                        <input
+                            type="hidden"
+                            name="student_id"
+                            value="<?= (int) $student->id ?>"
+                        >
+
+                        <?php endif; ?>
                     </div>
 
 
@@ -294,7 +303,12 @@
                             id="first_name"
                             name="first_name"
                             class="form-control"
-                            value="<?= set_value('first_name'); ?>"
+                            value="<?= html_escape(
+                                set_value(
+                                    'first_name',
+                                    $student->first_name ?? ''
+                                )
+                            ); ?>"
                             required>
 
                     </div>
@@ -308,7 +322,7 @@
                             for="middle_name"
                             class="form-label">
 
-                            Middle Name/M.I
+                            Middle Name / M.I.
 
                         </label>
 
@@ -317,7 +331,12 @@
                             id="middle_name"
                             name="middle_name"
                             class="form-control"
-                            value="<?= set_value('middle_name'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'middle_name',
+                                    $student->middle_name ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
@@ -340,81 +359,15 @@
                             id="last_name"
                             name="last_name"
                             class="form-control"
-                            value="<?= set_value('last_name'); ?>"
+                            value="<?= html_escape(
+                                set_value(
+                                    'last_name',
+                                    $student->last_name ?? ''
+                                )
+                            ); ?>"
                             required>
 
                     </div>
-
-
-                    <!-- Suffix -->
-
-                    <!-- <div class="col-12 col-md-6 col-lg-4" hidden>
-
-                        <label
-                            for="suffix"
-                            class="form-label">
-
-                            Suffix
-
-                        </label>
-
-                        <select
-                            id="suffix"
-                            name="suffix"
-                            class="form-select">
-
-                            <option value="">
-                                None
-                            </option>
-
-                            <option
-                                value="Jr."
-                                < ?= set_select(
-                                    'suffix',
-                                    'Jr.'
-                                ); ?>>
-
-                                Jr.
-
-                            </option>
-
-                            <option
-                                value="Sr."
-                                < ?= set_select(
-                                    'suffix',
-                                    'Sr.'
-                                ); ?>>
-
-                                Sr.
-
-                            </option>
-
-                            <option
-                                value="II"
-                                < ?= set_select(
-                                    'suffix',
-                                    'II'
-                                ); ?>>
-
-                                II
-
-                            </option>
-
-                            <option
-                                value="III"
-                                < ?= set_select(
-                                    'suffix',
-                                    'III'
-                                ); ?>>
-
-                                III
-
-                            </option>0
-
-                        </select>
-
-                    </div> -->
-
 
                     <!-- Gender -->
 
@@ -429,6 +382,14 @@
 
                         </label>
 
+                        <?php
+                        $gender =
+                            set_value(
+                                'gender',
+                                $student->gender ?? ''
+                            );
+                        ?>
+
                         <select
                             id="gender"
                             name="gender"
@@ -438,19 +399,27 @@
                             <option value="">
                                 Select Gender
                             </option>
+
                             <option
                                 value="Male"
-                                <?= set_select('gender', 'Male'); ?>
-                            >
+                                <?= $gender === 'Male'
+                                    ? 'selected'
+                                    : ''; ?>>
+
                                 Male
+
                             </option>
 
                             <option
                                 value="Female"
-                                <?= set_select('gender', 'Female'); ?>
-                            >
+                                <?= $gender === 'Female'
+                                    ? 'selected'
+                                    : ''; ?>>
+
                                 Female
+
                             </option>
+
                         </select>
 
                     </div>
@@ -469,12 +438,17 @@
 
                         </label>
 
-                        <input required
+                        <input
                             type="date"
                             id="birth_date"
                             name="birth_date"
                             class="form-control"
-                            value="<?= set_value('birth_date'); ?>"
+                            value="<?= html_escape(
+                                set_value(
+                                    'birth_date',
+                                    $student->birth_date ?? ''
+                                )
+                            ); ?>"
                             required>
 
                     </div>
@@ -497,7 +471,12 @@
                             id="birth_place"
                             name="birth_place"
                             class="form-control"
-                            value="<?= set_value('birth_place'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'birth_place',
+                                    $student->birth_place ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
@@ -519,50 +498,14 @@
                             id="nationality"
                             name="nationality"
                             class="form-control"
-                            value="<?= set_value(
-                                'nationality',
-                                'Filipino'
+                            value="<?= html_escape(
+                                set_value(
+                                    'nationality',
+                                    $student->nationality ?? 'Filipino'
+                                )
                             ); ?>">
 
                     </div>
-
-
-                    <!-- Civil Status -->
-
-                    <!-- <div class="col-12 col-md-6 col-lg-4">
-
-                        <label
-                            for="civil_status"
-                            class="form-label">
-
-                            Civil Status
-
-                        </label>
-
-                        <select
-                            id="civil_status"
-                            name="civil_status"
-                            class="form-select">
-
-                            <option value="">
-                                Select
-                            </option>
-
-                            <option value="Single">
-                                Single
-                            </option>
-
-                            <option value="Married">
-                                Married
-                            </option>
-
-                            <option value="Widowed">
-                                Widowed
-                            </option>
-
-                        </select>
-
-                    </div> -->
 
                 </div>
 
@@ -570,7 +513,7 @@
 
         </div>
 
-        
+
         <!-- =================================================
              Contact Information
         ================================================== -->
@@ -594,9 +537,6 @@
 
                 <div class="row g-3">
 
-
-                    <!-- Mobile -->
-
                     <div class="col-12 col-md-6">
 
                         <label
@@ -612,35 +552,16 @@
                             id="mobile_no"
                             name="mobile_no"
                             class="form-control"
-                            value="<?= set_value('mobile_no'); ?>"
+                            value="<?= html_escape(
+                                set_value(
+                                    'mobile_no',
+                                    $student->mobile_no ?? ''
+                                )
+                            ); ?>"
                             placeholder="09XXXXXXXXX">
 
                     </div>
 
-
-                    <!-- Telephone -->
-
-                    <!-- <div class="col-12 col-md-6">
-
-                        <label
-                            for="telephone"
-                            class="form-label">
-
-                            Telephone
-
-                        </label>
-
-                        <input
-                            type="tel"
-                            id="telephone"
-                            name="telephone"
-                            class="form-control"
-                            value="< ?= set_value('telephone'); ?>">
-
-                    </div> -->
-
-
-                    <!-- Email -->
 
                     <div class="col-12 col-md-6">
 
@@ -657,7 +578,12 @@
                             id="email"
                             name="email"
                             class="form-control"
-                            value="<?= set_value('email'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'email',
+                                    $student->email ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
@@ -667,9 +593,9 @@
 
         </div>
 
-        
+
         <!-- =================================================
-             Guardian information
+             Guardian Information
         ================================================== -->
 
         <div class="card border-0 shadow-sm mb-4">
@@ -681,15 +607,20 @@
                     <div>
 
                         <h5 class="fw-bold mb-1">
+
                             <i class="fas fa-hands-holding-child text-primary me-2"></i>
+
                             Guardian Information
+
                         </h5>
 
                         <small class="text-muted">
-                            Add the student's parent or <b>legal guardian.</b>
+                            Add the student's parent or
+                            <b>legal guardian.</b>
                         </small>
 
                     </div>
+
 
                     <button
                         type="button"
@@ -709,28 +640,60 @@
 
             <div class="card-body">
 
-                <div id="guardianContainer" class="row g-3">
+                <div
+                    id="guardianContainer"
+                    class="row g-3">
 
-                    <!-- Guardian dynamic fields here found in javascript -->
+                    <!-- Guardians generated by JavaScript -->
 
                 </div>
 
             </div>
 
         </div>
-        
+
+
         <!-- =================================================
-             currect Address
+             Current Address
         ================================================== -->
+
+        <?php
+
+        $currentAddress = null;
+        $permanentAddress = null;
+
+        foreach ($addresses ?? [] as $address) {
+
+            if (
+                isset($address->address_type) &&
+                $address->address_type === 'current'
+            ) {
+
+                $currentAddress = $address;
+            }
+
+            if (
+                isset($address->address_type) &&
+                $address->address_type === 'permanent'
+            ) {
+
+                $permanentAddress = $address;
+            }
+        }
+
+        ?>
+
 
         <div class="card border-0 shadow-sm mb-4">
 
             <div class="card-header bg-white py-3">
 
-            
                 <h5 class="fw-bold mb-1">
+
                     <i class="fas fa-house text-primary me-2"></i>
+
                     Current Address
+
                 </h5>
 
                 <small class="text-muted">
@@ -739,14 +702,20 @@
 
             </div>
 
+
             <div class="card-body">
 
                 <div class="row g-3">
 
+
                     <div class="col-12 col-md-4">
 
-                        <label class="form-label">
+                        <label
+                            for="current_house_no"
+                            class="form-label">
+
                             House / Building No.
+
                         </label>
 
                         <input
@@ -754,15 +723,24 @@
                             name="current_house_no"
                             id="current_house_no"
                             class="form-control"
-                            value="<?= set_value('current_house_no'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'current_house_no',
+                                    $currentAddress->house_no ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label class="form-label">
+                        <label
+                            for="current_street"
+                            class="form-label">
+
                             Street
+
                         </label>
 
                         <input
@@ -770,15 +748,24 @@
                             name="current_street"
                             id="current_street"
                             class="form-control"
-                            value="<?= set_value('current_street'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'current_street',
+                                    $currentAddress->street ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label class="form-label">
+                        <label
+                            for="current_barangay"
+                            class="form-label">
+
                             Barangay
+
                         </label>
 
                         <input
@@ -786,15 +773,24 @@
                             name="current_barangay"
                             id="current_barangay"
                             class="form-control"
-                            value="<?= set_value('current_barangay'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'current_barangay',
+                                    $currentAddress->barangay ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label class="form-label">
+                        <label
+                            for="current_city"
+                            class="form-label">
+
                             City / Municipality
+
                         </label>
 
                         <input
@@ -802,15 +798,24 @@
                             name="current_city"
                             id="current_city"
                             class="form-control"
-                            value="<?= set_value('current_city'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'current_city',
+                                    $currentAddress->city ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label class="form-label">
+                        <label
+                            for="current_province"
+                            class="form-label">
+
                             Province
+
                         </label>
 
                         <input
@@ -818,15 +823,24 @@
                             name="current_province"
                             id="current_province"
                             class="form-control"
-                            value="<?= set_value('current_province'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'current_province',
+                                    $currentAddress->province ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label class="form-label">
+                        <label
+                            for="current_postal_code"
+                            class="form-label">
+
                             Postal Code
+
                         </label>
 
                         <input
@@ -834,7 +848,12 @@
                             name="current_postal_code"
                             id="current_postal_code"
                             class="form-control"
-                            value="<?= set_value('current_postal_code'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'current_postal_code',
+                                    $currentAddress->postal_code ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
@@ -844,21 +863,51 @@
 
         </div>
 
+
         <!-- =================================================
-             Check for same Address
+             Same Address
         ================================================== -->
 
+        <?php
+
+        $sameAddress =
+            (
+                $currentAddress &&
+                $permanentAddress &&
+                ($currentAddress->house_no ?? '') ===
+                    ($permanentAddress->house_no ?? '') &&
+                ($currentAddress->street ?? '') ===
+                    ($permanentAddress->street ?? '') &&
+                ($currentAddress->barangay ?? '') ===
+                    ($permanentAddress->barangay ?? '') &&
+                ($currentAddress->city ?? '') ===
+                    ($permanentAddress->city ?? '') &&
+                ($currentAddress->province ?? '') ===
+                    ($permanentAddress->province ?? '') &&
+                ($currentAddress->postal_code ?? '') ===
+                    ($permanentAddress->postal_code ?? '')
+            );
+
+        $sameAddressValue =
+            set_value(
+                'permanent_same_as_current',
+                $sameAddress ? '1' : ''
+            );
+
+        ?>
+
+
         <div class="form-check my-3">
+
             <input
                 class="form-check-input"
                 type="checkbox"
                 id="permanent_same_as_current"
                 name="permanent_same_as_current"
                 value="1"
-                <?= set_checkbox(
-                    'permanent_same_as_current',
-                    '1'
-                ); ?>>
+                <?= $sameAddressValue === '1'
+                    ? 'checked'
+                    : ''; ?>>
 
             <label
                 class="form-check-label text-danger"
@@ -870,30 +919,43 @@
 
         </div>
 
+
         <!-- =================================================
-             permanent address
+             Permanent Address
         ================================================== -->
+
         <div class="card border-0 shadow-sm mb-4">
 
             <div class="card-header bg-white py-3">
 
                 <h5 class="fw-bold mb-1">
+
                     <i class="fas fa-house text-primary me-2"></i>
+
                     Permanent Address
+
                 </h5>
 
                 <small class="text-muted">
-                    Student's Permanent residential address
+                    Student's permanent residential address
                 </small>
 
             </div>
+
+
             <div class="card-body">
+
                 <div class="row g-3">
+
 
                     <div class="col-12 col-md-4">
 
-                        <label for="permanent_house_no" class="form-label">
+                        <label
+                            for="permanent_house_no"
+                            class="form-label">
+
                             House / Building No.
+
                         </label>
 
                         <input
@@ -901,15 +963,24 @@
                             name="permanent_house_no"
                             id="permanent_house_no"
                             class="form-control"
-                            value="<?= set_value('permanent_house_no'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'permanent_house_no',
+                                    $permanentAddress->house_no ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label for="permanent_street" class="form-label">
+                        <label
+                            for="permanent_street"
+                            class="form-label">
+
                             Street
+
                         </label>
 
                         <input
@@ -917,15 +988,24 @@
                             name="permanent_street"
                             id="permanent_street"
                             class="form-control"
-                            value="<?= set_value('permanent_street'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'permanent_street',
+                                    $permanentAddress->street ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label for="permanent_barangay" class="form-label">
+                        <label
+                            for="permanent_barangay"
+                            class="form-label">
+
                             Barangay
+
                         </label>
 
                         <input
@@ -933,15 +1013,24 @@
                             name="permanent_barangay"
                             id="permanent_barangay"
                             class="form-control"
-                            value="<?= set_value('permanent_barangay'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'permanent_barangay',
+                                    $permanentAddress->barangay ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label for="permanent_city" class="form-label">
+                        <label
+                            for="permanent_city"
+                            class="form-label">
+
                             City / Municipality
+
                         </label>
 
                         <input
@@ -949,15 +1038,24 @@
                             name="permanent_city"
                             id="permanent_city"
                             class="form-control"
-                            value="<?= set_value('permanent_city'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'permanent_city',
+                                    $permanentAddress->city ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label for="permanent_province" class="form-label">
+                        <label
+                            for="permanent_province"
+                            class="form-label">
+
                             Province
+
                         </label>
 
                         <input
@@ -965,15 +1063,24 @@
                             name="permanent_province"
                             id="permanent_province"
                             class="form-control"
-                            value="<?= set_value('permanent_province'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'permanent_province',
+                                    $permanentAddress->province ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
 
                     <div class="col-12 col-md-4">
 
-                        <label for="permanent_postal_code" class="form-label">
+                        <label
+                            for="permanent_postal_code"
+                            class="form-label">
+
                             Postal Code
+
                         </label>
 
                         <input
@@ -981,16 +1088,24 @@
                             name="permanent_postal_code"
                             id="permanent_postal_code"
                             class="form-control"
-                            value="<?= set_value('permanent_postal_code'); ?>">
+                            value="<?= html_escape(
+                                set_value(
+                                    'permanent_postal_code',
+                                    $permanentAddress->postal_code ?? ''
+                                )
+                            ); ?>">
 
                     </div>
 
                 </div>
+
             </div>
+
         </div>
 
+
         <!-- =================================================
-             Initial Enrollment
+             Enrollment
         ================================================== -->
 
         <div class="card border-0 shadow-sm mb-4">
@@ -1001,7 +1116,7 @@
 
                     <i class="fas fa-graduation-cap text-primary me-2"></i>
 
-                    Initial Enrollment
+                    Enrollment
 
                 </h5>
 
@@ -1022,6 +1137,7 @@
                             class="form-label">
 
                             Academic Year
+
                         </label>
 
                         <select
@@ -1030,15 +1146,47 @@
                             class="form-select">
 
                             <option value="">
-                                
+                                Select Academic Year
                             </option>
+
+                            <?php
+
+                            $selectedYear =
+                                set_value(
+                                    'academic_year',
+                                    $student->academic_year ?? ''
+                                );
+
+                            ?>
+
+                            <?php foreach ($academic_years ?? [] as $year): ?>
+
+                                <?php
+                                $yearValue =
+                                    is_object($year)
+                                        ? $year->year
+                                        : $year;
+                                ?>
+
+                                <option
+                                    value="<?= html_escape($yearValue); ?>"
+                                    <?= (string) $selectedYear ===
+                                        (string) $yearValue
+                                        ? 'selected'
+                                        : ''; ?>>
+
+                                    <?= html_escape($yearValue); ?>
+
+                                </option>
+
+                            <?php endforeach; ?>
 
                         </select>
 
                     </div>
 
 
-                    <!-- Grade -->
+                    <!-- Grade Level -->
 
                     <div class="col-12 col-md-6 col-lg-4">
 
@@ -1054,38 +1202,49 @@
                             name="grade_level"
                             id="grade_level"
                             class="form-select"
-                            disabled>
+                            <?= empty($selectedYear)
+                                ? 'disabled'
+                                : ''; ?>>
 
                             <option value="">
-                               
+                                Select Grade Level
                             </option>
+
+                            <?php
+
+                            $selectedGrade =
+                                set_value(
+                                    'grade_level',
+                                    $student->grade_level ?? ''
+                                );
+
+                            ?>
+
+                            <?php foreach ($grade_levels ?? [] as $grade): ?>
+
+                                <?php
+                                $gradeValue =
+                                    is_object($grade)
+                                        ? $grade->grade
+                                        : $grade;
+                                ?>
+
+                                <option
+                                    value="<?= html_escape($gradeValue); ?>"
+                                    <?= (string) $selectedGrade ===
+                                        (string) $gradeValue
+                                        ? 'selected'
+                                        : ''; ?>>
+
+                                    <?= html_escape($gradeValue); ?>
+
+                                </option>
+
+                            <?php endforeach; ?>
 
                         </select>
 
                     </div>
-
-
-                    <!-- Program -->
-
-                    <!-- <div class="col-12 col-md-6 col-lg-3">
-
-                        <label
-                            for="program"
-                            class="form-label">
-
-                            Program
-
-                        </label>
-
-                        <input
-                            type="text"
-                            id="program"
-                            name="program"
-                            class="form-control"
-                            value="< ?= set_value('program'); ?>"
-                            placeholder="e.g. STEM">
-
-                    </div> -->
 
 
                     <!-- Section -->
@@ -1104,11 +1263,45 @@
                             name="section"
                             id="section"
                             class="form-select"
-                            disabled>
+                            <?= empty($selectedGrade)
+                                ? 'disabled'
+                                : ''; ?>>
 
                             <option value="">
-                                
+                                Select Section
                             </option>
+
+                            <?php
+
+                            $selectedSection =
+                                set_value(
+                                    'section',
+                                    $student->section ?? ''
+                                );
+
+                            ?>
+
+                            <?php foreach ($sections ?? [] as $section): ?>
+
+                                <?php
+                                $sectionValue =
+                                    is_object($section)
+                                        ? $section->section
+                                        : $section;
+                                ?>
+
+                                <option
+                                    value="<?= html_escape($sectionValue); ?>"
+                                    <?= (string) $selectedSection ===
+                                        (string) $sectionValue
+                                        ? 'selected'
+                                        : ''; ?>>
+
+                                    <?= html_escape($sectionValue); ?>
+
+                                </option>
+
+                            <?php endforeach; ?>
 
                         </select>
 
@@ -1125,8 +1318,20 @@
 
                             Admission Type
 
+                            <span class="text-danger">*</span>
+
                         </label>
-                        <span class="text-danger">*</span>
+
+                        <?php
+
+                        $admissionType =
+                            set_value(
+                                'admission_type',
+                                $student->admission_type ??
+                                'New Student'
+                            );
+
+                        ?>
 
                         <select
                             id="admission_type"
@@ -1136,30 +1341,32 @@
 
                             <option
                                 value="New Student"
-                                <?= set_select(
-                                    'admission_type',
-                                    'New Student',
-                                    true
-                                ); ?>>
+                                <?= $admissionType === 'New Student'
+                                    ? 'selected'
+                                    : ''; ?>>
+
                                 New Student
+
                             </option>
 
                             <option
                                 value="Transferee"
-                                <?= set_select(
-                                    'admission_type',
-                                    'Transferee'
-                                ); ?>>
+                                <?= $admissionType === 'Transferee'
+                                    ? 'selected'
+                                    : ''; ?>>
+
                                 Transferee
+
                             </option>
 
                             <option
                                 value="Returning Student"
-                                <?= set_select(
-                                    'admission_type',
-                                    'Returning Student'
-                                ); ?>>
+                                <?= $admissionType === 'Returning Student'
+                                    ? 'selected'
+                                    : ''; ?>>
+
                                 Returning Student
+
                             </option>
 
                         </select>
@@ -1189,13 +1396,12 @@
                            gap-2">
 
                     <a
-                        href="<?= site_url('students'); ?>"
+                        href="<?= site_url('students/view/' . $student->id); ?>"
                         class="btn btn-outline-secondary">
 
                         Cancel
 
                     </a>
-
 
                     <button
                         type="reset"
@@ -1205,14 +1411,13 @@
 
                     </button>
 
-
                     <button
                         type="submit"
                         class="btn btn-primary">
 
                         <i class="fas fa-save me-1"></i>
 
-                        Register Student
+                        Save Changes
 
                     </button>
 
@@ -1222,10 +1427,9 @@
 
         </div>
 
-
-
     </form>
 
+    
     <!-- Duplicate LRN Modal -->
     <div
         class="modal fade"
@@ -1330,34 +1534,50 @@
 
 </div>
 
+
+<!-- =========================================================
+     JavaScript Data
+========================================================== -->
+
 <script>
-        
+
     const submittedGuardians =
         <?= json_encode($guardians ?? []); ?>;
 
-    const classAssignmentMode = 'create';
+    const classAssignmentMode = 'edit';
 
     const submittedEnrollment = {
 
         academic_year:
             <?= json_encode(
-                set_value('academic_year')
+                set_value(
+                    'academic_year',
+                    $student->academic_year ?? ''
+                )
             ); ?>,
 
         grade_level:
             <?= json_encode(
-                set_value('grade_level')
+                set_value(
+                    'grade_level',
+                    $student->grade_level ?? ''
+                )
             ); ?>,
 
         section:
             <?= json_encode(
-                set_value('section')
+                set_value(
+                    'section',
+                    $student->section ?? ''
+                )
             ); ?>
     };
 
     const BASE_URL =
         <?= json_encode(base_url()); ?>;
+
 </script>
+
 
 
 <script src="<?= base_url(

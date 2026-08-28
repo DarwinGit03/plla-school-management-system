@@ -162,6 +162,129 @@ class Students extends MY_Controller
     /**
      * Student List
      */
+    // public function index()
+    // {
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Filters
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //     $filters = [
+
+    //         'search' => trim(
+    //             $this->input->get('search', true)
+    //         ),
+
+    //         'status' => trim(
+    //             $this->input->get('status', true)
+    //         ),
+
+    //         'academic_year' => trim(
+    //             $this->input->get('academic_year', true)
+    //         ),
+
+    //         'grade_level' => trim(
+    //             $this->input->get('grade_level', true)
+    //         ),
+
+    //         'section' => trim(
+    //             $this->input->get('section', true)
+    //         )
+
+    //     ];
+
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Pagination
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //     $per_page = 10;
+
+    //     $page = (int) $this->input->get('page');
+
+    //     $page = max($page, 1);
+
+    //     $offset = ($page - 1) * $per_page;
+
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Get Students
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //     $students = $this->student_service->get_students(
+    //         $filters,
+    //         $per_page,
+    //         $offset
+    //     );
+
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Count
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //     $total_students =
+    //         $this->student_service->count_students(
+    //             $filters
+    //         );
+
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | View Data
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //     $data = [
+
+    //         'title' => 'Students',
+
+    //         'page_title' => 'Students',
+
+    //         'page_subtitle' =>
+    //             'Manage student information',
+
+    //         'breadcrumb' => [
+    //             'Students'
+    //         ],
+
+    //         'students' => $students,
+
+    //         'total_students' => $total_students,
+
+    //         'filters' => $filters,
+
+    //         'per_page' => $per_page,
+
+    //         'current_page' => $page
+
+    //     ];
+
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Dashboard Layout
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //     $data['content'] =
+    //         'students/index';
+
+    //     $this->load->view(
+    //         'dashboard/layouts/master',
+    //         $data
+    //     );
+    // }
+
+    /**
+     * Student list.
+     */
     public function index()
     {
         /*
@@ -195,6 +318,58 @@ class Students extends MY_Controller
         ];
 
 
+        /* dynamic dropdown
+        |--------------------------------------------------------------------------
+        | Academic Years
+        |--------------------------------------------------------------------------
+        */
+
+        $academic_years =
+            $this->student_service
+                ->get_academic_years();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Grade Levels
+        |--------------------------------------------------------------------------
+        */
+
+        $grade_levels = [];
+
+        if (!empty($filters['academic_year'])) {
+
+            $grade_levels =
+                $this->student_service
+                    ->get_grade_levels_by_year(
+                        $filters['academic_year']
+                    );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sections
+        |--------------------------------------------------------------------------
+        */
+
+        $sections = [];
+
+        if (
+            !empty($filters['academic_year'])
+            &&
+            !empty($filters['grade_level'])
+        ) {
+
+            $sections =
+                $this->student_service
+                    ->get_sections_by_year_and_grade(
+                        $filters['academic_year'],
+                        $filters['grade_level']
+                    );
+        }
+
+
         /*
         |--------------------------------------------------------------------------
         | Pagination
@@ -205,9 +380,60 @@ class Students extends MY_Controller
 
         $page = (int) $this->input->get('page');
 
-        $page = max($page, 1);
+        $page = max(
+            $page,
+            1
+        );
 
-        $offset = ($page - 1) * $per_page;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Count Students
+        |--------------------------------------------------------------------------
+        */
+
+        $total_students =
+            $this->student_service
+                ->count_students(
+                    $filters
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Calculate Total Pages
+        |--------------------------------------------------------------------------
+        */
+
+        $total_pages = (int) ceil(
+            $total_students / $per_page
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent Invalid Page
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $total_pages > 0
+            &&
+            $page > $total_pages
+        ) {
+
+            $page = $total_pages;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Offset
+        |--------------------------------------------------------------------------
+        */
+
+        $offset =
+            ($page - 1) * $per_page;
 
 
         /*
@@ -216,23 +442,13 @@ class Students extends MY_Controller
         |--------------------------------------------------------------------------
         */
 
-        $students = $this->student_service->get_students(
-            $filters,
-            $per_page,
-            $offset
-        );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Count
-        |--------------------------------------------------------------------------
-        */
-
-        $total_students =
-            $this->student_service->count_students(
-                $filters
-            );
+        $students =
+            $this->student_service
+                ->get_students(
+                    $filters,
+                    $per_page,
+                    $offset
+                );
 
 
         /*
@@ -254,15 +470,27 @@ class Students extends MY_Controller
                 'Students'
             ],
 
-            'students' => $students,
+            'students' =>
+                $students,
 
-            'total_students' => $total_students,
+            'total_students' =>
+                $total_students,
 
-            'filters' => $filters,
+            'total_pages' =>
+                $total_pages,
 
-            'per_page' => $per_page,
+            'filters' =>
+                $filters,
 
-            'current_page' => $page
+            'per_page' =>
+                $per_page,
+
+            'current_page' =>
+                $page,
+
+            'academic_years' =>
+                $this->student_service
+                    ->get_academic_years()
 
         ];
 
@@ -281,59 +509,88 @@ class Students extends MY_Controller
             $data
         );
     }
-
+    
     public function create()
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Handle Form Submission
+        |--------------------------------------------------------------------------
+        */
+
         if ($this->input->method() === 'post') {
 
-            // log_message(
-            //     'debug',
-            //     '[STUDENT CREATE] POST request received.'
-            // );
-
             /*
             |--------------------------------------------------------------------------
-            | Student Validation Rules
+            | Get Guardians
             |--------------------------------------------------------------------------
             */
 
-            $this->student_validation
-                ->set_student_rules();
+            $guardians = $this->input->post('guardians');
 
-            /*
-            |--------------------------------------------------------------------------
-            | Run Student Validation
-            |--------------------------------------------------------------------------
-            */
-
-            if ($this->form_validation->run() === false) {
-
-                log_message(
-                    'error',
-                    '[STUDENT CREATE] VALIDATION FAILED: ' .
-                    validation_errors(' | ', ' | ')
-                );
-
-                 $data = [
-                    'title' => 'Register Student',
-                    'page_title' => 'Register Student',
-                    'page_subtitle' => 'Create a new student record',
-                    'breadcrumb' => [
-                        'Students',
-                        'Register'
-                    ],
-                    'content' => 'students/create',
-                    'guardians' =>
-                        $this->input->post('guardians')
-                ];
-
-                $this->load->view(
-                    'dashboard/layouts/master',
-                    $data
-                );
-
-                return;
+            if (!is_array($guardians)) {
+                $guardians = [];
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Validate Registration
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !$this->student_validation
+                    ->validate_registration($guardians)
+            ) {
+
+                $validation_errors =
+                    $this->student_validation
+                        ->get_errors();
+
+
+                $show_lrn_duplicate_modal =
+                    false;
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Detect LRN Duplicate
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    !empty($validation_errors['student'])
+                    &&
+                    stripos(
+                        $validation_errors['student'],
+                        'LRN'
+                    ) !== false
+                    &&
+                    stripos(
+                        $validation_errors['student'],
+                        'already'
+                    ) !== false
+                ) {
+
+                    $show_lrn_duplicate_modal =
+                        true;
+                }
+
+
+                return $this->show_create_form(
+                    [
+                        'guardians' =>
+                            $guardians,
+
+                        'validation_errors' =>
+                            $validation_errors,
+
+                        'show_lrn_duplicate_modal' =>
+                            $show_lrn_duplicate_modal
+                    ]
+                );
+            }
+
 
             /*
             |--------------------------------------------------------------------------
@@ -343,29 +600,35 @@ class Students extends MY_Controller
 
             $student_data = [
 
-                'lrn' => trim(
-                    $this->input->post('lrn')
-                ),
+                'lrn' =>
+                    trim(
+                        $this->input->post('lrn')
+                    ),
 
-                'student_no' => trim(
-                    $this->input->post('student_no')
-                ),
+                'student_no' =>
+                    trim(
+                        $this->input->post('student_no')
+                    ),
 
-                'first_name' => trim(
-                    $this->input->post('first_name')
-                ),
+                'first_name' =>
+                    trim(
+                        $this->input->post('first_name')
+                    ),
 
-                'middle_name' => trim(
-                    $this->input->post('middle_name')
-                ),
+                'middle_name' =>
+                    trim(
+                        $this->input->post('middle_name')
+                    ),
 
-                'last_name' => trim(
-                    $this->input->post('last_name')
-                ),
+                'last_name' =>
+                    trim(
+                        $this->input->post('last_name')
+                    ),
 
-                'suffix' => trim(
-                    $this->input->post('suffix')
-                ),
+                'suffix' =>
+                    trim(
+                        $this->input->post('suffix')
+                    ),
 
                 'birth_date' =>
                     $this->input->post(
@@ -385,103 +648,35 @@ class Students extends MY_Controller
                 'nationality' =>
                     $this->input->post(
                         'nationality'
-                    )
+                    ),
 
+                'mobile_no' =>
+                    $this->input->post(
+                        'mobile_no'
+                    ),
+
+                'email' =>
+                    $this->input->post(
+                        'email'
+                    )
             ];
 
 
             /*
             |--------------------------------------------------------------------------
-            | Guardians
+            | Current Address
             |--------------------------------------------------------------------------
             */
 
-            $guardians =
-                $this->input->post(
-                    'guardians'
-                );
-
-
-            if (!is_array($guardians)) {
-
-                $guardians = [];
-
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Guardian Validation
-            |--------------------------------------------------------------------------
-            */
-
-            $guardian_validation =
-                $this->student_validation
-                    ->validate_guardians(
-                        $guardians
-                    );
-
-            if ($guardian_validation !== true) {
-
-                $data = [
-
-                    'title' =>
-                        'Register Student',
-
-                    'page_title' =>
-                        'Register Student',
-
-                    'page_subtitle' =>
-                        'Create a new student record',
-
-                    'breadcrumb' => [
-                        'Students',
-                        'Register'
-                    ],
-
-                    'content' =>
-                        'students/create',
-
-                    'guardians' =>
-                        $guardians,
-
-                    'guardian_error' =>
-                        $guardian_validation
-
-                ];
-
-
-                $this->load->view(
-                    'dashboard/layouts/master',
-                    $data
-                );
-
-                return;
-            }
-            // if ($guardian_validation !== true) {
-
-            //     $this->session->set_flashdata(
-            //         'error',
-            //         $guardian_validation
-            //     );
-
-            //     redirect(
-            //         'students/create'
-            //     );
-
-            //     return;
-            // }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Addresses
-            |--------------------------------------------------------------------------
-            */
-            
             $current_address = [
+                
+                'lrn' =>
+                    trim(
+                        $this->input->post('lrn')
+                    ),
 
-                'address_type' => 'current',
+                'address_type' =>
+                    'current',
 
                 'house_no' =>
                     trim(
@@ -523,58 +718,173 @@ class Students extends MY_Controller
                         $this->input->post(
                             'current_postal_code'
                         )
-                    ),
-
+                    )
             ];
 
 
-            $permanent_address = [
+            /*
+            |--------------------------------------------------------------------------
+            | Permanent Address
+            |--------------------------------------------------------------------------
+            */
 
-                'address_type' => 'permanent',
+            // $permanent_address = [
 
-                'house_no' =>
-                    trim(
-                        $this->input->post(
-                            'permanent_house_no'
+            //     'address_type' =>
+            //         'permanent',
+
+            //     'house_no' =>
+            //         trim(
+            //             $this->input->post(
+            //                 'permanent_house_no'
+            //             )
+            //         ),
+
+            //     'street' =>
+            //         trim(
+            //             $this->input->post(
+            //                 'permanent_street'
+            //             )
+            //         ),
+
+            //     'barangay' =>
+            //         trim(
+            //             $this->input->post(
+            //                 'permanent_barangay'
+            //             )
+            //         ),
+
+            //     'city' =>
+            //         trim(
+            //             $this->input->post(
+            //                 'permanent_city'
+            //             )
+            //         ),
+
+            //     'province' =>
+            //         trim(
+            //             $this->input->post(
+            //                 'permanent_province'
+            //             )
+            //         ),
+
+            //     'postal_code' =>
+            //         trim(
+            //             $this->input->post(
+            //                 'permanent_postal_code'
+            //             )
+            //         )
+            // ];
+
+            $permanent_same_as_current =
+            $this->input->post('permanent_same_as_current');
+
+
+            if ($permanent_same_as_current === '1') {
+                $permanent_address = [
+                    'lrn' =>
+                        trim(
+                            $this->input->post('lrn')
+                        ),
+                    'address_type' =>
+                        'permanent',
+
+                    'house_no' =>
+                        trim(
+                            $this->input->post(
+                                'current_house_no'
+                            )
+                        ),
+
+                    'street' =>
+                        trim(
+                            $this->input->post(
+                                'current_street'
+                            )
+                        ),
+
+                    'barangay' =>
+                        trim(
+                            $this->input->post(
+                                'current_barangay'
+                            )
+                        ),
+
+                    'city' =>
+                        trim(
+                            $this->input->post(
+                                'current_city'
+                            )
+                        ),
+
+                    'province' =>
+                        trim(
+                            $this->input->post(
+                                'current_province'
+                            )
+                        ),
+
+                    'postal_code' =>
+                        trim(
+                            $this->input->post(
+                                'current_postal_code'
+                            )
                         )
-                    ),
+                ];
 
-                'street' =>
-                    trim(
-                        $this->input->post(
-                            'permanent_street'
+            } else {
+                $permanent_address = [
+                    
+                    'lrn' =>
+                        trim(
+                            $this->input->post('lrn')
+                        ),
+                    'address_type' =>
+                        'permanent',
+
+                    'house_no' =>
+                        trim(
+                            $this->input->post(
+                                'permanent_house_no'
+                            )
+                        ),
+
+                    'street' =>
+                        trim(
+                            $this->input->post(
+                                'permanent_street'
+                            )
+                        ),
+
+                    'barangay' =>
+                        trim(
+                            $this->input->post(
+                                'permanent_barangay'
+                            )
+                        ),
+
+                    'city' =>
+                        trim(
+                            $this->input->post(
+                                'permanent_city'
+                            )
+                        ),
+
+                    'province' =>
+                        trim(
+                            $this->input->post(
+                                'permanent_province'
+                            )
+                        ),
+
+                    'postal_code' =>
+                        trim(
+                            $this->input->post(
+                                'permanent_postal_code'
+                            )
                         )
-                    ),
-
-                'barangay' =>
-                    trim(
-                        $this->input->post(
-                            'permanent_barangay'
-                        )
-                    ),
-
-                'city' =>
-                    trim(
-                        $this->input->post(
-                            'permanent_city'
-                        )
-                    ),
-
-                'province' =>
-                    trim(
-                        $this->input->post(
-                            'permanent_province'
-                        )
-                    ),
-
-                'postal_code' =>
-                    trim(
-                        $this->input->post(
-                            'permanent_postal_code'
-                        )
-                    ),
-
-            ];
+                ];
+            }
 
 
             /*
@@ -584,6 +894,11 @@ class Students extends MY_Controller
             */
 
             $enrollment_data = [
+                
+                'lrn' =>
+                    trim(
+                        $this->input->post('lrn')
+                    ),
 
                 'academic_year' =>
                     $this->input->post(
@@ -603,10 +918,8 @@ class Students extends MY_Controller
                 'admission_type' =>
                     $this->input->post(
                         'admission_type'
-                    ),
-
+                    )
             ];
-
 
 
             /*
@@ -616,52 +929,44 @@ class Students extends MY_Controller
             */
 
             $student_id =
-                $this->student_service->create_student(
-                    $student_data,
-                    $enrollment_data,
-                    $guardians,
-                    [
-                        $current_address,
-                        $permanent_address
-                    ]
-                );
-
-            // log_message(
-            //     'debug',
-            //     '[STUDENT CREATE] create_student() returned: ' .
-            //     print_r($student_id, true)
-            // );
-
-
-            if (!$student_id) {
-
-                log_message(
-                    'error',
-                    '[STUDENT CREATE] create_student() FAILED.'
-                );
-
-                $this->session->set_flashdata(
-                    'error',
-                    'Unable to create student.'
-                );
-
-                redirect(
-                    'students/create'
-                );
-
-                return;
-            }
-
-            // log_message(
-            //     'info',
-            //     '[STUDENT CREATE] Student successfully created. ID: ' .
-            //     $student_id
-            // );
+                $this->student_service
+                    ->create_student(
+                        $student_data,
+                        $enrollment_data,
+                        $guardians,
+                        [
+                            $current_address,
+                            $permanent_address
+                        ]
+                    );
 
 
             /*
             |--------------------------------------------------------------------------
-            | Success
+            | Creation Failed
+            |--------------------------------------------------------------------------
+            */
+
+            if (!$student_id) {
+
+                $this->session->set_flashdata(
+                    'error',
+                    'Unable to register the student. Please try again.'
+                );
+
+                return $this->show_create_form([
+                    'guardians' => $guardians,
+                    'validation_errors' => [
+                        'database' =>
+                            'Student creation failed.'
+                    ]
+                ]);
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Creation Successful
             |--------------------------------------------------------------------------
             */
 
@@ -670,41 +975,57 @@ class Students extends MY_Controller
                 'Student successfully registered.'
             );
 
-
-            redirect(
+            return redirect(
                 'students/view/' . $student_id
             );
-
-            return;
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | Registration View
+        | Display Registration Form
         |--------------------------------------------------------------------------
         */
 
-        $data = [
+        return $this->show_create_form();
+    }
 
-            'title' =>
-                'Register Student',
+    /**
+     * Display the student registration form.
+     *
+     * @param array $extra
+     * @return void
+     */
+    private function show_create_form(
+    array $extra = []
+    ) {
+        $data = array_merge(
 
-            'page_title' =>
-                'Register Student',
+            [
+                'title' =>
+                    'Register Student',
 
-            'page_subtitle' =>
-                'Create a new student record',
+                'page_title' =>
+                    'Register Student',
 
-            'breadcrumb' => [
-                'Students',
-                'Register'
+                'page_subtitle' =>
+                    'Create a new student record',
+
+                'breadcrumb' => [
+                    'Students',
+                    'Register'
+                ],
+
+                'content' =>
+                    'students/create',
+
+                'guardians' =>
+                    []
             ],
 
-            'content' =>
-                'students/create'
+            $extra
 
-        ];
+        );
 
 
         $this->load->view(
@@ -999,7 +1320,7 @@ class Students extends MY_Controller
 
         if ($student) {
 
-            $this->form_validation->set_message(
+            $this->form_validation->set_message(    
                 'lrn_unique',
                 'This LRN is already registered.'
             );

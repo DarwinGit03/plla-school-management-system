@@ -1,47 +1,3 @@
-<?php
-
-$currentController =
-    strtolower(
-        $this->router->fetch_class()
-    );
-
-$currentMethod =
-    strtolower(
-        $this->router->fetch_method()
-    );
-
-
-/*
-|--------------------------------------------------------------------------
-| Active Menu Detection
-|--------------------------------------------------------------------------
-*/
-
-$isDashboard =
-    ($currentController === 'dashboard');
-
-
-$isStudents =
-    ($currentController === 'students');
-
-
-$isStudentList =
-    (
-        $currentController === 'students'
-        &&
-        $currentMethod === 'index'
-    );
-
-
-$isEnrollment =
-    (
-        $currentController === 'students'
-        &&
-        $currentMethod === 'create'
-    );
-
-?>
-
 <ul class="nav flex-column">
 
 
@@ -53,8 +9,7 @@ $isEnrollment =
 
         <a
             href="<?= site_url('dashboard'); ?>"
-            class="nav-link text-white
-                <?= $isDashboard ? 'active' : ''; ?>">
+            class="nav-link text-white">
 
             <i class="fas fa-gauge-high me-2"></i>
 
@@ -167,7 +122,7 @@ $isEnrollment =
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
-            aria-expanded="<?= $isStudents ? 'true' : 'false'; ?>"
+            aria-expanded="false"
             aria-controls="studentMenu">
 
             <span>
@@ -184,20 +139,16 @@ $isEnrollment =
 
 
         <div
-            class="collapse
-                <?= $isStudents ? 'show' : ''; ?>"
+            class="collapse"
             id="studentMenu">
 
             <ul class="nav flex-column ms-3">
-
-                <!-- Student List -->
 
                 <li class="nav-item">
 
                     <a
                         href="<?= site_url('students'); ?>"
-                        class="nav-link text-secondary
-                            <?= $isStudentList ? 'submenu-active' : ''; ?>">
+                        class="nav-link text-secondary">
 
                         Student List
 
@@ -206,14 +157,11 @@ $isEnrollment =
                 </li>
 
 
-                <!-- Enrollment -->
-
                 <li class="nav-item">
 
                     <a
                         href="<?= site_url('students/create'); ?>"
-                        class="nav-link text-secondary
-                            <?= $isEnrollment ? 'submenu-active' : ''; ?>">
+                        class="nav-link text-secondary">
 
                         Enrollment
 
@@ -221,8 +169,6 @@ $isEnrollment =
 
                 </li>
 
-
-                <!-- Alumni -->
 
                 <li class="nav-item">
 

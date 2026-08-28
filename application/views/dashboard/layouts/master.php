@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
     <meta charset="utf-8">
@@ -39,7 +38,7 @@
     <!-- Dashboard -->
 
     <link
-        href="<?= base_url('assets/css/dashboard.css'); ?>"
+        href="<?= base_url('assets/css/master.css'); ?>"
         rel="stylesheet">
 
 </head>
@@ -82,7 +81,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 
-<script src="<?= base_url('assets/js/dashboard.js'); ?>"></script>
+<script src="<?= base_url('assets/js/master.js'); ?>"></script>
 <script>
     const CSRF = {
         name: "<?= $this->security->get_csrf_token_name(); ?>",

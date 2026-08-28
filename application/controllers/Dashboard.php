@@ -20,22 +20,12 @@ class Dashboard extends MY_Controller
         {
             /*
             |--------------------------------------------------------------------------
-            | Administrator
+            | Administrator /principal
             |--------------------------------------------------------------------------
             */
 
-            // case 1:
-            //     $data['title']      = 'Administrator Dashboard';
-            //     $data['page_css']    = 'assets/css/dashboard.css';
-            //     $data['page_js']    = 'assets/js/auth/login.js';
-
-            //     $this->load->view(
-            //         'dashboard/admin/dashboard', $data
-            //     );
-
-            // break;
-
             case 1:
+            case 2:
                 $this->data['title'] = 'Administrator Dashboard';
 
                 $this->data['page_title'] = 'Administrator Dashboard';
@@ -61,7 +51,7 @@ class Dashboard extends MY_Controller
             |--------------------------------------------------------------------------
             */
 
-            case 2:
+            case 3:
 
                 echo "Teacher Dashboard";
 
@@ -73,7 +63,7 @@ class Dashboard extends MY_Controller
             |--------------------------------------------------------------------------
             */
 
-            case 3:
+            case 4:
 
                 echo "Finance Dashboard";
 

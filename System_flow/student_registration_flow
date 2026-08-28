@@ -1,0 +1,26 @@
+User Input
+    ↓
+Client-side Validation
+    ↓
+AJAX Validation
+    ↓
+Form Submission
+    ↓
+Student_validation
+    ↓
+Validate Everything
+├── Student Details
+├── Contacts
+├── Guardians
+├── Addresses
+└── Enrollment
+    ↓
+Valid?
+├── NO → Display errors
+└── YES
+       ↓
+Student_service
+       ↓
+Database Transaction
+       ↓
+COMMIT / ROLLBACK

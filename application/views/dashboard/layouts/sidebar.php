@@ -1,12 +1,19 @@
-<!-- ===============================
-     Mobile Sidebar (Bootstrap Offcanvas)
-================================ -->
+<!-- ==========================================================
+     MOBILE SIDEBAR
+========================================================== -->
 
-<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMobile">
+<div
+    class="offcanvas offcanvas-start bg-dark text-white"
+    tabindex="-1"
+    id="sidebarMobile"
+    aria-labelledby="sidebarMobileLabel"
+    style="width: 270px;">
 
-    <div class="offcanvas-header border-bottom">
+    <div class="offcanvas-header border-bottom border-secondary">
 
-        <h5 class="fw-bold mb-0">
+        <h5
+            class="offcanvas-title fw-bold"
+            id="sidebarMobileLabel">
 
             PLLA
 
@@ -14,51 +21,67 @@
 
         <button
             type="button"
-            class="btn-close"
-            data-bs-dismiss="offcanvas">
+            class="btn-close btn-close-white"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close">
         </button>
 
     </div>
 
+
     <div class="offcanvas-body p-0">
 
         <?php
-            $this->load->view('dashboard/layouts/sidebar_menu');
+
+        $this->load->view(
+            'dashboard/layouts/sidebar_menu'
+        );
+
         ?>
 
     </div>
 
 </div>
 
-<!-- ===============================
-     Desktop Sidebar
-================================ -->
+
+<!-- ==========================================================
+     DESKTOP SIDEBAR
+========================================================== -->
 
 <aside
     id="sidebarDesktop"
-    class="d-none d-lg-flex flex-column">
+    class="d-none d-lg-flex flex-column bg-dark text-white"
+    style="
+        width:260px;
+        height:100vh;
+        position:fixed;
+        top:0;
+        left:0;
+        z-index:1030;
+    ">
 
     <!-- Logo -->
 
-    <div class="p-4 border-bottom">
+    <div class="p-4 border-bottom border-secondary">
 
         <div class="d-flex align-items-center">
 
             <img
                 src="<?= base_url('assets/images/logo.png'); ?>"
                 width="45"
-                class="me-3"
-                alt="Logo">
+                height="45"
+                class="rounded me-3"
+                alt="PLLA">
 
             <div>
 
-                <h5 class="mb-0 text-white fw-bold">
+                <h5 class="mb-0 fw-bold">
 
                     PLLA
 
                 </h5>
 
-                <small class="text-light">
+                <small class="text-secondary">
 
                     School Management
 
@@ -70,19 +93,26 @@
 
     </div>
 
+
     <!-- Navigation -->
 
-    <div class="flex-grow-1 overflow-auto py-3">
+    <div
+        class="flex-grow-1 overflow-auto py-3">
 
         <?php
-            $this->load->view('dashboard/layouts/sidebar_menu');
+
+        $this->load->view(
+            'dashboard/layouts/sidebar_menu'
+        );
+
         ?>
 
     </div>
 
-    <!-- Sidebar Footer -->
 
-    <div class="border-top p-3">
+    <!-- Footer -->
+
+    <div class="p-3 border-top border-secondary">
 
         <small class="text-secondary">
 

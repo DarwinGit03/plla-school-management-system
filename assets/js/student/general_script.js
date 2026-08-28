@@ -18,15 +18,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 studentNoInput.value =
                     lrnInput.value;
 
-                studentNoInput.readOnly =
-                    true;
+                // studentNoInput.readOnly =
+                //     true;
 
-            } else {
+            } 
+            // else {
 
-                studentNoInput.readOnly =
-                    false;
+            //     studentNoInput.readOnly =
+            //         false;
 
-            }
+            // }
         }
 
         sameAsLrn.addEventListener(
@@ -342,7 +343,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                     name="guardians[${index}][first_name]"
                                     class="form-control"
                                     value="${guardian.first_name ?? ''}">
-                                    
 
                             </div>
 
@@ -718,8 +718,9 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedType ===
             'guardian'
         ) {
-
-            relationship.value = '';
+            if(classAssignmentMode === 'create'){
+                relationship.value = '';
+            }
 
             relationship.readOnly =
                 false;
