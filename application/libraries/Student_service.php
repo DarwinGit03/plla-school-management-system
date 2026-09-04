@@ -845,6 +845,200 @@ class Student_service
         return true;
     }
 
+    public function change_status(
+        $student_id,
+        $new_status,
+        $reason
+    ) {
+        $new_status =
+            strtolower(
+                trim($new_status)
+            );
+
+        $reason =
+            trim($reason);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Status
+        |--------------------------------------------------------------------------
+        */
+
+        $allowed_statuses = [
+            'active',
+            'inactive'
+        ];
+
+        if (
+            !in_array(
+                $new_status,
+                $allowed_statuses,
+                true
+            )
+        ) {
+            return [
+                'status' => false,
+                'message' => 'Invalid student status.'
+            ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Reason
+        |--------------------------------------------------------------------------
+        */
+
+        if ($reason === '') {
+            return [
+                'status' => false,
+                'message' => 'Reason is required.'
+            ];
+        }
+
+        if (strlen($reason) > 500) {
+            return [
+                'status' => false,
+                'message' =>
+                    'Reason must not exceed 500 characters.'
+            ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get Current Student
+        |--------------------------------------------------------------------------
+        */
+
+        $student =
+            $this->get_student($student_id);
+
+        if (!$student) {
+            return [
+                'status' => false,
+                'message' => 'Student not found.'
+            ];
+        }
+
+        $old_status =
+            strtolower(
+                trim($student->status)
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent Same Status
+        |--------------------------------------------------------------------------
+        */
+
+        if ($old_status === $new_status) {
+            return [
+                'status' => false,
+                'message' =>
+                    'Student is already ' .
+                    ucfirst($new_status) .
+                    '.'
+            ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update
+        |--------------------------------------------------------------------------
+        */
+
+        $employee_no =
+            $this->CI
+                ->session
+                ->userdata(
+                    'employee_no'
+                );
+
+        $this->CI
+            ->db
+            ->trans_begin();
+
+        $updated =
+            $this->CI
+                ->Student_model
+                ->change_status(
+                    $student_id,
+                    $new_status,
+                    $employee_no
+                );
+
+        if (!$updated) {
+
+            $this->CI
+                ->db
+                ->trans_rollback();
+
+            return [
+                'status' => false,
+                'message' =>
+                    'Unable to change student status.'
+            ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Transaction Check
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $this->CI
+                ->db
+                ->trans_status() === false
+        ) {
+
+            $this->CI
+                ->db
+                ->trans_rollback();
+
+            return [
+                'status' => false,
+                'message' =>
+                    'Unable to change student status.'
+            ];
+        }
+
+        $this->CI
+            ->db
+            ->trans_commit();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        $this->CI
+            ->audit_log_service
+            ->log(
+                'students',
+                'STATUS_CHANGE',
+                $student_id,
+                'Student status changed.',
+                [
+                    'student_lrn' =>
+                        $student->lrn,
+
+                    'status' => [
+                        'old' => $old_status,
+                        'new' => $new_status
+                    ],
+
+                    'reason' => $reason
+                ]
+            );
+
+        return [
+            'status' => true,
+            'message' =>
+                'Student status changed successfully.'
+        ];
+    }
+
     /**
      * Get complete student profile.
      *

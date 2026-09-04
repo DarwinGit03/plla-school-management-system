@@ -1952,4 +1952,60 @@
             return false;
         }
 
+        public function change_status($id)
+        {
+            if (
+                $this->input->method() !== 'post'
+            ) {
+                show_404();
+            }
+
+            if (
+                !is_numeric($id)
+            ) {
+                show_404();
+            }
+
+            $new_status =
+                $this->input
+                    ->post(
+                        'new_status',
+                        true
+                    );
+
+            $reason =
+                $this->input
+                    ->post(
+                        'reason',
+                        true
+                    );
+
+            $result =
+                $this->student_service
+                    ->change_status(
+                        (int) $id,
+                        $new_status,
+                        $reason
+                    );
+
+            if ($result['status']) {
+
+                $this->session->set_flashdata(
+                    'success',
+                    $result['message']
+                );
+
+            } else {
+
+                $this->session->set_flashdata(
+                    'error',
+                    $result['message']
+                );
+            }
+
+            redirect(
+                'students'
+            );
+        }
+
     }

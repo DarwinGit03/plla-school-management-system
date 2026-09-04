@@ -417,46 +417,156 @@
                                     </td>
 
 
-                                    <td class="text-end px-3">
+                                    <td class="text-end">
 
-                                        <div
-                                            class="btn-group"
-                                            role="group">
+                                        <!-- <a
+                                            href="< ?= site_url(
+                                                'students/view/' . $student->id
+                                            ); ?>"
+                                            class="btn btn-sm btn-outline-primary"
+                                            title="View">
 
-                                            <a
-                                                href="<?= site_url(
-                                                    'students/view/' .
-                                                    $student->id
-                                                ); ?>"
-                                                class="btn btn-sm btn-outline-primary"
-                                                title="View">
+                                            <i class="fas fa-eye"></i>
 
-                                                <i class="fas fa-eye"></i>
-
-                                            </a>
+                                        </a>
 
 
-                                            <a
-                                                href="<?= site_url(
-                                                    'students/edit/' .
-                                                    $student->id
-                                                ); ?>"
-                                                class="btn btn-sm btn-outline-warning"
-                                                title="Edit">
+                                        <a
+                                            href  site_url(
+                                                'students/edit/' . $student->id
+                                            ); ?>"
+                                            class="btn btn-sm btn-outline-secondary"
+                                            title="Edit">
 
-                                                <i class="fas fa-edit"></i>
+                                            <i class="fas fa-edit"></i>
 
-                                            </a>
+                                        </a> -->
 
 
+                                        <!-- Actions -->
+                                        <div class="dropdown">
                                             <button
                                                 type="button"
-                                                class="btn btn-sm btn-outline-danger"
-                                                title="Archive">
+                                                class="btn btn-sm btn-outline-secondary"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                title="Actions">
 
-                                                <i class="fas fa-archive"></i>
+                                                <i class="fas fa-ellipsis-v"></i>
 
                                             </button>
+
+                                            <ul class="dropdown-menu dropdown-menu-end">
+
+                                                <li>
+                                                    <a
+                                                        class="dropdown-item"
+                                                        href="<?= base_url(
+                                                            'students/view/' . $student->id
+                                                        ); ?>">
+
+                                                        <i class="fas fa-eye me-2"></i>
+                                                        View
+
+                                                    </a>
+                                                </li>
+
+                                                <li>
+                                                    <a
+                                                        class="dropdown-item"
+                                                        href="<?= base_url(
+                                                            'students/edit/' . $student->id
+                                                        ); ?>">
+
+                                                        <i class="fas fa-edit me-2"></i>
+                                                        Edit
+
+                                                    </a>
+                                                </li>
+
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+
+                                                <?php if ($student->status === 'active'): ?>
+
+                                                    <li>
+
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item change-status-btn"
+                                                            data-id="<?= $student->id; ?>"
+                                                            data-name="<?= htmlspecialchars(
+                                                                trim(
+                                                                    $student->first_name .
+                                                                    ', ' .
+                                                                    $student->last_name
+                                                                ),
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            ); ?>"
+                                                            data-lrn="<?= htmlspecialchars(
+                                                                $student->lrn,
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            ); ?>"
+                                                            data-grade="<?= htmlspecialchars(
+                                                                $student->grade_level ?? '',
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            ); ?>"
+                                                            data-current-status="active"
+                                                            data-new-status="inactive">
+
+                                                            <i class="fas fa-user-slash me-2"></i>
+                                                            Deactivate
+
+                                                        </button>
+
+                                                    </li>
+
+                                                <?php elseif ($student->status === 'inactive'): ?>
+
+                                                    <li>
+
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item change-status-btn"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#changeStatusModal"
+                                                            data-id="<?= $student->id; ?>"
+                                                            data-name="<?= htmlspecialchars(
+                                                                trim(
+                                                                    $student->first_name .
+                                                                    ', ' .
+                                                                    $student->last_name
+                                                                ),
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            ); ?>"
+                                                            data-lrn="<?= htmlspecialchars(
+                                                                $student->lrn,
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            ); ?>"
+                                                            data-grade="<?= htmlspecialchars(
+                                                                $student->grade_level ?? '',
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            ); ?>"
+                                                            data-current-status="inactive"
+                                                            data-new-status="active">
+
+                                                            <i class="fas fa-user-check me-2"></i>
+                                                            Activate
+
+                                                        </button>
+
+                                                    </li>
+
+                                                <?php endif; ?>
+
+                                            </ul>
 
                                         </div>
 
@@ -701,6 +811,154 @@
 
     </div>
 
+    
+    <!-- =====================================================
+        Archive Student Modal
+    ====================================================== -->
+    <div
+    class="modal fade"
+    id="changeStatusModal"
+    tabindex="-1"
+    aria-labelledby="changeStatusModalLabel"
+    aria-hidden="true">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <form
+                id="changeStatusForm"
+                method="post">
+
+                <div class="modal-header">
+
+                    <h5
+                        class="modal-title"
+                        id="changeStatusModalLabel">
+
+                        Change Status
+
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <?= form_hidden(
+                        $this->security
+                            ->get_csrf_token_name(),
+                        $this->security
+                            ->get_csrf_hash()
+                    ); ?>
+
+                    <p class="mb-3">
+                        Are you sure you want to
+                        <strong id="statusActionText"></strong>
+                        this student?
+                    </p>
+
+                    <div class="mb-1">
+
+                        <strong>LRN:</strong>
+                        <span id="statusStudentLrn"></span>
+
+                    </div>
+
+                    <div class="mb-1">
+
+                        <strong>Student:</strong>
+                        <span id="statusStudentName"></span>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <strong>Grade:</strong>
+                        <span id="statusStudentGrade"></span>
+
+                    </div>
+
+                    <div
+                        class="alert alert-warning mb-3"
+                        id="statusResultMessage">
+
+                        The student will be marked as
+                        <strong id="statusNewStatus"></strong>.
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label
+                            for="statusReason"
+                            class="form-label">
+
+                            Reason
+                            <span class="text-danger">*</span>
+
+                        </label>
+
+                        <textarea
+                            name="reason"
+                            id="statusReason"
+                            class="form-control"
+                            rows="4"
+                            maxlength="500"
+                            required
+                            placeholder="Enter the reason for changing the student's status..."></textarea>
+
+                        <div class="form-text">
+                            Maximum 500 characters.
+                        </div>
+
+                    </div>
+
+                    <input
+                        type="hidden"
+                        name="new_status"
+                        id="newStudentStatus">
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+
+                        Cancel
+
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn"
+                        id="changeStatusSubmit">
+
+                        <span id="changeStatusSubmitText">
+                            Submit
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
 </div>
 <script>
 
@@ -726,6 +984,7 @@
     const BASE_URL =
         "<?= base_url(); ?>";
 </script>
+
 
 <script src="<?= base_url(
     'assets/js/student/class_assignment.js'

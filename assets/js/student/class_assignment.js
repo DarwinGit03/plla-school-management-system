@@ -499,5 +499,209 @@ document.addEventListener(
             );
         }
 
+        const buttons =
+            document.querySelectorAll(
+                '.change-status-btn'
+            );
+
+        const modalElement =
+            document.getElementById(
+                'changeStatusModal'
+            );
+
+        const form =
+            document.getElementById(
+                'changeStatusForm'
+            );
+
+        const studentName =
+            document.getElementById(
+                'statusStudentName'
+            );
+
+        const studentLrn =
+            document.getElementById(
+                'statusStudentLrn'
+            );
+
+        const studentGrade =
+            document.getElementById(
+                'statusStudentGrade'
+            );
+
+        const actionText =
+            document.getElementById(
+                'statusActionText'
+            );
+
+        const newStatusText =
+            document.getElementById(
+                'statusNewStatus'
+            );
+
+        const newStatus =
+            document.getElementById(
+                'newStudentStatus'
+            );
+
+        const reason =
+            document.getElementById(
+                'statusReason'
+            );
+
+        const submitButton =
+            document.getElementById(
+                'changeStatusSubmit'
+            );
+
+        const submitText =
+            document.getElementById(
+                'changeStatusSubmitText'
+            );
+
+        if (
+            !modalElement ||
+            !form
+        ) {
+            return;
+        }
+
+        buttons.forEach(
+            function (button) {
+
+                button.addEventListener(
+                    'click',
+                    function () {
+
+                        const id =
+                            this.getAttribute(
+                                'data-id'
+                            );
+
+                        const name =
+                            this.getAttribute(
+                                'data-name'
+                            );
+
+                        const lrn =
+                            this.getAttribute(
+                                'data-lrn'
+                            );
+
+                        const grade =
+                            this.getAttribute(
+                                'data-grade'
+                            );
+
+                        const targetStatus =
+                            this.getAttribute(
+                                'data-new-status'
+                            );
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Student Information
+                        |--------------------------------------------------------------------------
+                        */
+
+                        studentName.textContent =
+                            name || '';
+
+                        studentLrn.textContent =
+                            lrn || '';
+
+                        studentGrade.textContent =
+                            grade || '';
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Status Information
+                        |--------------------------------------------------------------------------
+                        */
+
+                        if (
+                            targetStatus ===
+                            'inactive'
+                        ) {
+
+                            actionText.textContent =
+                                'deactivate';
+
+                            newStatusText.textContent =
+                                'Inactive';
+
+                            submitText.textContent =
+                                'Deactivate';
+
+                            submitButton.className =
+                                'btn btn-danger';
+
+                        } else {
+
+                            actionText.textContent =
+                                'activate';
+
+                            newStatusText.textContent =
+                                'Active';
+
+                            submitText.textContent =
+                                'Activate';
+
+                            submitButton.className =
+                                'btn btn-success';
+
+                        }
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Hidden Status
+                        |--------------------------------------------------------------------------
+                        */
+
+                        newStatus.value =
+                            targetStatus;
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Reset Reason
+                        |--------------------------------------------------------------------------
+                        */
+
+                        reason.value =
+                            '';
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Form Action
+                        |--------------------------------------------------------------------------
+                        */
+
+                        form.setAttribute(
+                            'action',
+                            BASE_URL +
+                            'students/change-status/' +
+                            id
+                        );
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Show Modal
+                        |--------------------------------------------------------------------------
+                        */
+
+                        const modal =
+                            bootstrap.Modal
+                                .getOrCreateInstance(
+                                    modalElement
+                                );
+
+                        modal.show();
+
+                    }
+                );
+
+            }
+        );
+
     }
 );

@@ -307,6 +307,32 @@ class Student_model extends CI_Model
         return true;
     }
 
+    public function change_status(
+        $id,
+        $new_status,
+        $employee_no
+    ) {
+        return $this->db
+            ->where('id', $id)
+            ->where(
+                'deleted_at IS NULL',
+                null,
+                false
+            )
+            ->where(
+                'status !=',
+                $new_status
+            )
+            ->update(
+                $this->table,
+                [
+                    'status' => $new_status,
+                    'updated_by' => $employee_no,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]
+            );
+    }
+
     public function update_current_enrollment(
     $student_id,
     array $data
