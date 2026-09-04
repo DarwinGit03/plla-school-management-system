@@ -9,7 +9,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $config['login_max_attempts'] = 5;
 $config['lock_minutes'] = 15;
-$config['session_timeout'] = 1800;
+// $config['session_timeout'] = 1800;
+$config['session_timeout'] = 600;
 $config['otp_expiry'] = 300;
 $config['otp_max_attempts'] = 5;
 $config['session_token_length'] = 32;

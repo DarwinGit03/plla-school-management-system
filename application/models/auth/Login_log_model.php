@@ -25,17 +25,39 @@ class Login_log_model extends CI_Model
     |--------------------------------------------------------------------------
     */
 
-    public function updateLogout($user_id)
+    // public function updateLogout($user_id)
+    // {
+    //     return $this->db
+    //                 ->where('user_id', $user_id)
+    //                 ->where('logout_time IS NULL', NULL, FALSE)
+    //                 ->order_by('id', 'DESC')
+    //                 ->limit(1)
+    //                 ->update(
+    //                     $this->table,
+    //                     [
+    //                         'logout_time' => date('Y-m-d H:i:s')
+    //                     ]
+    //                 );
+    // }
+    
+    public function updateLogout($session_id)
     {
         return $this->db
-                    ->where('user_id', $user_id)
-                    ->where('logout_time IS NULL', NULL, FALSE)
-                    ->order_by('id', 'DESC')
+                    ->where(
+                        'session_id',
+                        $session_id
+                    )
+                    ->where(
+                        'logout_time IS NULL',
+                        NULL,
+                        FALSE
+                    )
                     ->limit(1)
                     ->update(
                         $this->table,
                         [
-                            'logout_time' => date('Y-m-d H:i:s')
+                            'logout_time' =>
+                                date('Y-m-d H:i:s')
                         ]
                     );
     }

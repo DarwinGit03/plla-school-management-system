@@ -224,6 +224,13 @@ document.addEventListener('DOMContentLoaded', function () {
             <div
                 class="col-12 guardian-item"
                 data-guardian-index="${index}">
+                
+                                    
+                                    <input
+    type="text"
+    name="guardians[${index}][id]"
+    class="form-control guardian-id"
+    value="${guardian.id ?? ''}">
 
                 <div class="card border">
 

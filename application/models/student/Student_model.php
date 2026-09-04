@@ -244,14 +244,67 @@ class Student_model extends CI_Model
         return false;
     }
 
+    // public function update_student($id, $data)
+    // {
+    //     return $this->db
+    //         ->where('id', $id)
+    //         ->update(
+    //             $this->table,
+    //             $data
+    //         );
+    // }
+
     public function update_student($id, $data)
     {
-        return $this->db
-            ->where('id', $id)
-            ->update(
-                $this->table,
-                $data
-            );
+        $existing =
+            $this->db
+                ->where('id', $id)
+                ->get($this->table)
+                ->row();
+
+        if (!$existing) {
+            return false;
+        }
+
+        foreach ($data as $field => $value) {
+
+            if (
+                in_array(
+                    $field,
+                    [
+                        'created_by',
+                        'updated_by',
+                        'created_at',
+                        'updated_at'
+                    ],
+                    true
+                )
+            ) {
+                continue;
+            }
+
+            if (
+                (string) ($existing->$field ?? '') !==
+                (string) $value
+            ) {
+
+                $data['updated_by'] =
+                    $this->session
+                        ->userdata('employee_no');
+                        
+                $data['updated_at'] =
+                    date('Y-m-d H:i:s');
+
+                return $this->db
+                    ->where('id', $id)
+                    ->update(
+                        $this->table,
+                        $data
+                    );
+            }
+        }
+
+        return true;
     }
 
     public function update_current_enrollment(
@@ -369,15 +422,56 @@ class Student_model extends CI_Model
             );
         }
 
-        return $this->db
-            ->where(
-                'id',
-                $enrollment->id
-            )
-            ->update(
-                'student_enrollments',
-                $data
-            );
+        // return $this->db
+        //     ->where(
+        //         'id',
+        //         $enrollment->id
+        //     )
+        //     ->update(
+        //         'student_enrollments',
+        //         $data
+        //     );
+        foreach ($data as $field => $value) {
+            if (
+                in_array(
+                    $field,
+                    [
+                        'created_by',
+                        'updated_by',
+                        'created_at',
+                        'updated_at'
+                    ],
+                    true
+                )
+            ) {
+                continue;
+            }
+
+            if (
+                (string) ($enrollment->$field ?? '') !==
+                (string) $value
+            ) {
+
+                $data['updated_by'] =
+                    $this->session
+                        ->userdata('employee_no');
+
+                $data['updated_at'] =
+                    date('Y-m-d H:i:s');
+
+                return $this->db
+                    ->where(
+                        'id',
+                        $enrollment->id
+                    )
+                    ->update(
+                        'student_enrollments',
+                        $data
+                    );
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -553,6 +647,35 @@ class Student_model extends CI_Model
             ->order_by('section', 'ASC')
             ->get('academic_sections')
             ->result();
+    }
+
+    /**
+     * Get current active enrollment.
+     *
+     * @param int $student_id
+     * @return object|null
+     */
+    public function get_current_enrollment(
+        $student_id
+    ) {
+        return $this->db
+            ->where(
+                'student_id',
+                $student_id
+            )
+            ->where(
+                'status',
+                'active'
+            )
+            ->order_by(
+                'id',
+                'DESC'
+            )
+            ->limit(1)
+            ->get(
+                'student_enrollments'
+            )
+            ->row();
     }
 
 }

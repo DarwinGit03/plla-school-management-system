@@ -42,24 +42,119 @@ class Student_address_model extends CI_Model
     }
 
 
+    // public function update(
+    //     $id,
+    //     $student_id,
+    //     $data
+    // ) {
+    //     return $this->db
+    //         ->where(
+    //             'id',
+    //             $id
+    //         )
+    //         ->where(
+    //             'student_id',
+    //             $student_id
+    //         )
+    //         ->update(
+    //             $this->table,
+    //             $data
+    //         );
+    // }
+
     public function update(
         $id,
         $student_id,
         $data
     ) {
-        return $this->db
-            ->where(
-                'id',
-                $id
-            )
-            ->where(
-                'student_id',
-                $student_id
-            )
-            ->update(
-                $this->table,
-                $data
-            );
+        /*
+        |--------------------------------------------------------------------------
+        | Get Existing Address
+        |--------------------------------------------------------------------------
+        */
+
+        $existing =
+            $this->db
+                ->where(
+                    'id',
+                    $id
+                )
+                ->where(
+                    'student_id',
+                    $student_id
+                )
+                ->get(
+                    $this->table
+                )
+                ->row();
+
+
+        if (!$existing) {
+            return false;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check Actual Changes
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($data as $field => $value) {
+
+            if (
+                in_array(
+                    $field,
+                    [
+                        'created_by',
+                        'updated_by',
+                        'created_at',
+                        'updated_at'
+                    ],
+                    true
+                )
+            ) {
+                continue;
+            }
+
+
+            if (
+                (string) ($existing->$field ?? '') !==
+                (string) $value
+            ) {
+
+                $data['updated_by'] =
+                    $this->session
+                        ->userdata('employee_no');
+
+                $data['updated_at'] =
+                    date('Y-m-d H:i:s');
+
+
+                return $this->db
+                    ->where(
+                        'id',
+                        $id
+                    )
+                    ->where(
+                        'student_id',
+                        $student_id
+                    )
+                    ->update(
+                        $this->table,
+                        $data
+                    );
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | No Actual Changes
+        |--------------------------------------------------------------------------
+        */
+
+        return true;
     }
 
 

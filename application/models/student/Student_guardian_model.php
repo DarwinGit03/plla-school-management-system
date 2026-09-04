@@ -43,14 +43,101 @@ class Student_guardian_model extends CI_Model
     }
 
 
+    // public function update($id, $data)
+    // {
+    //     return $this->db
+    //         ->where('id', $id)
+    //         ->update(
+    //             $this->table,
+    //             $data
+    //         );
+    // }
+
     public function update($id, $data)
     {
-        return $this->db
-            ->where('id', $id)
-            ->update(
-                $this->table,
-                $data
-            );
+        $existing =
+            $this->db
+                ->where('id', $id)
+                ->get($this->table)
+                ->row();
+
+        if (!$existing) {
+            return false;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check Actual Changes
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($data as $field => $value) {
+
+            if (
+                in_array(
+                    $field,
+                    [
+                        'created_by',
+                        'updated_by',
+                        'created_at',
+                        'updated_at'
+                    ],
+                    true
+                )
+            ) {
+                continue;
+            }
+
+
+            if (
+                (string) ($existing->$field ?? '') !==
+                (string) $value
+            ) {
+
+                /*
+                |--------------------------------------------------------------
+                | Actual change detected
+                |--------------------------------------------------------------
+                */
+
+                $data['updated_by'] =
+                    $this->session
+                        ->userdata('employee_no');
+
+                $data['updated_at'] =
+                    date('Y-m-d H:i:s');
+
+
+                /*
+                |--------------------------------------------------------------
+                | Never modify created_by
+                |--------------------------------------------------------------
+                */
+
+                unset(
+                    $data['created_by'],
+                    $data['created_at']
+                );
+
+
+                return $this->db
+                    ->where('id', $id)
+                    ->update(
+                        $this->table,
+                        $data
+                    );
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | No Actual Changes
+        |--------------------------------------------------------------------------
+        */
+
+        return true;
     }
 
 

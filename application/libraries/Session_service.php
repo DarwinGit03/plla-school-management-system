@@ -31,7 +31,7 @@ class Session_service
     |--------------------------------------------------------------------------
     */
 
-    public function create($user)
+    public function createSession($user)
     {
         $token = bin2hex(
             // random_bytes(32)
@@ -202,7 +202,7 @@ class Session_service
 
             >
 
-            $this->timeout;
+            $this->CI->config->item('session_timeout'); //
     }
 
     /*

@@ -85,9 +85,9 @@ class MY_Controller extends CI_Controller
         if(!$this->session_service->verifyToken())
         {
             $this->audit_log_service->log(
-                $this->session->userdata('user_id'),
-                'core/MY_Controller',
+                'auth',
                 'FORCE_LOGOUT',
+                null,
                 'Logged out because another session replaced this login.'
             );
 
@@ -102,23 +102,56 @@ class MY_Controller extends CI_Controller
         |--------------------------------------------------------------------------
         */
 
-        if($this->session_service->expired())
+        if ($this->session_service->expired())
         {
-            $this->audit_log_service->log(
+            $sessionId =
+                $this->session
+                    ->userdata('session_token');
 
-                $this->session->userdata('user_id'),
 
-                'core/MY_Controller',
+            /*
+            |--------------------------------------------------------------------------
+            | Close Login Log
+            |--------------------------------------------------------------------------
+            */
 
-                'SESSION_TIMEOUT',
+            if ($sessionId)
+            {
+                $logoutUpdated =
+                    $this->Login_log_model
+                        ->updateLogout(
+                            $sessionId
+                        );
 
-                'Automatic logout because of inactivity.'
+                /*
+                |--------------------------------------------------------------------------
+                | Only Create Audit Log Once
+                |--------------------------------------------------------------------------
+                */
 
-            );
+                if ($logoutUpdated)
+                {
+                    $this->audit_log_service->log(
+                        'auth',
+                        'SESSION_TIMEOUT',
+                        null,
+                        'Automatic logout because of inactivity.'
+                    );
+                }
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Force Logout
+            |--------------------------------------------------------------------------
+            */
 
             $this->session_service->forceLogout(
                 'Your session expired because of inactivity.'
             );
+
+            return;
         }
 
         /*

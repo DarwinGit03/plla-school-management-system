@@ -3,14 +3,20 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class MY_Controller extends CI_Controller
 {
-    /**
-     * Logged-in user information
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Current User
+    |--------------------------------------------------------------------------
+    */
+
     protected $current_user = NULL;
 
-    /**
-     * Shared data for views
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Shared View Data
+    |--------------------------------------------------------------------------
+    */
+
     protected $data = [];
 
     public function __construct()
@@ -19,7 +25,7 @@ class MY_Controller extends CI_Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Load Common Models
+        | Models
         |--------------------------------------------------------------------------
         */
 
@@ -27,207 +33,36 @@ class MY_Controller extends CI_Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Load Common Libraries
+        | Libraries
         |--------------------------------------------------------------------------
         */
 
         $this->load->library('session');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Load Common Libraries
-        |--------------------------------------------------------------------------
-        */
-        
         $this->load->library('Session_service');
 
+        $this->load->library('Audit_log_service');
+
         /*
         |--------------------------------------------------------------------------
-        | Load Common Helpers
+        | Helpers
         |--------------------------------------------------------------------------
         */
 
-        $this->load->helper(['url', 'auth']);
+        $this->load->helper([
+            'url',
+            'auth'
+        ]);
 
         /*
         |--------------------------------------------------------------------------
-        | Get Current User
+        | Load Current User
         |--------------------------------------------------------------------------
         */
 
         $this->loadCurrentUser();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Check Active Session
-        |--------------------------------------------------------------------------
-        */
-
-        // if(
-        //     $this->session->userdata('user_id')
-        // )
-        // {
-        //     $this->checkSessionTimeout();
-        // }
-        // if($this->session->userdata('logged_in'))
-        // {
-        //     $this->checkSessionTimeout();
-        // }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Session Timeout
-    |--------------------------------------------------------------------------
-    */
-    // private function checkSessionTimeout()
-    // {
-    //     if(!$this->session->userdata('user_id'))
-    //     {
-    //         return;
-    //     }
-
-    //     $user = $this->User_model->getById(
-    //         $this->session->userdata('user_id')
-    //     );
-
-    //     if(
-    //         !$user ||
-    //         $user->session_token !=
-    //         $this->session->userdata('session_token')
-    //     )
-    //     {
-    //         $this->session_service->destroy();
-
-    //         redirect('login');
-
-    //         return;
-    //     }
-
-    //     // Continue with timeout checks...
-    // }
-
-    private function checkSessionTimeout()
-    {
-        $this->audit_log_service->log(
-                $this->session->userdata('user_id'),
-                'LOGS',
-                'IN',
-                'OKEY HERE'
-            );
-        if(!$this->session->userdata('logged_in'))
-        {
-            return;
-        }
-
-        $user = $this->User_model->getById(
-            $this->session->userdata('user_id')
-        );
-
-        if(
-            !$user ||
-            $user->session_token !=
-            $this->session->userdata('session_token')
-        )
-        {
-            
-            $this->audit_log_service->log(
-                $this->session->userdata('user_id'),
-                'core/My_Controller',
-                'SESSION_TOKEN',
-                'Automatic logout due to updated token.'
-            );
-            $this->session_service->destroy();
-
-            redirect('login');
-
-            return;
-        }
-
-        if($this->session_service->expired())
-        {
-            $this->audit_log_service->log(
-                $this->session->userdata('user_id'),
-                'core/My_Controller',
-                'SESSION_TIMEOUT',
-                'Automatic logout due to inactivity.'
-            );
-
-            $this->session_service->destroy();
-            redirect('login');
-            return;
-        }
-
-        $this->session_service->touch();
-    }
-
-
-    // private function checkSessionTimeout()
-    // {
-        
-    //     if(!$this->session->userdata('user_id'))
-    //     {
-    //         return;
-    //     }
-
-    //     if(
-    //         !$user ||
-    //         $user->session_token !=
-    //         $this->session->userdata('session_token')
-    //     )
-    //     {
-    //         $this->session->sess_destroy();
-
-    //         redirect('login');
-
-    //         return;
-    //     }
-
-    //     /*
-    //     |--------------------------------------------------------------------------
-    //     | Check Session Timeout
-    //     |--------------------------------------------------------------------------
-    //     */
-
-
-    //     if($this->session_service->expired())
-    //     {
-    //         $this->audit_log_service->log(
-
-    //             $this->session->userdata('user_id'),
-    //             'core/My_Controller',
-    //             'SESSION_TIMEOUT',
-    //             'Automatic logout due to inactivity.'
-
-    //         );
-
-    //         $this->session_service->destroy();
-
-    //         redirect('login');
-    //         return
-    //     }
-
-    //     $this->session_service->touch();
-    // }
-
-    
-
-    /**
-     * Get logged-in user
-     */
-    protected function loadCurrentUser()
-    {
-        $user_id =
-            $this->session->userdata('user_id');
-
-        if(!$user_id)
-        {
-            return;
-        }
-        
-        $this->current_user = $this->User_model->getById($user_id);
-        $this->data['current_user'] = $this->current_user;
-    }
     /*
     |--------------------------------------------------------------------------
     | Require Login
@@ -236,7 +71,76 @@ class MY_Controller extends CI_Controller
 
     protected function requireLogin()
     {
-        require_login();
+        if(!$this->session_service->isLoggedIn())
+        {
+            redirect('login');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Single Session
+        |--------------------------------------------------------------------------
+        */
+
+        if(!$this->session_service->verifyToken())
+        {
+            $this->audit_log_service->log(
+                $this->session->userdata('user_id'),
+                'core/MY_Controller',
+                'FORCE_LOGOUT',
+                'Logged out because another session replaced this login.'
+            );
+
+            $this->session_service->forceLogout(
+                'You have been logged out because another session has replaced yours.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Session Timeout
+        |--------------------------------------------------------------------------
+        */
+
+        if($this->session_service->expired())
+        {
+            $this->audit_log_service->log(
+
+                $this->session->userdata('user_id'),
+
+                'core/MY_Controller',
+
+                'SESSION_TIMEOUT',
+
+                'Automatic logout because of inactivity.'
+
+            );
+
+            $sessionId = $this->session->userdata(
+                    'session_token'
+                );
+
+            if($sessionId)
+            {
+                $this
+                    ->Login_log_model
+                    ->updateLogout(
+                        $sessionId
+                    );
+            }
+
+            $this->session_service->forceLogout(
+                'Your session expired because of inactivity.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Activity
+        |--------------------------------------------------------------------------
+        */
+
+        $this->session_service->touch();
     }
 
     /*
@@ -247,12 +151,15 @@ class MY_Controller extends CI_Controller
 
     protected function guestOnly()
     {
-        guest_only();
+        if($this->session_service->isLoggedIn())
+        {
+            redirect('dashboard');
+        }
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Require Role
+    | Role Middleware
     |--------------------------------------------------------------------------
     */
 
@@ -263,11 +170,35 @@ class MY_Controller extends CI_Controller
 
     /*
     |--------------------------------------------------------------------------
+    | Load Current User
+    |--------------------------------------------------------------------------
+    */
+
+    protected function loadCurrentUser()
+    {
+        if(!$this->session_service->isLoggedIn())
+        {
+            return;
+        }
+
+        $this->current_user =
+            $this->session_service->currentUser();
+
+        $this->data['current_user'] =
+            $this->current_user;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | JSON Response
     |--------------------------------------------------------------------------
     */
 
-    protected function jsonResponse($status, $message, $data = [])
+    protected function jsonResponse(
+        $status,
+        $message,
+        $data = []
+    )
     {
         $response = array_merge(
             [
@@ -277,48 +208,25 @@ class MY_Controller extends CI_Controller
             $data
         );
 
-        $this->output
-            ->set_content_type('application/json')
-            ->set_output(
-                json_encode($response)
-            );
+        return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(
+                        json_encode($response)
+                    );
     }
 
-    protected function checkSession()
+    protected function requireOTPVerification()
     {
-        if(!$this->session->userdata('user_id'))
-        {
-            redirect('login');
-            return;
-        }
-
-        $user = $this->User_model->getById(
-            $this->session->userdata('user_id')
-        );
-
         if(
-            !$user ||
-            $user->session_token !=
-            $this->session->userdata('session_token')
+
+            !$this->session
+                ->userdata(
+                        'otp_verified'
+                )
+
         )
         {
-            $this->session_service->destroy();
-
-            redirect('login');
-
-            return;
+            redirect('forgot-password');
         }
-
-        if($this->session_service->expired())
-        {
-            $this->session_service->destroy();
-
-            redirect('login');
-
-            return;
-        }
-
-        $this->session_service->touch();
     }
-
 }

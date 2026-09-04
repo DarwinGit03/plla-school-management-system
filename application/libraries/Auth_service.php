@@ -282,7 +282,8 @@ class Auth_service
 
             $this->logLogin(
                 $user,
-                'FAILED'
+                'FAILED',
+                null
             );
             return [
                 'status' => false,
@@ -315,32 +316,14 @@ class Auth_service
 
         $this->CI
             ->session_service
-            ->create($user);
+            ->createSession($user);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Create Session
-        |--------------------------------------------------------------------------
-        */
-        
-        // $this->CI->session->set_userdata([
-        //     'user_id'   => $user->id,
-        //     'role_id'   => $user->role_id,
-        //     'email'     => $user->email,
-        //     'logged_in' => true,
-        //     'session_token' => $sessionToken //test
-        // ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Start Session Activity Timer
-        |--------------------------------------------------------------------------
-        // */
-
-        // $this->CI
-        //     ->session_service
-        //     ->touch();
-
+            
+        $sessionId = $this->CI
+            ->session
+            ->userdata(
+                'session_token'
+            );
         
         /*
         |--------------------------------------------------------------------------
@@ -362,7 +345,7 @@ class Auth_service
         */
 
         $this->logLogin(
-            $user, 'SUCCESS'
+            $user, 'SUCCESS', $sessionId
         );
 
         /*
@@ -384,35 +367,36 @@ class Auth_service
     |--------------------------------------------------------------------------
     */
 
-    private function createSession(
-        $user
-    )
-    {
-        $this->CI
-             ->session
-             ->set_userdata([
+    // private function createSession(
+    //     $user
+    // )
+    // {
+    //     $this->CI
+    //          ->session
+    //          ->set_userdata([
 
-                'user_id' =>
-                    $user->id,
+    //             'user_id' =>
+    //                 $user->id,
 
-                'role_id' =>
-                    $user->role_id,
+    //             'role_id' =>
+    //                 $user->role_id,
 
-                'email' =>
-                    $user->email,
+    //             'email' =>
+    //                 $user->email,
 
-                'full_name' =>
-                    trim(
-                        $user->first_name
-                        .' '.
-                        $user->last_name
-                    ),
+    //             'full_name' =>
+    //                 trim(
+    //                     $user->first_name
+    //                     .' '.
+    //                     $user->last_name
+    //                 ),
 
-                'logged_in' =>
-                    true
+    //             'logged_in' =>
+    //                 true
 
-             ]);
-    }
+    //         ]);
+
+    // }
 
     /*
     |--------------------------------------------------------------------------
@@ -422,6 +406,7 @@ class Auth_service
 
     public function logout()
     {
+
         /*
         |--------------------------------------------------------------------------
         | Current User
@@ -435,6 +420,29 @@ class Auth_service
                     'user_id'
                 );
 
+        $sessionId =
+            $this->CI
+                ->session
+                ->userdata(
+                    'session_token'
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Login Log
+        |--------------------------------------------------------------------------
+        */
+
+        if($sessionId)
+        {
+            $this->CI
+                ->Login_log_model
+                ->updateLogout(
+                    $sessionId
+                );
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Audit Log
@@ -447,12 +455,9 @@ class Auth_service
                 ->audit_log_service
                 ->log(
 
-                    $userId,
-
-                    'auth/logout',
-
+                    'auth',
                     'LOGOUT',
-
+                    null,
                     'User logged out.'
 
                 );
@@ -527,10 +532,11 @@ class Auth_service
     |--------------------------------------------------------------------------
     */
 
-    private function logLogin($user, $status)
+    private function logLogin($user, $status, $sessionId)
     {
         $this->CI->Login_log_model->create([
             'user_id'     => $user->id,
+            'session_id'  => $sessionId,
             'ip_address'  => $this->CI->input->ip_address(),
             'browser'     => $this->CI->input->user_agent(),
             'status'      => $status,
@@ -619,6 +625,7 @@ class Auth_service
                 $user->id,
                 'auth/forgot-password',
                 'PASSWORD_RESET_REQUEST',
+                null,
                 'User requested password reset.'
 
             );

@@ -121,6 +121,7 @@
                 <span class="fw-semibold">
 
                     <?= $current_user->first_name ?? 'Admin'; ?>
+                    <i><?= $current_user->employee_no ?? '#'; ?></i>
 
                 </span>
 

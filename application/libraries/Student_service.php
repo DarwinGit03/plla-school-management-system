@@ -66,6 +66,12 @@ class Student_service
         array $guardians = [],
         array $addresses = []
     ) {
+        //test now
+        $employee_no =
+        $this->CI
+            ->session
+            ->userdata('employee_no');
+
         /*
         |--------------------------------------------------------------------------
         | Start Transaction
@@ -74,12 +80,18 @@ class Student_service
 
         $this->CI->db->trans_begin();
 
-
         /*
         |--------------------------------------------------------------------------
         | Create Student
         |--------------------------------------------------------------------------
         */
+        
+        //test now
+        $student_data['created_by'] =
+            $employee_no;
+
+        // $student_data['updated_by'] =
+        //     $employee_no;
 
         $student_id =
             $this->CI
@@ -87,7 +99,6 @@ class Student_service
                 ->create_student(
                     $student_data
                 );
-
 
         if (!$student_id) {
 
@@ -103,9 +114,13 @@ class Student_service
         |--------------------------------------------------------------------------
         */
 
-        $enrollment_data['student_id'] =
-            $student_id;
+        $enrollment_data['student_id'] = $student_id;
+        //test now
+        $enrollment_data['created_by'] =
+            $employee_no;
 
+        // $enrollment_data['updated_by'] =
+        //     $employee_no;
 
         $enrollment_id =
             $this->CI
@@ -142,7 +157,12 @@ class Student_service
 
             $guardian['lrn'] = 
                 $student_data['lrn'];
+                
+            // $guardian['created_by'] =
+            //     $employee_no;
 
+            $guardian['created_by'] =
+                $employee_no;
 
             $guardian['is_primary'] =
                 !empty(
@@ -179,7 +199,12 @@ class Student_service
 
             $address['student_id'] =
                 $student_id;
+                
+            $address['created_by'] =
+                $employee_no;
 
+            // $address['updated_by'] =
+            //     $employee_no;
 
             $address_id =
                 $this->CI
@@ -222,6 +247,68 @@ class Student_service
 
         $this->CI->db->trans_commit();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Get Updated Student For Audit
+        |--------------------------------------------------------------------------
+        */
+
+        $new_student =
+            $this->CI
+                ->Student_model
+                ->get_student(
+                    $student_id
+                );
+
+        if (!$new_student) {
+            return true;
+        }
+
+        $new_enrollment =
+            $this->CI
+                ->Student_model
+                ->get_current_enrollment(
+                    $student_id
+                );
+
+        $new_guardians =
+            $this->CI
+                ->Student_guardian_model
+                ->get_by_student(
+                    $student_id
+                );
+
+        $new_addresses =
+            $this->CI
+                ->Student_address_model
+                ->get_by_student(
+                    $student_id
+                );
+
+
+        $details = [
+            'student' => $new_student,
+            'enrollment' => $new_enrollment,
+            'guardians' => $new_guardians,
+            'addresses' => $new_addresses
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        $this->CI
+            ->audit_log_service
+            ->log(
+                'libraries/Student_service',
+                'CREATE_STUDENT',
+                $student_id,
+                'Student created.',
+                $details
+            );
+
 
         return $student_id;
     }
@@ -245,34 +332,49 @@ class Student_service
         array $guardians = [],
         array $addresses = []
     ) {
+        //test now
+        $employee_no =
+        $this->CI
+            ->session
+            ->userdata('employee_no');
 
         /*
         |--------------------------------------------------------------------------
-        | Protect Admin-only Student Fields
+        | Get Existing Student For Audit
         |--------------------------------------------------------------------------
         */
 
-        // $role_id =
-        //     (string) $this->CI
-        //         ->session
-        //         ->userdata('role_id');
+       $old_student =
+            $this->CI
+                ->Student_model
+                ->get_student(
+                    $student_id
+                );
 
+        if (!$old_student) {
+            return false;
+        }
 
-        // $is_admin =
-        //     in_array(
-        //         $role_id,
-        //         ['3', '2'],
-        //         true
-        //     );
+        $old_enrollment =
+            $this->CI
+                ->Student_model
+                ->get_current_enrollment(
+                    $student_id
+                );
 
+        $old_guardians =
+            $this->CI
+                ->Student_guardian_model
+                ->get_by_student(
+                    $student_id
+                );
 
-        // if (!$is_admin) {
-
-        //     unset(
-        //         $student_data['lrn'],
-        //         $student_data['student_no']
-        //     );
-        // }
+        $old_addresses =
+            $this->CI
+                ->Student_address_model
+                ->get_by_student(
+                    $student_id
+                );
 
         /*
         |--------------------------------------------------------------------------
@@ -288,6 +390,8 @@ class Student_service
         | Update Student
         |--------------------------------------------------------------------------
         */
+
+        // $student_data['updated_by'] = $employee_no;
 
         $updated =
             $this->CI
@@ -311,6 +415,9 @@ class Student_service
         | Update Enrollment
         |--------------------------------------------------------------------------
         */
+
+        //test now
+        // $enrollment_data['updated_by'] = $employee_no;
 
         $updated =
             $this->CI
@@ -370,6 +477,9 @@ class Student_service
             $guardian['lrn'] =
                 $student_data['lrn'] ?? null;
 
+            // $guardian['updated_by'] =
+            //     $employee_no;
+
             $guardian['is_primary'] =
                 !empty(
                     $guardian['is_primary']
@@ -383,6 +493,14 @@ class Student_service
             | Existing Guardian
             |----------------------------------------------------------------------
             */
+
+            // echo '<pre>';
+
+            // echo "GUARDIAN ID DATA\n";
+            // var_dump($guardian['id']);
+
+            // exit;
+
 
             if (
                 !empty($guardian['id'])
@@ -418,7 +536,6 @@ class Student_service
                     $guardian['id']
                 );
 
-
                 $updated =
                     $this->CI
                         ->Student_guardian_model
@@ -435,18 +552,23 @@ class Student_service
                     return false;
                 }
 
-            } else {
+            } 
+            else {
 
                 /*
                 |------------------------------------------------------------------
                 | New Guardian
                 |------------------------------------------------------------------
                 */
+                $guardian['created_by'] =
+                    $employee_no;
+
+                $guardian['updated_by'] =
+                    $employee_no;
 
                 unset(
                     $guardian['id']
                 );
-
 
                 $guardian_id =
                     $this->CI
@@ -515,7 +637,9 @@ class Student_service
 
                 $address['student_id'] =
                     $student_id;
-
+            
+                // $address['updated_by'] =
+                //     $employee_no;
 
                 unset(
                     $address['id']
@@ -538,6 +662,9 @@ class Student_service
                 }
 
             } else {
+
+                // $address['updated_by'] =
+                //     $employee_no;
 
                 $address_id =
                     (int) $address['id'];
@@ -591,7 +718,129 @@ class Student_service
         */
 
         $this->CI->db->trans_commit();
+        
+        /*
+        |--------------------------------------------------------------------------
+        | Get Updated Student For Audit
+        |--------------------------------------------------------------------------
+        */
 
+        $new_student =
+            $this->CI
+                ->Student_model
+                ->get_student(
+                    $student_id
+                );
+
+        if (!$new_student) {
+            return true;
+        }
+
+        $new_enrollment =
+            $this->CI
+                ->Student_model
+                ->get_current_enrollment(
+                    $student_id
+                );
+
+        $new_guardians =
+            $this->CI
+                ->Student_guardian_model
+                ->get_by_student(
+                    $student_id
+                );
+
+        $new_addresses =
+            $this->CI
+                ->Student_address_model
+                ->get_by_student(
+                    $student_id
+                );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Compare Changes
+        |--------------------------------------------------------------------------
+        */
+
+        $student_details =
+            $this->CI
+                ->audit_log_service
+                ->get_changed_fields(
+                    $old_student,
+                    $new_student
+                );
+
+        $enrollment_details =
+            $this->CI
+                ->audit_log_service
+                ->get_changed_fields(
+                    $old_enrollment,
+                    $new_enrollment
+                );  
+
+        $guardian_details =
+            $this->CI
+                ->audit_log_service
+                ->get_changed_records(
+                    $old_guardians,
+                    $new_guardians
+                );
+
+        $address_details =
+            $this->CI
+                ->audit_log_service
+                ->get_changed_records(
+                    $old_addresses,
+                    $new_addresses
+                );
+
+        $details = [];
+        
+        if (
+            !empty($student_details) ||
+            !empty($enrollment_details) ||
+            !empty($guardian_details) ||
+            !empty($address_details)
+        ) {
+            $details = [
+                'student_lrn' =>
+                    $new_student->lrn ?? null
+            ];
+        }
+
+        if (!empty($student_details)) {
+            $details['student'] = $student_details;
+        }
+
+        if (!empty($enrollment_details)) {
+            $details['enrollment'] = $enrollment_details;
+        }
+
+        if (!empty($guardian_details)) {
+            $details['guardians'] = $guardian_details;
+        }
+
+        if (!empty($address_details)) {
+            $details['addresses'] = $address_details;
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+        
+        if (!empty($details)) {
+            $this->CI
+                ->audit_log_service
+                ->log(
+                    'students',
+                    'UPDATE',
+                    $student_id,
+                    'Student information updated.',
+                    $details
+                );
+        }
 
         return true;
     }

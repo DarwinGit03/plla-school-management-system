@@ -1952,15 +1952,4 @@
             return false;
         }
 
-        // private function is_admin()
-        // {
-        //     $role_id = (string) $this->session->userdata('role_id');
-
-        //     return in_array(
-        //         $role_id,
-        //         ['3', '2'],
-        //         true
-        //     );
-        // }
-
     }
