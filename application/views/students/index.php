@@ -190,8 +190,14 @@
                             name="status"
                             class="form-select">
 
-                            <option value="">
+                            <option
+                                value=""
+                                <?= $filters['status'] === ''
+                                    ? 'selected'
+                                    : ''; ?>>
+
                                 All
+
                             </option>
 
                             <option
@@ -444,7 +450,9 @@
 
 
                                         <!-- Actions -->
-                                        <div class="dropdown">
+                                        <!-- <div class="dropdown"> -->
+                                        <!-- <div class="dropup"> -->
+                                        <div class="dropdown action-dropdown">
                                             <button
                                                 type="button"
                                                 class="btn btn-sm btn-outline-secondary"
@@ -829,6 +837,58 @@
             <form
                 id="changeStatusForm"
                 method="post">
+
+                <input
+    type="hidden"
+    name="filter_search"
+    value="<?= htmlspecialchars(
+        $filters['search'] ?? '',
+        ENT_QUOTES,
+        'UTF-8'
+    ); ?>">
+
+<input
+    type="hidden"
+    name="filter_status"
+    value="<?= htmlspecialchars(
+        $filters['status'] ?? '',
+        ENT_QUOTES,
+        'UTF-8'
+    ); ?>">
+
+<input
+    type="hidden"
+    name="filter_academic_year"
+    value="<?= htmlspecialchars(
+        $filters['academic_year'] ?? '',
+        ENT_QUOTES,
+        'UTF-8'
+    ); ?>">
+
+<input
+    type="hidden"
+    name="filter_grade_level"
+    value="<?= htmlspecialchars(
+        $filters['grade_level'] ?? '',
+        ENT_QUOTES,
+        'UTF-8'
+    ); ?>">
+
+<input
+    type="hidden"
+    name="filter_section"
+    value="<?= htmlspecialchars(
+        $filters['section'] ?? '',
+        ENT_QUOTES,
+        'UTF-8'
+    ); ?>">
+
+<input
+    type="hidden"
+    name="filter_page"
+    value="<?= (int) (
+        $this->input->get('page', true) ?? 1
+    ); ?>">
 
                 <div class="modal-header">
 

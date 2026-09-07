@@ -118,13 +118,13 @@ class Student_model extends CI_Model
         }
 
         $this->db->order_by(
-            'students.last_name',
-            'ASC'
+            'students.created_at',
+            'DESC'
         );
 
         $this->db->order_by(
-            'students.first_name',
-            'ASC'
+            'students.updated_at',
+            'DESC'
         );
 
         if ($limit !== null) {

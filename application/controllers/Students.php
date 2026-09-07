@@ -168,16 +168,36 @@
             | Filters
             |--------------------------------------------------------------------------
             */
+            $status =
+                $this->input->get(
+                    'status',
+                    true
+                );
+
+            if ($status === null) {
+                $status = 'active';
+            }
 
             $filters = [
 
                 'search' => trim(
-                    $this->input->get('search', true)
+                    $this->input->get(
+                        'search',
+                        true
+                    )
                 ),
 
-                'status' => trim(
-                    $this->input->get('status', true)
-                ),
+                'status' => trim($status),
+
+            // $filters = [
+
+            //     'search' => trim(
+            //         $this->input->get('search', true)
+            //     ),
+
+            //     'status' => trim(
+            //         $this->input->get('status', true)
+            //     ),
 
                 'academic_year' => trim(
                     $this->input->get('academic_year', true)
@@ -1960,25 +1980,21 @@
                 show_404();
             }
 
-            if (
-                !is_numeric($id)
-            ) {
+            if (!is_numeric($id)) {
                 show_404();
             }
 
             $new_status =
-                $this->input
-                    ->post(
-                        'new_status',
-                        true
-                    );
+                $this->input->post(
+                    'new_status',
+                    true
+                );
 
             $reason =
-                $this->input
-                    ->post(
-                        'reason',
-                        true
-                    );
+                $this->input->post(
+                    'reason',
+                    true
+                );
 
             $result =
                 $this->student_service
@@ -2003,9 +2019,127 @@
                 );
             }
 
-            redirect(
-                'students'
-            );
+            /*
+            |--------------------------------------------------------------------------
+            | Preserve Current Student List Filters
+            |--------------------------------------------------------------------------
+            */
+
+            $redirect_params = [
+
+                'search' =>
+                    $this->input->post(
+                        'filter_search',
+                        true
+                    ),
+
+                'status' =>
+                    $this->input->post(
+                        'filter_status',
+                        true
+                    ),
+
+                'academic_year' =>
+                    $this->input->post(
+                        'filter_academic_year',
+                        true
+                    ),
+
+                'grade_level' =>
+                    $this->input->post(
+                        'filter_grade_level',
+                        true
+                    ),
+
+                'section' =>
+                    $this->input->post(
+                        'filter_section',
+                        true
+                    ),
+
+                'page' =>
+                    $this->input->post(
+                        'filter_page',
+                        true
+                    )
+            ];
+
+            $redirect_params =
+                array_filter(
+                    $redirect_params,
+                    function ($value) {
+                        return $value !== '';
+                    }
+                );
+
+            $redirect_url =
+                'students';
+
+            if (!empty($redirect_params)) {
+
+                $redirect_url .=
+                    '?' .
+                    http_build_query(
+                        $redirect_params
+                    );
+            }
+
+            redirect($redirect_url);
         }
+        // public function change_status($id)
+        // {
+        //     if (
+        //         $this->input->method() !== 'post'
+        //     ) {
+        //         show_404();
+        //     }
+
+        //     if (
+        //         !is_numeric($id)
+        //     ) {
+        //         show_404();
+        //     }
+
+        //     $new_status =
+        //         $this->input
+        //             ->post(
+        //                 'new_status',
+        //                 true
+        //             );
+
+        //     $reason =
+        //         $this->input
+        //             ->post(
+        //                 'reason',
+        //                 true
+        //             );
+
+        //     $result =
+        //         $this->student_service
+        //             ->change_status(
+        //                 (int) $id,
+        //                 $new_status,
+        //                 $reason
+        //             );
+
+        //     if ($result['status']) {
+
+        //         $this->session->set_flashdata(
+        //             'success',
+        //             $result['message']
+        //         );
+
+        //     } else {
+
+        //         $this->session->set_flashdata(
+        //             'error',
+        //             $result['message']
+        //         );
+        //     }
+
+        //     redirect(
+        //         'students'
+        //     );
+        // }
 
     }
