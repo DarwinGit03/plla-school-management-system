@@ -74,6 +74,18 @@ $route['auth/save_password'] = 'auth/save_password';
 
 $route['dashboard'] = 'dashboard/index';
 $route['students'] = 'students/index';
+$route['students/enroll'] = 'students/enroll';
+$route['students/enroll/(:num)'] = 'students/enroll_student/$1';
+$route['finance/payments'] = 'finance/payments';
+$route['finance/payments/void'] = 'finance/void_payment';
+$route['finance/payments/correct'] = 'finance/correct_payment';
+$route['finance/configuration/edit/(:num)'] = 'finance/edit_configuration/$1';
+$route['finance/configuration/duplicate-year'] = 'finance/duplicate_school_year';
+$route['finance/configuration/delete-year'] = 'finance/delete_school_year';
+$route['finance/configuration/update-year-status'] = 'finance/update_school_year_status';
+$route['finance/payments/statement/(:num)'] = 'finance/payment_statement/$1';
+$route['finance/payments/email-statement/(:num)'] = 'finance/email_payment_statement/$1';
+$route['parents/payment-history'] = 'parents/payment_history';
 
 //admin 
 $route['admin/unlock-account/(:num)'] = 'auth/unlockAccount/$1';

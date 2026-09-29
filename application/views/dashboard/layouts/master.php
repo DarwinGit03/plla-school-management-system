@@ -41,6 +41,10 @@
         href="<?= base_url('assets/css/master.css'); ?>"
         rel="stylesheet">
 
+    <?php foreach (($page_styles ?? []) as $style): ?>
+        <link href="<?= base_url($style); ?>" rel="stylesheet">
+    <?php endforeach; ?>
+
 </head>
 
 <body>
@@ -82,6 +86,9 @@
 <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 
 <script src="<?= base_url('assets/js/master.js'); ?>"></script>
+<?php foreach (($page_scripts ?? []) as $script): ?>
+    <script src="<?= base_url($script); ?>"></script>
+<?php endforeach; ?>
 <script>
     const CSRF = {
         name: "<?= $this->security->get_csrf_token_name(); ?>",

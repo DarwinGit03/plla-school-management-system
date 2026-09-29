@@ -1167,4 +1167,11 @@ class Student_service
                 $student_id
             );
     }
+
+    public function get_enrollment_fee_snapshot($enrollment_id)
+    {
+        return $this->CI
+            ->Student_model
+            ->get_enrollment_fee_snapshot($enrollment_id);
+    }
 }

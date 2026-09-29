@@ -24,6 +24,12 @@ $isDashboard =
 $isStudents =
     ($currentController === 'students');
 
+$isFinance =
+    ($currentController === 'finance');
+
+$isParentPaymentHistory =
+    ($currentController === 'parents' && $currentMethod === 'payment_history');
+
 
 $isStudentList =
     (
@@ -33,11 +39,17 @@ $isStudentList =
     );
 
 
-$isEnrollment =
+$registration =
     (
         $currentController === 'students'
         &&
         $currentMethod === 'create'
+    );
+
+$isEnrollment =
+    (
+        $currentController === 'students'
+        && in_array($currentMethod, ['enroll', 'enroll_student'], true)
     );
 
 ?>
@@ -63,6 +75,17 @@ $isEnrollment =
         </a>
 
     </li>
+
+    <?php if ((int) $this->session->userdata('role_id') === 5): ?>
+        <li class="nav-item">
+            <a
+                href="<?= site_url('parents/payment-history'); ?>"
+                class="nav-link text-white <?= $isParentPaymentHistory ? 'active' : ''; ?>">
+                <i class="fas fa-receipt me-2"></i>
+                Payment History
+            </a>
+        </li>
+    <?php endif; ?>
 
 
     <!-- =====================================================
@@ -206,12 +229,27 @@ $isEnrollment =
                 </li>
 
 
-                <!-- Enrollment -->
+                <!-- Registration -->
 
                 <li class="nav-item">
 
                     <a
                         href="<?= site_url('students/create'); ?>"
+                        class="nav-link text-secondary
+                            <?= $registration ? 'submenu-active' : ''; ?>">
+
+                        Registration
+
+                    </a>
+
+                </li>
+
+                <!-- Enrollment -->
+
+                <li class="nav-item">
+
+                    <a
+                        href="<?= site_url('students/enroll'); ?>"
                         class="nav-link text-secondary
                             <?= $isEnrollment ? 'submenu-active' : ''; ?>">
 
@@ -220,7 +258,6 @@ $isEnrollment =
                     </a>
 
                 </li>
-
 
                 <!-- Alumni -->
 
@@ -326,17 +363,30 @@ $isEnrollment =
     ====================================================== -->
 
     <li class="nav-item">
-
         <a
-            href="#"
-            class="nav-link text-white">
-
-            <i class="fas fa-coins me-2"></i>
-
-            Finance
-
+            href="#financeMenu"
+            class="nav-link text-white d-flex justify-content-between align-items-center"
+            data-bs-toggle="collapse"
+            role="button"
+            aria-expanded="<?= $isFinance ? 'true' : 'false'; ?>"
+            aria-controls="financeMenu">
+            <span><i class="fas fa-coins me-2"></i>Finance</span>
+            <i class="fas fa-chevron-down small"></i>
         </a>
-
+        <div class="collapse <?= $isFinance ? 'show' : ''; ?>" id="financeMenu">
+            <ul class="nav flex-column ms-3">
+                <li class="nav-item">
+                    <a href="<?= site_url('finance'); ?>" class="nav-link text-secondary <?= $isFinance && $currentMethod === 'index' ? 'submenu-active' : ''; ?>">
+                        Fee Configurations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="<?= site_url('finance/payments'); ?>" class="nav-link text-secondary <?= $isFinance && $currentMethod === 'payments' ? 'submenu-active' : ''; ?>">
+                        Record Payments
+                    </a>
+                </li>
+            </ul>
+        </div>
     </li>
 
 

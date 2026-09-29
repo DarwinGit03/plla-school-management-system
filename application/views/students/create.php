@@ -16,7 +16,7 @@
 
             <h1 class="h3 fw-bold mb-1">
 
-                Initial Enrollment
+                Registration
 
             </h1>
 

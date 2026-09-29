@@ -28,7 +28,8 @@ class Student_model extends CI_Model
                 students.status,
                 student_enrollments.academic_year,
                 student_enrollments.grade_level,
-                student_enrollments.section
+                student_enrollments.section,
+                student_enrollments.payment_mode
             ')
             ->from($this->table)
             ->join(
@@ -117,6 +118,13 @@ class Student_model extends CI_Model
             );
         }
 
+        if (!empty($filters['payment_mode'])) {
+            $this->db->where(
+                'student_enrollments.payment_mode',
+                $filters['payment_mode']
+            );
+        }
+
         $this->db->order_by(
             'students.created_at',
             'DESC'
@@ -202,6 +210,13 @@ class Student_model extends CI_Model
             $this->db->where(
                 'student_enrollments.section',
                 $filters['section']
+            );
+        }
+
+        if (!empty($filters['payment_mode'])) {
+            $this->db->where(
+                'student_enrollments.payment_mode',
+                $filters['payment_mode']
             );
         }
 
@@ -515,9 +530,11 @@ class Student_model extends CI_Model
                 student_enrollments.id AS enrollment_id,
                 student_enrollments.academic_year,
                 student_enrollments.grade_level,
+                student_enrollments.payment_mode,
                 student_enrollments.program,
                 student_enrollments.section,
                 student_enrollments.admission_type,
+                student_enrollments.fee_configuration_id,
                 student_enrollments.status AS enrollment_status,
                 student_enrollments.enrolled_at
             ')
@@ -571,6 +588,18 @@ class Student_model extends CI_Model
                 'DESC'
             )
             ->get('student_enrollments')
+            ->result();
+    }
+
+    /** Return the immutable fee rows recorded for an enrollment. */
+    public function get_enrollment_fee_snapshot($enrollment_id)
+    {
+        return $this->db
+            ->where('enrollment_id', $enrollment_id)
+            ->order_by('fee_category', 'ASC')
+            ->order_by('payment_sequence', 'ASC')
+            ->order_by('id', 'ASC')
+            ->get('student_enrollment_fees')
             ->result();
     }
 

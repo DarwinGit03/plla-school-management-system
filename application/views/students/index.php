@@ -81,7 +81,7 @@
 
                     <div class="col-12 col-lg-4">
 
-                        <label class="form-label small fw-semibold">
+                        <label for="search" class="form-label small fw-semibold">
 
                             Search
 
@@ -97,6 +97,7 @@
 
                             <input
                                 type="search"
+                                id="search"
                                 name="search"
                                 value="<?= html_escape($filters['search']); ?>"
                                 class="form-control"
@@ -120,9 +121,16 @@
                             id="academic_year"
                             class="form-select">
 
-                            <option value="">
-                                
-                            </option>
+                            <option value="">All years</option>
+                            <?php foreach ($academic_years as $year): ?>
+                                <option
+                                    value="<?= html_escape($year->year); ?>"
+                                    <?= (string) $filters['academic_year'] === (string) $year->year
+                                        ? 'selected'
+                                        : ''; ?>>
+                                    <?= html_escape($year->year); ?>
+                                </option>
+                            <?php endforeach; ?>
 
                         </select>
 
@@ -133,7 +141,7 @@
 
                     <div class="col-6 col-lg-2">
 
-                    <label class="form-label small fw-semibold">
+                    <label for="grade_level" class="form-label small fw-semibold">
                         Grade Level
                     </label>
 
@@ -141,11 +149,18 @@
                         name="grade_level"
                         id="grade_level"
                         class="form-select"
-                        disabled>
+                        <?= empty($filters['academic_year']) ? 'disabled' : ''; ?>>
 
-                        <option value="">
-                            
-                        </option>
+                        <option value="">All grades</option>
+                        <?php foreach ($grade_levels as $grade): ?>
+                            <option
+                                value="<?= html_escape($grade->grade); ?>"
+                                <?= (string) $filters['grade_level'] === (string) $grade->grade
+                                    ? 'selected'
+                                    : ''; ?>>
+                                <?= html_escape($grade->grade); ?>
+                            </option>
+                        <?php endforeach; ?>
 
                     </select>
 
@@ -165,11 +180,18 @@
                             name="section"
                             id="section"
                             class="form-select"
-                            disabled>
+                            <?= empty($filters['academic_year']) || empty($filters['grade_level']) ? 'disabled' : ''; ?>>
 
-                            <option value="">
-                              
-                            </option>
+                            <option value="">All sections</option>
+                            <?php foreach ($sections as $section): ?>
+                                <option
+                                    value="<?= html_escape($section->section); ?>"
+                                    <?= (string) $filters['section'] === (string) $section->section
+                                        ? 'selected'
+                                        : ''; ?>>
+                                    <?= html_escape($section->section); ?>
+                                </option>
+                            <?php endforeach; ?>
 
                         </select>
 
@@ -235,24 +257,14 @@
                     </div>
 
 
-                    <!-- Filter -->
-
-                    <div class="col-6 col-lg-2">
-
-                        <div class="d-grid">
-
-                            <button
-                                type="submit"
-                                class="btn btn-primary">
-
-                                <i class="fas fa-filter me-1"></i>
-
-                                Filter
-
-                            </button>
-
-                        </div>
-
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>
+                            Search
+                        </button>
+                        <a class="btn btn-outline-secondary" href="<?= site_url('students'); ?>">
+                            Clear
+                        </a>
                     </div>
 
                 </div>

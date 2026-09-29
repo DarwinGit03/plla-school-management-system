@@ -18,6 +18,8 @@
 
             $this->load->library('Student_service');
             $this->load->library('student_validation');
+            $this->load->model('finance/fee_configuration_model');
+            $this->load->model('finance/enrollment_model');
 
             /*
             |--------------------------------------------------------------------------
@@ -179,38 +181,11 @@
             }
 
             $filters = [
-
-                'search' => trim(
-                    $this->input->get(
-                        'search',
-                        true
-                    )
-                ),
-
-                'status' => trim($status),
-
-            // $filters = [
-
-            //     'search' => trim(
-            //         $this->input->get('search', true)
-            //     ),
-
-            //     'status' => trim(
-            //         $this->input->get('status', true)
-            //     ),
-
-                'academic_year' => trim(
-                    $this->input->get('academic_year', true)
-                ),
-
-                'grade_level' => trim(
-                    $this->input->get('grade_level', true)
-                ),
-
-                'section' => trim(
-                    $this->input->get('section', true)
-                )
-
+                'search' => trim((string) $this->input->get('search', true)),
+                'status' => trim((string) $status),
+                'academic_year' => trim((string) $this->input->get('academic_year', true)),
+                'grade_level' => trim((string) $this->input->get('grade_level', true)),
+                'section' => trim((string) $this->input->get('section', true))
             ];
 
 
@@ -355,6 +330,8 @@
 
             $data = [
 
+                'page_styles' => ['assets/css/students.css'],
+
                 'title' => 'Students',
 
                 'page_title' => 'Students',
@@ -384,9 +361,11 @@
                 'current_page' =>
                     $page,
 
-                'academic_years' =>
-                    $this->student_service
-                        ->get_academic_years()
+                'academic_years' => $academic_years,
+
+                'grade_levels' => $grade_levels,
+
+                'sections' => $sections
 
             ];
 
@@ -404,6 +383,327 @@
                 'dashboard/layouts/master',
                 $data
             );
+        }
+
+        /** Search existing student records for enrollment work. */
+        public function enroll()
+        {
+            $filters = [
+                'search' => trim((string) $this->input->get('search', true)),
+                'status' => trim((string) $this->input->get('status', true)),
+                'academic_year' => trim((string) $this->input->get('academic_year', true)),
+                'grade_level' => trim((string) $this->input->get('grade_level', true)),
+                'section' => trim((string) $this->input->get('section', true)),
+                'payment_mode' => trim((string) $this->input->get('payment_mode', true))
+            ];
+            $filters['status'] = $filters['status'] ?: 'active';
+
+            $per_page = 10;
+            $page = max(1, (int) $this->input->get('page'));
+            $total_students = $this->student_service->count_students($filters);
+            $total_pages = (int) ceil($total_students / $per_page);
+            if ($total_pages > 0) {
+                $page = min($page, $total_pages);
+            }
+
+            $data = [
+                'page_styles' => ['assets/css/students.css'],
+                'title' => 'Enrollment',
+                'page_title' => 'Enrollment',
+                'page_subtitle' => 'Find a student and review their current enrollment.',
+                'breadcrumb' => ['Students', 'Enrollment'],
+                'content' => 'students/enroll',
+                'students' => $this->student_service->get_students(
+                    $filters,
+                    $per_page,
+                    ($page - 1) * $per_page
+                ),
+                'filters' => $filters,
+                'payment_modes' => [
+                    'tri_term' => 'Tri-Term',
+                    'semi_annual' => 'Semi-Annual',
+                    'annual' => 'Annual'
+                ],
+                'academic_years' => $this->student_service->get_academic_years(),
+                'grade_levels' => $filters['academic_year']
+                    ? $this->student_service->get_grade_levels_by_year($filters['academic_year'])
+                    : [],
+                'sections' => ($filters['academic_year'] && $filters['grade_level'])
+                    ? $this->student_service->get_sections_by_year_and_grade(
+                        $filters['academic_year'],
+                        $filters['grade_level']
+                    )
+                    : [],
+                'total_students' => $total_students,
+                'total_pages' => $total_pages,
+                'current_page' => $page
+            ];
+
+            $this->load->view('dashboard/layouts/master', $data);
+        }
+
+        /** Show the selected student's proposed enrollment and configured fees. */
+        public function enroll_student($student_id)
+        {
+            if ($this->input->method() === 'post') {
+                $is_admin_edit = $this->input->post('edit_enrollment', true) === '1';
+                if ($is_admin_edit && (int) $this->session->userdata('role_id') !== 1) {
+                    show_error('Only an administrator can edit a saved enrollment.', 403);
+                    return;
+                }
+                $this->load->library('Enrollment_service');
+                $enrollment_input = [
+                        'academic_year' => $this->input->post('academic_year', true),
+                        'grade_code' => $this->input->post('grade_code', true),
+                        'payment_mode' => $this->input->post('payment_mode', true),
+                        'uniform_size' => $this->input->post('uniform_size', true),
+                        'flow' => $this->input->post('flow', true)
+                    ];
+                $result = $is_admin_edit
+                    ? $this->enrollment_service->update_enrollment(
+                        (int) $student_id,
+                        (int) $this->input->post('enrollment_id'),
+                        $enrollment_input
+                    )
+                    : $this->enrollment_service->save_enrollment((int) $student_id, $enrollment_input);
+                $this->session->set_flashdata(
+                    $result['ok'] ? 'success' : 'error',
+                    $result['message']
+                );
+
+                $return_params = [];
+                foreach (['academic_year', 'grade_code', 'payment_mode', 'uniform_size', 'flow'] as $key) {
+                    $value = $this->input->post($key, true);
+                    if ($value !== null && $value !== '') {
+                        $return_params[$key] = $value;
+                    }
+                }
+                if ($is_admin_edit && !$result['ok']) $return_params['edit'] = '1';
+                return redirect(
+                    'students/enroll/' . (int) $student_id . '?' . http_build_query($return_params)
+                );
+            }
+
+            $student = $this->student_service->get_student_profile((int) $student_id);
+            if (!$student) {
+                show_404();
+                return;
+            }
+
+            $initial_flow_requested = $this->input->get('flow', true) === 'initial';
+            $is_admin = (int) $this->session->userdata('role_id') === 1;
+            $admin_edit = $this->input->get('edit', true) === '1';
+            if ($admin_edit && !$is_admin) {
+                show_error('Only an administrator can edit a saved enrollment.', 403);
+                return;
+            }
+            $admin_edit = $admin_edit && !empty($student->fee_configuration_id);
+            if ($admin_edit && $this->enrollment_model->has_enrollment_payments((int) $student->enrollment_id)) {
+                $this->session->set_flashdata('error', 'This enrollment cannot be edited because a payment has already been recorded.');
+                return redirect('students/enroll/' . (int) $student_id . '?' . http_build_query([
+                    'academic_year' => $student->academic_year,
+                    'grade_code' => $student->grade_level,
+                    'payment_mode' => $student->payment_mode
+                ]));
+            }
+            $years = $this->fee_configuration_model->get_active_school_years();
+            if (
+                !empty($student->academic_year)
+                && (!empty($student->fee_configuration_id) || $initial_flow_requested)
+            ) {
+                $has_saved_year = false;
+                foreach ($years as $available_year) {
+                    if ((string) $available_year->school_year === (string) $student->academic_year) {
+                        $has_saved_year = true;
+                        break;
+                    }
+                }
+                if (!$has_saved_year) {
+                    $years[] = (object) ['school_year' => $student->academic_year];
+                }
+            }
+            $year = trim((string) $this->input->get('academic_year', true));
+            if ($initial_flow_requested && $year === '') {
+                $year = (string) ($student->academic_year ?? '');
+            }
+
+            $valid_years = array_map(function ($item) {
+                return (string) $item->school_year;
+            }, $years);
+            if (!in_array($year, $valid_years, true)) {
+                $year = '';
+            }
+
+            $grades = $year
+                ? $this->fee_configuration_model->get_active_grade_codes($year)
+                : [];
+            if ($initial_flow_requested && $year === (string) ($student->academic_year ?? '')) {
+                $has_current_grade = false;
+                foreach ($grades as $available_grade) {
+                    if ((string) $available_grade->grade_code === (string) $student->grade_level) {
+                        $has_current_grade = true;
+                        break;
+                    }
+                }
+                if (!$has_current_grade && !empty($student->grade_level)) {
+                    $grades[] = (object) ['grade_code' => $student->grade_level];
+                }
+            }
+            $grade = trim((string) $this->input->get('grade_code', true));
+            $saved_enrollment_for_year = !empty($student->fee_configuration_id)
+                && (string) $student->academic_year === $year
+                && !$admin_edit;
+            if ($saved_enrollment_for_year) {
+                $grade = (string) $student->grade_level;
+                $grade_exists = false;
+                foreach ($grades as $available_grade) {
+                    if ((string) $available_grade->grade_code === $grade) {
+                        $grade_exists = true;
+                        break;
+                    }
+                }
+                if (!$grade_exists) {
+                    $grades[] = (object) ['grade_code' => $grade];
+                }
+            }
+            if ($initial_flow_requested && $grade === '') {
+                $grade = (string) ($student->grade_level ?? '');
+            }
+            if ($admin_edit && $grade === '') $grade = (string) ($student->grade_level ?? '');
+            $valid_grades = array_map(function ($item) {
+                return (string) $item->grade_code;
+            }, $grades);
+            if (!in_array($grade, $valid_grades, true)) {
+                $grade = '';
+            }
+
+            $initial_flow = $initial_flow_requested
+                && $year !== ''
+                && $year === (string) ($student->academic_year ?? '')
+                && $grade === (string) ($student->grade_level ?? '');
+
+            $placement_error = '';
+            if ($year !== '' && !$saved_enrollment_for_year && !$admin_edit) {
+                $this->load->library('Enrollment_service');
+                $placement_check = $this->enrollment_service->validate_placement(
+                    $student,
+                    $year,
+                    $grade,
+                    $initial_flow_requested
+                );
+                if (!$placement_check['ok']) $placement_error = $placement_check['message'];
+            }
+
+            $payment_modes = [
+                'tri_term' => 'Tri-Term',
+                'semi_annual' => 'Semi-Annual',
+                'annual' => 'Annual'
+            ];
+            $payment_mode = trim((string) $this->input->get('payment_mode', true));
+            if ($saved_enrollment_for_year) {
+                $payment_mode = (string) $student->payment_mode;
+            }
+            if ($admin_edit && $payment_mode === '') $payment_mode = (string) ($student->payment_mode ?? '');
+            if (!array_key_exists($payment_mode, $payment_modes)) {
+                $payment_mode = '';
+            }
+
+            $fees = null;
+            $saved_fee_rows = [];
+            $configuration_checked = ($year !== '' && $grade !== '' && $payment_mode !== '');
+            if ($saved_enrollment_for_year) {
+                $saved_fee_rows = $this->student_service
+                    ->get_enrollment_fee_snapshot((int) $student->enrollment_id);
+            } elseif ($configuration_checked && $placement_error === '') {
+                $fees = $this->fee_configuration_model->get_complete_fees(
+                    $year,
+                    $grade,
+                    $payment_mode
+                );
+            }
+
+            $enrollment_history = $this->student_service->get_enrollment_history((int) $student_id);
+            $enrollment_saved = $saved_enrollment_for_year;
+            if ($initial_flow) {
+                $enrollment_type = 'Initial enrollment';
+            } elseif ($year === '') {
+                $enrollment_type = 'Select target year';
+            } elseif ($enrollment_saved) {
+                $enrollment_type = 'Enrollment complete';
+            } elseif (empty($student->enrollment_id) && empty($enrollment_history)) {
+                $enrollment_type = 'Initial enrollment';
+            } else {
+                $enrollment_type = 'Re-enrollment';
+            }
+
+            $uniform_type = strtolower((string) ($student->gender ?? '')) === 'female'
+                ? 'girls'
+                : 'boys';
+            $uniforms = $fees ? $fees['uniform_' . ($uniform_type === 'girls' ? 'girls' : 'boys')] : [];
+            $uniform_size = trim((string) $this->input->get('uniform_size', true));
+            if ($admin_edit && $uniform_size === '') {
+                $uniform_size = $this->enrollment_model->get_enrollment_uniform_size((int) $student->enrollment_id);
+            }
+            $selected_uniform = null;
+            foreach ($uniforms as $uniform) {
+                if ((string) $uniform->uniform_size === $uniform_size) {
+                    $selected_uniform = $uniform;
+                    break;
+                }
+            }
+
+            $fees_total = 0.0;
+            if ($fees) {
+                foreach (['tuition', 'worktext', 'extra_curricular'] as $category) {
+                    foreach ($fees[$category] as $fee) {
+                        $fees_total += (float) ($fee->tuition_fee ?? $fee->amount ?? 0);
+                    }
+                }
+                if ($selected_uniform) {
+                    $fees_total += (float) $selected_uniform->top_price
+                        + (float) $selected_uniform->bottom_price;
+                }
+            }
+            if ($enrollment_saved) {
+                $fees_total = 0.0;
+                foreach ($saved_fee_rows as $saved_fee) {
+                    $fees_total += (float) $saved_fee->amount;
+                }
+            }
+
+            $this->load->view('dashboard/layouts/master', [
+                'page_styles' => ['assets/css/students.css'],
+                'title' => 'Enroll Student',
+                'page_title' => 'Enroll Student',
+                'page_subtitle' => 'Review placement and configured fees.',
+                'breadcrumb' => ['Students', 'Enrollment', 'Enroll Student'],
+                'content' => 'students/enroll_setup',
+                'student' => $student,
+                'initial_flow' => $initial_flow,
+                'admin_edit' => $admin_edit,
+                'is_admin' => $is_admin,
+                'can_admin_edit' => $is_admin && !empty($student->enrollment_id)
+                    && !$this->enrollment_model->has_enrollment_payments((int) $student->enrollment_id),
+                'enrollment_type' => $enrollment_type,
+                'placement_error' => $placement_error,
+                'academic_years' => $years,
+                'grades' => $grades,
+                'payment_modes' => $payment_modes,
+                'selected' => [
+                    'academic_year' => $year,
+                    'grade_code' => $grade,
+                    'payment_mode' => $payment_mode,
+                    'uniform_size' => $selected_uniform ? $uniform_size : ''
+                ],
+                'configuration_checked' => $configuration_checked,
+                'enrollment_saved' => $enrollment_saved,
+                'fees' => $fees,
+                'saved_fee_rows' => $saved_fee_rows,
+                'uniform_type' => $uniform_type,
+                'uniforms' => $uniforms,
+                'selected_uniform' => $selected_uniform,
+                'fees_total' => $fees_total
+            ]);
         }
         
         public function create()
@@ -872,7 +1172,11 @@
                 );
 
                 return redirect(
-                    'students/view/' . $student_id
+                    'students/enroll/' . $student_id . '?' . http_build_query([
+                        'flow' => 'initial',
+                        'academic_year' => $enrollment_data['academic_year'],
+                        'grade_code' => $enrollment_data['grade_level']
+                    ])
                 );
             }
 
@@ -1518,6 +1822,8 @@
 
                 [
 
+                    'page_styles' => ['assets/css/students.css'],
+
                     'title' =>
                         'Edit Student',
 
@@ -1587,6 +1893,7 @@
             $data = array_merge(
 
                 [
+                    'page_styles' => ['assets/css/students.css'],
                     'title' =>
                         'Register Student',
 
@@ -1685,6 +1992,8 @@
             */
 
             $data = [
+
+                'page_styles' => ['assets/css/students.css'],
 
                 'title' =>
                     'Student Profile',

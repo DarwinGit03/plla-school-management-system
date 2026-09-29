@@ -9,6 +9,7 @@ use PHPMailer\PHPMailer\Exception;
 class Mail_service
 {
     protected $mail;
+    protected $configured = false;
 
     public function __construct()
     {
@@ -38,45 +39,8 @@ class Mail_service
         $this->mail->Password = 'gmkxxeldocjmwzgs';
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $this->mail->Port = 465;
-        $this->mail->setFrom(
-            'darwinortozar00@gmail.com',
-            'PLLA School Management'
-        );
-    }
-
-    private function setup()
-    {
-        // $mail =
-        //     new PHPMailer(
-        //         true
-        //     );
-
-        $mail->isSMTP();
-
-        $mail->Host =
-            'smtp.gmail.com';
-
-        $mail->SMTPAuth =
-            true;
-
-        $mail->Username =
-            'darwinortozar00@gmail.com';
-
-        $mail->Password =
-            'gmkxxeldocjmwzgs';
-
-        $mail->SMTPSecure =
-            PHPMailer::ENCRYPTION_SMTPS;
-
-        $mail->Port =
-            465;
-
-        $mail->setFrom(
-            'darwinortozar00@gmail.com',
-            'PLLA School Management'
-        );
-
-        return $mail;
+        $this->mail->setFrom('darwinortozar00@gmail.com', 'PLLA School Management');
+        $this->configured = true;
     }
 
     /*
@@ -87,6 +51,10 @@ class Mail_service
 
     public function send($email, $subject, $body)
     {
+        if (!$this->configured) {
+            return ['status' => false, 'message' => 'SMTP is not configured.'];
+        }
+
         try
         {
             $this->mail->clearAddresses();
@@ -105,6 +73,31 @@ class Mail_service
                 'status' => false,
                 'message' => $this->mail->ErrorInfo
             ];
+        }
+    }
+
+    /** Send a message with an in-memory attachment such as a generated PDF. */
+    public function sendWithAttachment($email, $subject, $body, $attachment, $filename, $mime_type = 'application/pdf')
+    {
+        if (!$this->configured) {
+            return ['status' => false, 'message' => 'SMTP is not configured.'];
+        }
+
+        try {
+            $this->mail->clearAddresses();
+            $this->mail->clearAttachments();
+            $this->mail->addAddress($email);
+            $this->mail->isHTML(true);
+            $this->mail->Subject = $subject;
+            $this->mail->Body = $body;
+            $this->mail->AltBody = trim(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $body)));
+            $this->mail->addStringAttachment($attachment, $filename, 'base64', $mime_type);
+            $this->mail->send();
+            $this->mail->clearAttachments();
+            return ['status' => true];
+        } catch (Exception $e) {
+            $this->mail->clearAttachments();
+            return ['status' => false, 'message' => $this->mail->ErrorInfo];
         }
     }
 

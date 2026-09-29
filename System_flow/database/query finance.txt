@@ -1,0 +1,962 @@
+                    SCHOOL YEAR
+                        │
+                        ▼
+                   GRADE LEVEL
+                  /     |      \
+                 /      |       \
+                ▼       ▼        ▼
+           FEE TUITION WORKTEXT EXTRA-CURRICULAR
+               │
+         Payment Mode
+       ┌────────┼────────┐
+    Tri-Term Semi-Annual Annual
+
+
+CREATE TABLE school_years (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_year VARCHAR(20) NOT NULL UNIQUE,
+    status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE school_years (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_year VARCHAR(20) NOT NULL UNIQUE,
+    status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE grade_levels (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    grade_name VARCHAR(100) NOT NULL,
+    grade_code VARCHAR(100) NOT NULL,
+    status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO grade_levels
+    (grade_name, grade_code, status)
+VALUES
+    ('Nursery', 'N', 'active'),
+    ('Kindergarten', 'K', 'active'),
+    ('Grade 1', '1', 'active'),
+    ('Grade 2', '2', 'active'),
+    ('Grade 3', '3', 'active'),
+    ('Grade 4', '4', 'active'),
+    ('Grade 5', '5', 'active'),
+    ('Grade 6', '6', 'active');
+
+
+CREATE TABLE fee_uniform (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    school_year VARCHAR(100) NOT NULL,
+    uniform_size VARCHAR(100) NOT NULL,
+
+    uniform_type ENUM(
+        'boys',
+        'girls'
+    ) NOT NULL,
+
+    top_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    bottom_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL DEFAULT NULL,
+);
+
+INSERT INTO fee_uniform 
+(
+    school_year,
+    uniform_size,
+    uniform_type,
+    top_price,
+    bottom_price
+)
+VALUES
+("2026-2027", "Size 4 Small", 'boys', 550.00, 380.00),
+("2026-2027", "Size 6 Medium", 'boys', 580.00, 400.00),
+("2026-2027", "Size 8 Large", 'boys', 600.00, 420.00),
+("2026-2027", "Size 10 XL", 'boys', 620.00, 450.00),
+("2026-2027", "Size 12", 'boys', 640.00, 480.00),
+("2026-2027", "Size 14", 'boys', 680.00, 520.00),
+("2026-2027", "Size 16", 'boys', 720.00, 560.00),
+("2026-2027", "Size 18", 'boys', 770.00, 600.00),
+("2026-2027", "Size 20", 'boys', 800.00, 650.00);
+-- also for girls setup
+
+
+CREATE TABLE fee_configurations (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    school_year VARCHAR(100) NOT NULL,
+    grade_code VARCHAR(100) NOT NULL,
+
+    payment_mode ENUM(
+        'tri_term',
+        'semi_annual',
+        'annual'
+    ) NOT NULL,
+
+    status ENUM(
+        'draft',
+        'active',
+        'inactive'
+    ) NOT NULL DEFAULT 'draft',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_fee_configuration (
+        school_year,
+        grade_code,
+        payment_mode
+    )
+) ENGINE=InnoDB;
+
+
+INSERT INTO fee_configurations
+(
+    school_year,
+    grade_code,
+    payment_mode,
+    status
+)
+VALUES
+
+('2026-2027', 'N', 'tri_term', 'active'),
+('2026-2027', 'N', 'semi_annual', 'active'),
+('2026-2027', 'N', 'annual', 'active'),
+
+('2026-2027', 'K', 'tri_term', 'active'),
+('2026-2027', 'K', 'semi_annual', 'active'),
+('2026-2027', 'K', 'annual', 'active'),
+
+('2026-2027', '1', 'tri_term', 'active'),
+('2026-2027', '1', 'semi_annual', 'active'),
+('2026-2027', '1', 'annual', 'active'),
+
+('2026-2027', '2', 'tri_term', 'active'),
+('2026-2027', '2', 'semi_annual', 'active'),
+('2026-2027', '2', 'annual', 'active'),
+
+('2026-2027', '3', 'tri_term', 'active'),
+('2026-2027', '3', 'semi_annual', 'active'),
+('2026-2027', '3', 'annual', 'active'),
+
+('2026-2027', '4', 'tri_term', 'active'),
+('2026-2027', '4', 'semi_annual', 'active'),
+('2026-2027', '4', 'annual', 'active'),
+
+('2026-2027', '5', 'tri_term', 'active'),
+('2026-2027', '5', 'semi_annual', 'active'),
+('2026-2027', '5', 'annual', 'active'),
+
+('2026-2027', '6', 'tri_term', 'active'),
+('2026-2027', '6', 'semi_annual', 'active'),
+('2026-2027', '6', 'annual', 'active');
+
+CREATE TABLE fee_tuition (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    configuration_id INT UNSIGNED NOT NULL,
+
+    payment_sequence INT UNSIGNED NOT NULL,
+
+    payment_label VARCHAR(100) NOT NULL,
+
+    payment_date DATE NULL,
+
+    tuition_fee DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+
+    status ENUM(
+        'active',
+        'inactive'
+    ) NOT NULL DEFAULT 'active',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME NULL
+        DEFAULT NULL
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_payment_schedule (
+        configuration_id,
+        payment_sequence
+    ),
+
+    CONSTRAINT fk_fee_tuition_configuration
+        FOREIGN KEY (configuration_id)
+        REFERENCES fee_configurations(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    INDEX idx_fee_tuition_configuration (
+        configuration_id
+    )
+
+) ENGINE=InnoDB;
+
+INSERT INTO fee_tuition
+(
+    configuration_id,
+    payment_sequence,
+    payment_label,
+    payment_date,
+    tuition_fee,
+    status
+)
+
+SELECT
+    fc.id,
+    s.payment_sequence,
+    s.payment_label,
+    s.payment_date,
+    s.tuition_fee,
+    'active'
+
+FROM fee_configurations fc
+
+INNER JOIN
+(
+    /* =========================================
+       NURSERY + KINDERGARTEN
+       ========================================= */
+
+    SELECT
+        'NK' AS grade_group,
+        'tri_term' AS payment_mode,
+        1 AS payment_sequence,
+        'Upon Enrollment' AS payment_label,
+        NULL AS payment_date,
+        4250.00 AS tuition_fee
+
+    UNION ALL SELECT
+        'NK',
+        'tri_term',
+        2,
+        'First Term',
+        '2026-09-07',
+        4000.00
+
+    UNION ALL SELECT
+        'NK',
+        'tri_term',
+        3,
+        'Second Term',
+        '2026-12-07',
+        4000.00
+
+    UNION ALL SELECT
+        'NK',
+        'tri_term',
+        4,
+        'Third Term',
+        '2027-01-18',
+        4000.00
+
+    UNION ALL SELECT
+        'NK',
+        'semi_annual',
+        1,
+        'Upon Enrollment',
+        NULL,
+        3250.00
+
+    UNION ALL SELECT
+        'NK',
+        'semi_annual',
+        2,
+        '1st Installment',
+        '2026-09-07',
+        6000.00
+
+    UNION ALL SELECT
+        'NK',
+        'semi_annual',
+        3,
+        '2nd Installment',
+        '2027-01-07',
+        6000.00
+
+    UNION ALL SELECT
+        'NK',
+        'annual',
+        1,
+        'Upon Enrollment',
+        NULL,
+        3250.00
+
+    UNION ALL SELECT
+        'NK',
+        'annual',
+        2,
+        'Annual',
+        '2026-07-22',
+        11500.00
+
+
+    /* =========================================
+       GRADES 1, 2, 3
+       ========================================= */
+
+    UNION ALL SELECT
+        'G1_G3',
+        'tri_term',
+        1,
+        'Enrollment',
+        '2026-06-08',
+        6250.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'tri_term',
+        2,
+        'First Term',
+        '2026-08-07',
+        6250.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'tri_term',
+        3,
+        'Second Term',
+        '2026-10-07',
+        6250.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'tri_term',
+        4,
+        'Third Term',
+        '2026-12-07',
+        6250.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'semi_annual',
+        1,
+        'Upon Enrollment',
+        NULL,
+        5000.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'semi_annual',
+        2,
+        '1st Installment',
+        '2026-08-07',
+        9500.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'semi_annual',
+        3,
+        '2nd Installment',
+        '2026-12-07',
+        9500.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'annual',
+        1,
+        'Upon Enrollment',
+        NULL,
+        5000.00
+
+    UNION ALL SELECT
+        'G1_G3',
+        'annual',
+        2,
+        'Annual',
+        '2026-06-15',
+        18500.00
+
+
+    /* =========================================
+       GRADES 4, 5, 6
+       ========================================= */
+
+    UNION ALL SELECT
+        'G4_G6',
+        'tri_term',
+        1,
+        'Enrollment',
+        '2026-06-08',
+        6500.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'tri_term',
+        2,
+        'First Term',
+        '2026-09-07',
+        6500.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'tri_term',
+        3,
+        'Second Term',
+        '2026-12-07',
+        6500.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'tri_term',
+        4,
+        'Third Term',
+        '2027-03-07',
+        6500.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'semi_annual',
+        1,
+        'Upon Enrollment',
+        NULL,
+        5000.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'semi_annual',
+        2,
+        '1st Installment',
+        '2026-08-07',
+        10000.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'semi_annual',
+        3,
+        '2nd Installment',
+        '2026-12-07',
+        10000.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'annual',
+        1,
+        'Upon Enrollment',
+        NULL,
+        5000.00
+
+    UNION ALL SELECT
+        'G4_G6',
+        'annual',
+        2,
+        'Annual',
+        '2026-06-15',
+        19500.00
+
+) s
+
+ON fc.school_year = '2026-2027'
+
+AND
+(
+    (s.grade_group = 'NK'
+        AND fc.grade_code IN ('N', 'K'))
+
+    OR
+
+    (s.grade_group = 'G1_G3'
+        AND fc.grade_code IN ('1', '2', '3'))
+
+    OR
+
+    (s.grade_group = 'G4_G6'
+        AND fc.grade_code IN ('4', '5', '6'))
+)
+
+AND fc.payment_mode = s.payment_mode;
+
+
+CREATE TABLE fee_worktext (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    school_year VARCHAR(100) NOT NULL,
+
+    grade_code VARCHAR(100) NOT NULL,
+
+    payment_sequence INT UNSIGNED NOT NULL,
+
+    payment_label VARCHAR(100) NOT NULL,
+
+    payment_date DATE NULL,
+
+    amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+
+    status ENUM(
+        'active',
+        'inactive'
+    ) NOT NULL DEFAULT 'active',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME NULL
+        DEFAULT NULL
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_worktext_schedule (
+        school_year,
+        grade_code,
+        payment_sequence
+    )
+
+) ENGINE=InnoDB;
+
+
+INSERT INTO fee_worktext
+(
+    school_year,
+    grade_code,
+    payment_sequence,
+    payment_label,
+    payment_date,
+    amount,
+    status
+)
+VALUES
+
+-- NURSERY
+(
+    '2026-2027',
+    'N',
+    1,
+    'Upon Enrollment',
+    NULL,
+    2100.00,
+    'active'
+),
+(
+    '2026-2027',
+    'N',
+    2,
+    'First Term',
+    '2026-09-07',
+    1750.00,
+    'active'
+),
+(
+    '2026-2027',
+    'N',
+    3,
+    'Second Term',
+    '2026-12-07',
+    1750.00,
+    'active'
+),
+
+-- KINDERGARTEN
+(
+    '2026-2027',
+    'K',
+    1,
+    'Upon Enrollment',
+    NULL,
+    2100.00,
+    'active'
+),
+(
+    '2026-2027',
+    'K',
+    2,
+    'First Term',
+    '2026-09-07',
+    1750.00,
+    'active'
+),
+(
+    '2026-2027',
+    'K',
+    3,
+    'Second Term',
+    '2026-12-07',
+    1750.00,
+    'active'
+),
+
+-- GRADE 1
+(
+    '2026-2027',
+    '1',
+    1,
+    'Upon Enrollment',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '1',
+    2,
+    'First Term',
+    '2026-08-07',
+    2750.00,
+    'active'
+),
+(
+    '2026-2027',
+    '1',
+    3,
+    'Second Term',
+    '2026-10-07',
+    2750.00,
+    'active'
+),
+
+-- GRADE 2
+(
+    '2026-2027',
+    '2',
+    1,
+    'Upon Enrollment',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '2',
+    2,
+    'First Term',
+    '2026-08-07',
+    2750.00,
+    'active'
+),
+(
+    '2026-2027',
+    '2',
+    3,
+    'Second Term',
+    '2026-10-07',
+    2750.00,
+    'active'
+),
+
+-- GRADE 3
+(
+    '2026-2027',
+    '3',
+    1,
+    'Upon Enrollment',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '3',
+    2,
+    'First Term',
+    '2026-08-07',
+    2750.00,
+    'active'
+),
+(
+    '2026-2027',
+    '3',
+    3,
+    'Second Term',
+    '2026-10-07',
+    2750.00,
+    'active'
+),
+
+-- GRADE 4
+(
+    '2026-2027',
+    '4',
+    1,
+    'Upon Enrollment',
+    NULL,
+    3100.00,
+    'active'
+),
+(
+    '2026-2027',
+    '4',
+    2,
+    'First Term',
+    '2026-09-07',
+    2850.00,
+    'active'
+),
+(
+    '2026-2027',
+    '4',
+    3,
+    'Second Term',
+    '2026-12-07',
+    2850.00,
+    'active'
+),
+
+-- GRADE 5
+(
+    '2026-2027',
+    '5',
+    1,
+    'Upon Enrollment',
+    NULL,
+    3100.00,
+    'active'
+),
+(
+    '2026-2027',
+    '5',
+    2,
+    'First Term',
+    '2026-09-07',
+    2850.00,
+    'active'
+),
+(
+    '2026-2027',
+    '5',
+    3,
+    'Second Term',
+    '2026-12-07',
+    2850.00,
+    'active'
+),
+
+-- GRADE 6
+(
+    '2026-2027',
+    '6',
+    1,
+    'Upon Enrollment',
+    NULL,
+    3100.00,
+    'active'
+),
+(
+    '2026-2027',
+    '6',
+    2,
+    'First Term',
+    '2026-09-07',
+    2850.00,
+    'active'
+),
+(
+    '2026-2027',
+    '6',
+    3,
+    'Second Term',
+    '2026-12-07',
+    2850.00,
+    'active'
+);
+
+
+
+CREATE TABLE fee_extra_curricular (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    school_year VARCHAR(100) NOT NULL,
+
+    grade_code VARCHAR(100) NOT NULL,
+
+    payment_sequence INT UNSIGNED NOT NULL,
+
+    payment_label VARCHAR(100) NOT NULL,
+
+    payment_date DATE NULL,
+
+    amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+
+    status ENUM(
+        'active',
+        'inactive'
+    ) NOT NULL DEFAULT 'active',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME NULL
+        DEFAULT NULL
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_extra_curricular_schedule (
+        school_year,
+        grade_code,
+        payment_sequence
+    )
+
+) ENGINE=InnoDB;
+
+
+
+INSERT INTO fee_extra_curricular
+(
+    school_year,
+    grade_code,
+    payment_sequence,
+    payment_label,
+    payment_date,
+    amount,
+    status
+)
+VALUES
+
+-- NURSERY
+(
+    '2026-2027',
+    'N',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3250.00,
+    'active'
+),
+(
+    '2026-2027',
+    'N',
+    2,
+    '3rd Term',
+    NULL,
+    1750.00,
+    'active'
+),
+
+-- KINDERGARTEN
+(
+    '2026-2027',
+    'K',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3250.00,
+    'active'
+),
+(
+    '2026-2027',
+    'K',
+    2,
+    '3rd Term',
+    NULL,
+    1750.00,
+    'active'
+),
+
+-- GRADE 1
+(
+    '2026-2027',
+    '1',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '1',
+    2,
+    '3rd Term',
+    NULL,
+    2000.00,
+    'active'
+),
+
+-- GRADE 2
+(
+    '2026-2027',
+    '2',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '2',
+    2,
+    '3rd Term',
+    NULL,
+    2000.00,
+    'active'
+),
+
+-- GRADE 3
+(
+    '2026-2027',
+    '3',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '3',
+    2,
+    '3rd Term',
+    NULL,
+    2000.00,
+    'active'
+),
+
+-- GRADE 4
+(
+    '2026-2027',
+    '4',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '4',
+    2,
+    '3rd Term',
+    NULL,
+    2000.00,
+    'active'
+),
+
+-- GRADE 5
+(
+    '2026-2027',
+    '5',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '5',
+    2,
+    '3rd Term',
+    NULL,
+    2000.00,
+    'active'
+),
+
+-- GRADE 6
+(
+    '2026-2027',
+    '6',
+    1,
+    '1st & 2nd Term',
+    NULL,
+    3000.00,
+    'active'
+),
+(
+    '2026-2027',
+    '6',
+    2,
+    '3rd Term',
+    NULL,
+    2000.00,
+    'active'
+);
