@@ -1,5 +1,17 @@
 $(document).ready(function () {
 
+    $(document).on('click', '[data-password-toggle]', function () {
+        const input = document.getElementById($(this).data('password-toggle'));
+        if (!input) return;
+
+        const showPassword = input.type === 'password';
+        input.type = showPassword ? 'text' : 'password';
+        $(this)
+            .toggleClass('is-visible', showPassword)
+            .attr('aria-pressed', showPassword ? 'true' : 'false')
+            .attr('aria-label', showPassword ? 'Hide password' : 'Show password');
+    });
+
     $('#loginForm').submit(function(e){
         e.preventDefault();
         let formData = $(this).serializeArray();

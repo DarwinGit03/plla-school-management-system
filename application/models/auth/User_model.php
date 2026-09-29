@@ -65,8 +65,11 @@ class User_model extends CI_Model
     public function getById($id)
     {
         return $this->db
-                    ->where('id', $id)
-                    ->get($this->table)
+                    ->select('users.*, roles.role_name')
+                    ->from($this->table)
+                    ->join('roles', 'roles.id = users.role_id', 'left')
+                    ->where('users.id', $id)
+                    ->get()
                     ->row();
     }
     /*

@@ -142,16 +142,47 @@ class Finance extends MY_Controller
     public function payments()
     {
         $search = trim((string) $this->input->get('search', true));
-        $has_search = $search !== '';
         $student_id = (int) $this->input->get('student_id');
-        $school_years = $this->payment_model->get_payment_school_years();
+        $school_years = $this->fee_configuration_model->get_school_years();
         $school_year_values = array_map(function ($year) {
-            return (string) $year->academic_year;
+            return (string) $year->school_year;
         }, $school_years);
         $requested_year = trim((string) $this->input->get('academic_year', true));
         $academic_year = in_array($requested_year, $school_year_values, true)
             ? $requested_year
             : '';
+        $grade_levels = $academic_year !== ''
+            ? $this->fee_configuration_model->get_grade_codes_by_year($academic_year)
+            : [];
+        $grade_options_by_year = [];
+        foreach ($school_years as $school_year_option) {
+            $year_value = (string) $school_year_option->school_year;
+            $year_grades = $year_value === $academic_year
+                ? $grade_levels
+                : $this->fee_configuration_model->get_grade_codes_by_year($year_value);
+            $grade_options_by_year[$year_value] = array_map(function ($grade) {
+                return (string) $grade->grade;
+            }, $year_grades);
+        }
+        $grade_values = array_map(function ($grade) {
+            return (string) $grade->grade;
+        }, $grade_levels);
+        $requested_grade = trim((string) $this->input->get('grade_level', true));
+        $grade_level = in_array($requested_grade, $grade_values, true)
+            ? $requested_grade
+            : '';
+        $this->load->library('Student_service');
+        $sections = ($academic_year !== '' && $grade_level !== '')
+            ? $this->student_service->get_sections_by_year_and_grade($academic_year, $grade_level)
+            : [];
+        $section_values = array_map(function ($section) {
+            return (string) $section->section;
+        }, $sections);
+        $requested_section = trim((string) $this->input->get('section', true));
+        $section = in_array($requested_section, $section_values, true)
+            ? $requested_section
+            : '';
+        $has_search = $search !== '' || $academic_year !== '' || $grade_level !== '' || $section !== '';
 
         if ($this->input->method() === 'post') {
             $this->load->library('Payment_service');
@@ -177,10 +208,32 @@ class Finance extends MY_Controller
             $academic_year = in_array($requested_year, $school_year_values, true)
                 ? $requested_year
                 : '';
+            $requested_grade = trim((string) $this->input->post('grade_level', true));
+            $available_grades = $academic_year !== ''
+                ? $this->fee_configuration_model->get_grade_codes_by_year($academic_year)
+                : [];
+            $available_grade_values = array_map(function ($grade) {
+                return (string) $grade->grade;
+            }, $available_grades);
+            $grade_level = in_array($requested_grade, $available_grade_values, true)
+                ? $requested_grade
+                : '';
+            $requested_section = trim((string) $this->input->post('section', true));
+            $available_sections = ($academic_year !== '' && $grade_level !== '')
+                ? $this->student_service->get_sections_by_year_and_grade($academic_year, $grade_level)
+                : [];
+            $available_section_values = array_map(function ($section_record) {
+                return (string) $section_record->section;
+            }, $available_sections);
+            $section = in_array($requested_section, $available_section_values, true)
+                ? $requested_section
+                : '';
             return redirect('finance/payments?' . http_build_query([
                 'search' => $search,
                 'student_id' => $student_id,
-                'academic_year' => $academic_year
+                'academic_year' => $academic_year,
+                'grade_level' => $grade_level,
+                'section' => $section
             ]));
         }
 
@@ -189,7 +242,7 @@ class Finance extends MY_Controller
             ? $this->payment_model->get_student_payment_summary($student_id, $academic_year)
             : null;
         $students = ($has_search && $student_id === 0)
-            ? $this->payment_model->search_students_for_payments($search, $academic_year)
+            ? $this->payment_model->search_students_for_payments($search, $academic_year, $grade_level, $section)
             : [];
         $payment_history = $selected_student
             ? $this->payment_model->get_payment_history_by_student($student_id, $academic_year)
@@ -205,6 +258,11 @@ class Finance extends MY_Controller
             'search' => $search,
             'academic_year' => $academic_year,
             'school_years' => $school_years,
+            'grade_level' => $grade_level,
+            'grade_levels' => $grade_levels,
+            'grade_options_by_year' => $grade_options_by_year,
+            'section' => $section,
+            'sections' => $sections,
             'has_search' => $has_search,
             'students' => $students,
             'selected_student' => $selected_student,
@@ -214,7 +272,7 @@ class Finance extends MY_Controller
             'payment_history' => $payment_history,
             'payment_audit' => $this->payment_model->get_payment_audit_by_payment_ids($payment_ids),
             'student_id' => $student_id,
-            'page_scripts' => ['assets/js/finance/finance.js'],
+            'page_scripts' => ['assets/js/finance/finance.js?v=20260929'],
             'payment_methods' => $this->payment_service->get_payment_methods()
         ]);
     }
@@ -258,12 +316,14 @@ class Finance extends MY_Controller
         return redirect('finance/payments?' . http_build_query([
             'search' => trim((string) $this->input->post('search', true)),
             'student_id' => (int) $student_id,
-            'academic_year' => trim((string) $this->input->post('academic_year', true))
+            'academic_year' => trim((string) $this->input->post('academic_year', true)),
+            'grade_level' => trim((string) $this->input->post('grade_level', true)),
+            'section' => trim((string) $this->input->post('section', true))
         ]));
     }
 
     /** Download the selected student's payment statement as a PDF. */
-    public function payment_statement($student_id)
+    public function payment_statement($student_id, $display = 'attachment')
     {
         $academic_year = $this->normalize_payment_school_year($this->input->get('academic_year', true));
         $statement = $this->build_payment_statement((int) $student_id, $academic_year);
@@ -274,12 +334,16 @@ class Finance extends MY_Controller
         $this->load->library('Payment_statement_pdf');
         $pdf = $this->payment_statement_pdf->generate(
             $statement['student'],
-            $statement['payments']
+            $statement['payments'],
+            $statement['primary_guardian'],
+            $this->payment_statement_signer()
         );
-        $filename = $this->payment_statement_filename($statement['student']);
+        $filename = $display === 'inline'
+            ? 'Payment Record View.pdf'
+            : $this->payment_statement_filename($statement['student']);
         $this->output
             ->set_content_type('application/pdf')
-            ->set_header('Content-Disposition: attachment; filename="' . $filename . '"')
+            ->set_header('Content-Disposition: ' . ($display === 'inline' ? 'inline' : 'attachment') . '; filename="' . $filename . '"')
             ->set_output($pdf);
     }
 
@@ -303,7 +367,9 @@ class Finance extends MY_Controller
             return redirect('finance/payments?' . http_build_query([
                 'search' => $this->input->post('search', true),
                 'student_id' => (int) $student_id,
-                'academic_year' => $academic_year
+                'academic_year' => $academic_year,
+                'grade_level' => $this->input->post('grade_level', true),
+                'section' => $this->input->post('section', true)
             ]));
         }
 
@@ -313,14 +379,18 @@ class Finance extends MY_Controller
             return redirect('finance/payments?' . http_build_query([
                 'search' => $this->input->post('search', true),
                 'student_id' => (int) $student_id,
-                'academic_year' => $academic_year
+                'academic_year' => $academic_year,
+                'grade_level' => $this->input->post('grade_level', true),
+                'section' => $this->input->post('section', true)
             ]));
         }
 
         $this->load->library('Payment_statement_pdf');
         $pdf = $this->payment_statement_pdf->generate(
             $statement['student'],
-            $statement['payments']
+            $statement['payments'],
+            $statement['primary_guardian'],
+            $this->payment_statement_signer()
         );
         $student_name = trim($statement['student']->first_name . ' ' . $statement['student']->last_name);
         $filename = $this->payment_statement_filename($statement['student']);
@@ -347,7 +417,9 @@ class Finance extends MY_Controller
         return redirect('finance/payments?' . http_build_query([
             'search' => $this->input->post('search', true),
             'student_id' => (int) $student_id,
-            'academic_year' => $academic_year
+            'academic_year' => $academic_year,
+            'grade_level' => $this->input->post('grade_level', true),
+            'section' => $this->input->post('section', true)
         ]));
     }
 
@@ -364,7 +436,25 @@ class Finance extends MY_Controller
         return [
             'student' => $student,
             'guardian' => $this->payment_model->get_statement_guardian($student_id),
+            'primary_guardian' => $this->payment_model->get_primary_guardian($student_id),
             'payments' => $payments
+        ];
+    }
+
+    private function payment_statement_signer()
+    {
+        $user = $this->current_user;
+        $name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+        if ($name === '') {
+            $name = trim((string) ($user->username ?? ''));
+        }
+
+        $role_id = (int) ($user->role_id ?? $this->session->userdata('role_id'));
+        $role = $role_id === 1 ? 'ADMIN' : ($role_id === 2 ? 'PRINCIPAL' : 'AUTHORIZED FINANCE STAFF');
+
+        return [
+            'name' => $name !== '' ? $name : 'Authorized school representative',
+            'role' => $role
         ];
     }
 
@@ -394,8 +484,8 @@ class Finance extends MY_Controller
             return null;
         }
 
-        foreach ($this->payment_model->get_payment_school_years() as $year) {
-            if ((string) $year->academic_year === $requested_year) {
+        foreach ($this->fee_configuration_model->get_school_years() as $year) {
+            if ((string) $year->school_year === $requested_year) {
                 return $requested_year;
             }
         }

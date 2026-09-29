@@ -52,6 +52,8 @@ $(document).ready(function(){
 
 
     $('.otp-input').on('input', function(){
+        $(this).val($(this).val().replace(/\D/g, '').slice(-1));
+
         if($(this).val().length === 1)
         {
             $(this).next('.otp-input').focus();
@@ -61,9 +63,17 @@ $(document).ready(function(){
     });
 
     $('.otp-input').on('keydown', function(e){
-        if(e.key === 'Backspace' && $(this).val() === '')
+        if(e.key === 'Backspace')
         {
-            $(this).prev('.otp-input').focus();
+            if($(this).val() === '')
+            {
+                $(this).prev('.otp-input').focus();
+            }
+            else
+            {
+                $(this).val('');
+                buildOTP();
+            }
         }
     });
 
@@ -134,13 +144,13 @@ $(document).ready(function(){
                         }
                     });
 
-                    notyf.error({
+                    notyf.success({
                         message: response.message,
                         duration: 3000 // 2 seconds
                     });
                     
                     setTimeout(function () {
-                        window.location = BASE_URL + 'dashboard';
+                        window.location = BASE_URL + 'reset-password-page';
                     }, 1000);
                 }
                 else

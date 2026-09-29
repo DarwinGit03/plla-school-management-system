@@ -26,7 +26,7 @@
                     <div class="fw-semibold">
                         <?= html_escape($student->academic_year ?: 'Not enrolled'); ?>
                         <?php if (!empty($student->grade_level)): ?>
-                            · <?= (stripos(trim($student->grade_level), 'grade ') === 0 ? '' : 'Grade ') . html_escape($student->grade_level); ?>
+                            · <?= html_escape($this->fee_configuration_model->grade_label($student->grade_level)); ?>
                         <?php endif; ?>
                         <?php if (!empty($student->section)): ?>
                             · <?= html_escape($student->section); ?>
@@ -99,7 +99,7 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
             <div>
                 <h2 class="h5 fw-bold mb-1">Saved fee assessment</h2>
-                <div class="text-muted small"><?= html_escape($selected['academic_year']); ?> · Grade <?= html_escape($selected['grade_code']); ?> · <?= html_escape($payment_modes[$selected['payment_mode']]); ?></div>
+                <div class="text-muted small"><?= html_escape($selected['academic_year']); ?> · <?= html_escape($this->fee_configuration_model->grade_label($selected['grade_code'])); ?> · <?= html_escape($payment_modes[$selected['payment_mode']]); ?></div>
             </div>
             <div class="text-md-end">
                 <div class="small text-muted">Snapshot total</div>
@@ -109,7 +109,7 @@
                 <a class="btn btn-outline-primary" href="<?= site_url('students/enroll/' . (int) $student->id . '?' . http_build_query([
                     'edit' => '1',
                     'academic_year' => $student->academic_year,
-                    'grade_code' => $student->grade_level,
+                    'grade_code' => $student->grade_code,
                     'payment_mode' => $student->payment_mode
                 ])); ?>"><i class="fas fa-edit me-1" aria-hidden="true"></i>Edit enrollment</a>
             <?php elseif ($is_admin && !empty($student->enrollment_id)): ?>
@@ -118,7 +118,7 @@
         </div>
         <div class="card border-0 shadow-sm mb-3">
             <div class="table-responsive">
-                <table class="table align-middle mb-0 student-table">
+                <table class="table align-middle mb-0 text-nowrap">
                     <thead class="table-light"><tr><th>Category</th><th>Payment</th><th>Date</th><th class="text-end">Amount</th></tr></thead>
                     <tbody>
                         <?php if (!empty($saved_fee_rows)): ?>
@@ -169,7 +169,7 @@
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white fw-semibold"><?= html_escape($definition[0]); ?></div>
                 <div class="table-responsive">
-                    <table class="table align-middle mb-0 student-table">
+                    <table class="table align-middle mb-0 text-nowrap">
                         <thead class="table-light"><tr><th>Payment</th><th>Date</th><th class="text-end">Amount</th></tr></thead>
                         <tbody>
                             <?php if (!empty($fees[$category])): ?>
@@ -193,7 +193,7 @@
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white fw-semibold">Uniform · <?= html_escape(ucfirst($uniform_type)); ?></div>
                 <div class="table-responsive">
-                    <table class="table align-middle mb-0 student-table">
+                    <table class="table align-middle mb-0 text-nowrap">
                         <thead class="table-light"><tr><th>Size</th><th class="text-end">Top</th><th class="text-end">Bottom</th><th class="text-end">Total</th></tr></thead>
                         <tbody><tr>
                             <td><?= html_escape($selected_uniform->uniform_size); ?></td>

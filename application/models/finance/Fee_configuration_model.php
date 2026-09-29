@@ -221,6 +221,49 @@ class Fee_configuration_model extends CI_Model
             ->get($this->table)->result();
     }
 
+    /** Convert a configured grade code to its value stored for display in enrollments. */
+    public function grade_label($grade_code)
+    {
+        $value = trim((string) $grade_code);
+        $normalized = strtoupper($value);
+
+        if (preg_match('/^GRADE\s*(.+)$/i', $value, $matches)) {
+            $value = trim($matches[1]);
+            $normalized = strtoupper($value);
+        }
+
+        if (in_array($normalized, ['N', 'NURSERY'], true)) return 'Nursery';
+        if (in_array($normalized, ['K', 'KINDERGARTEN'], true)) return 'Kindergarten';
+        if (ctype_digit($value)) return 'Grade ' . $value;
+
+        return $value;
+    }
+
+    /** Convert a stored enrollment label to the configured grade code. */
+    public function grade_code($grade_value)
+    {
+        $value = trim((string) $grade_value);
+        $normalized = strtoupper($value);
+
+        if (in_array($normalized, ['N', 'NURSERY'], true)) return 'N';
+        if (in_array($normalized, ['K', 'KINDERGARTEN'], true)) return 'K';
+        if (preg_match('/^GRADE\s*(.+)$/i', $value, $matches)) return trim($matches[1]);
+
+        return $value;
+    }
+
+    /** Return configured grade codes for a school year, including historical schedules. */
+    public function get_grade_codes_by_year($school_year)
+    {
+        return $this->db
+            ->distinct()
+            ->select('grade_code AS grade')
+            ->where('school_year', $school_year)
+            ->order_by('grade_code', 'ASC')
+            ->get($this->table)
+            ->result();
+    }
+
     /** Inventory school years which already contain any fee schedule records. */
     public function get_fee_year_inventory()
     {

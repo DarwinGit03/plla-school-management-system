@@ -12,6 +12,12 @@ class Enrollment_model extends CI_Model
     protected $enrollments_table = 'student_enrollments';
     protected $fees_table = 'student_enrollment_fees';
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('finance/fee_configuration_model');
+    }
+
     public function has_enrollment_payments($enrollment_id)
     {
         return $this->db
@@ -57,7 +63,7 @@ class Enrollment_model extends CI_Model
 
         $updated = $this->db->where('id', (int) $enrollment_id)->update($this->enrollments_table, [
             'academic_year' => $placement['academic_year'],
-            'grade_level' => $placement['grade_level'],
+            'grade_level' => $this->fee_configuration_model->grade_label($placement['grade_level']),
             'payment_mode' => $placement['payment_mode'],
             'fee_configuration_id' => $placement['fee_configuration_id'],
             'section' => null,
@@ -122,7 +128,7 @@ class Enrollment_model extends CI_Model
                     if (empty($placement['allow_current_year_setup'])) {
                         return $this->rollback_with_error('same_year_not_allowed');
                     }
-                    if ((string) $current->grade_level !== (string) $placement['grade_level']) {
+                    if ($this->fee_configuration_model->grade_code($current->grade_level) !== $this->fee_configuration_model->grade_code($placement['grade_level'])) {
                         return $this->rollback_with_error('same_year_grade_change');
                     }
                 } elseif ($this->grade_rank($placement['grade_level']) < $this->grade_rank($current->grade_level)) {
@@ -147,7 +153,7 @@ class Enrollment_model extends CI_Model
             $this->db
                 ->where('id', $enrollment_id)
                 ->update($this->enrollments_table, [
-                    'grade_level' => $placement['grade_level'],
+                    'grade_level' => $this->fee_configuration_model->grade_label($placement['grade_level']),
                     'payment_mode' => $placement['payment_mode'],
                     'fee_configuration_id' => $placement['fee_configuration_id'],
                     'updated_at' => date('Y-m-d H:i:s'),
@@ -183,7 +189,7 @@ class Enrollment_model extends CI_Model
                 'student_id' => $student_id,
                 'lrn' => $lrn,
                 'academic_year' => $placement['academic_year'],
-                'grade_level' => $placement['grade_level'],
+                'grade_level' => $this->fee_configuration_model->grade_label($placement['grade_level']),
                 'section' => null,
                 'payment_mode' => $placement['payment_mode'],
                 'fee_configuration_id' => $placement['fee_configuration_id'],
@@ -241,8 +247,8 @@ class Enrollment_model extends CI_Model
     {
         $grade = strtoupper(trim((string) $grade));
         if (preg_match('/^GRADE\s*(\d+)$/', $grade, $matches)) $grade = $matches[1];
-        if ($grade === 'N') return 0;
-        if ($grade === 'K') return 1;
+        if ($grade === 'N' || $grade === 'NURSERY') return 0;
+        if ($grade === 'K' || $grade === 'KINDERGARTEN') return 1;
         if (ctype_digit($grade)) return (int) $grade + 1;
         return 0;
     }

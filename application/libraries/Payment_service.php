@@ -66,8 +66,11 @@ class Payment_service
 
         if (!$result['ok']) {
             $messages = [
+                'invalid_request' => 'The payment request is invalid. Refresh the page and try again.',
                 'assessment_not_found' => 'The selected fee assessment could not be found.',
                 'invalid_amount' => 'Enter a payment amount greater than zero.',
+                'invalid_payment_method' => 'Choose a valid payment method.',
+                'invalid_reference' => 'Reference number must be 100 characters or fewer.',
                 'amount_exceeds_balance' => 'The payment exceeds the remaining balance.',
                 'save_failed' => 'The payment could not be saved.'
             ];
@@ -102,6 +105,8 @@ class Payment_service
         );
         if (!$result['ok']) {
             $messages = [
+                'invalid_request' => 'The payment record could not be identified. Refresh the page and try again.',
+                'invalid_reason' => 'Enter a reason between 5 and 500 characters.',
                 'payment_not_found' => 'The selected payment could not be found for this student.',
                 'payment_not_posted' => 'Only a posted payment can be voided.',
                 'save_failed' => 'The payment could not be voided. No changes were saved.'
@@ -122,7 +127,6 @@ class Payment_service
         if (!in_array($method, $this->payment_methods, true)) {
             return ['ok' => false, 'message' => 'Choose a valid payment method.'];
         }
-        if ((int) $payment_id < 1 || (int) $student_id < 1) return ['ok' => false, 'message' => 'The payment record could not be identified. Refresh the page and try again.'];
         if (strlen($reference) > 100) return ['ok' => false, 'message' => 'Reference number must be 100 characters or fewer.'];
         if ($this->character_length($reason) < 5 || $this->character_length($reason) > 500) return ['ok' => false, 'message' => 'Enter a reason between 5 and 500 characters.'];
 
@@ -136,6 +140,10 @@ class Payment_service
         );
         if (!$result['ok']) {
             $messages = [
+                'invalid_request' => 'The payment record could not be identified. Refresh the page and try again.',
+                'invalid_payment_method' => 'Choose a valid payment method.',
+                'invalid_reference' => 'Reference number must be 100 characters or fewer.',
+                'invalid_reason' => 'Enter a reason between 5 and 500 characters.',
                 'payment_not_found' => 'The selected payment could not be found for this student.',
                 'payment_not_posted' => 'Only a posted payment can be corrected.',
                 'no_changes' => 'No payment details were changed.',

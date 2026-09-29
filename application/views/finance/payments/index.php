@@ -14,9 +14,10 @@
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
-            <form method="get" action="<?= site_url('finance/payments'); ?>">
+        <div class="form-text">All years shows a separate balance for each student enrollment.</div>
+            <form method="get" action="<?= site_url('finance/payments'); ?>" class="js-finance-payment-search" data-grade-options="<?= html_escape(json_encode($grade_options_by_year)); ?>" data-section-url="<?= site_url('students/sections'); ?>">
                 <div class="row g-3 align-items-end">
-                    <div class="col-12 col-md-6 col-lg-6">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <label for="search" class="form-label">Search for a student</label>
                         <input
                             id="search"
@@ -24,21 +25,46 @@
                             type="search"
                             name="search"
                             value="<?= html_escape($search); ?>"
-                            placeholder="Student name, student number, or LRN">
+                            placeholder="Name, student number, or LRN (optional with filters)">
                     </div>
-                    <div class="col-12 col-md-4 col-lg-3">
+                    <div class="col-12 col-md-3 col-lg-2">
                         <label for="academic_year" class="form-label">School year</label>
                         <select id="academic_year" name="academic_year" class="form-select">
                             <option value="" <?= $academic_year === '' ? 'selected' : ''; ?>>All school years</option>
                             <?php foreach ($school_years as $year): ?>
-                                <option value="<?= html_escape($year->academic_year); ?>" <?= $academic_year === (string) $year->academic_year ? 'selected' : ''; ?>>
-                                    <?= html_escape($year->academic_year); ?>
+                                <option value="<?= html_escape($year->school_year); ?>" <?= $academic_year === (string) $year->school_year ? 'selected' : ''; ?>>
+                                    <?= html_escape($year->school_year); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="form-text">All years shows a separate balance for each student enrollment.</div>
                     </div>
-                    <div class="col-auto d-flex gap-2">
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label for="grade_level" class="form-label">Grade</label>
+                        <select id="grade_level" name="grade_level" class="form-select" <?= $academic_year === '' ? 'disabled' : ''; ?>>
+                            <option value="">All grades</option>
+                            <?php foreach ($grade_levels as $grade): ?>
+                                <?php
+                                    $grade_value = (string) $grade->grade;
+                                    $grade_label = strcasecmp($grade_value, 'N') === 0
+                                        ? 'Nursery'
+                                        : (strcasecmp($grade_value, 'K') === 0
+                                            ? 'Kindergarten'
+                                            : (stripos($grade_value, 'grade') === 0 ? $grade_value : 'Grade ' . $grade_value));
+                                ?>
+                                <option value="<?= html_escape($grade_value); ?>" <?= $grade_level === $grade_value ? 'selected' : ''; ?>><?= html_escape($grade_label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label for="section" class="form-label">Section</label>
+                        <select id="section" name="section" class="form-select" <?= ($academic_year === '' || $grade_level === '') ? 'disabled' : ''; ?>>
+                            <option value="">All sections</option>
+                            <?php foreach ($sections as $section_option): ?>
+                                <option value="<?= html_escape($section_option->section); ?>" <?= $section === (string) $section_option->section ? 'selected' : ''; ?>><?= html_escape($section_option->section); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 col-lg-2 d-flex gap-2 align-items-end">
                         <button class="btn btn-primary" type="submit">
                             <i class="fas fa-search me-1" aria-hidden="true"></i>
                             Search
@@ -52,13 +78,13 @@
 
     <?php if (!$has_search): ?>
         <div class="alert alert-info" role="status">
-            Search for a student across school years. Each enrollment keeps its own balance and due dates.
+            Enter a student name, or select a school year and grade to list matching enrollments. Each enrollment has its own balance and due dates.
         </div>
     <?php elseif ($student_id > 0): ?>
         <?php if (!$selected_student): ?>
             <div class="alert alert-warning" role="alert">
                 This student record could not be found.
-                <a href="<?= site_url('finance/payments?' . http_build_query(['search' => $search, 'academic_year' => $academic_year])); ?>" class="alert-link">Return to search results</a>.
+                <a href="<?= site_url('finance/payments?' . http_build_query(['search' => $search, 'academic_year' => $academic_year, 'grade_level' => $grade_level, 'section' => $section])); ?>" class="alert-link">Return to search results</a>.
             </div>
         <?php else: ?>
             <?php $selected_name = trim($selected_student->first_name . ' ' . $selected_student->middle_name . ' ' . $selected_student->last_name . ' ' . $selected_student->suffix); ?>
@@ -92,7 +118,7 @@
                         </div>
                         <a
                             class="btn btn-outline-secondary"
-                            href="<?= site_url('finance/payments?' . http_build_query(['search' => $search, 'academic_year' => $academic_year])); ?>">
+                            href="<?= site_url('finance/payments?' . http_build_query(['search' => $search, 'academic_year' => $academic_year, 'grade_level' => $grade_level, 'section' => $section])); ?>">
                             <i class="fas fa-arrow-left me-1" aria-hidden="true"></i>
                             Back to results
                         </a>
@@ -162,6 +188,9 @@
                         <span class="small text-muted ms-2"><?= number_format(count($payment_history)); ?> records</span>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-sm btn-outline-primary" href="<?= site_url('finance/payments/payment-record-view/' . (int) $selected_student->student_id . ($academic_year !== '' ? '?' . http_build_query(['academic_year' => $academic_year]) : '')); ?>" target="_blank" rel="noopener noreferrer">
+                            <i class="fas fa-eye me-1" aria-hidden="true"></i>View PDF
+                        </a>
                         <a class="btn btn-sm btn-outline-primary" href="<?= site_url('finance/payments/statement/' . (int) $selected_student->student_id . ($academic_year !== '' ? '?' . http_build_query(['academic_year' => $academic_year]) : '')); ?>">
                             <i class="fas fa-file-pdf me-1" aria-hidden="true"></i>Download PDF
                         </a>
@@ -169,6 +198,8 @@
                             <input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">
                             <input type="hidden" name="search" value="<?= html_escape($search); ?>">
                             <input type="hidden" name="academic_year" value="<?= html_escape($academic_year); ?>">
+                            <input type="hidden" name="grade_level" value="<?= html_escape($grade_level); ?>">
+                            <input type="hidden" name="section" value="<?= html_escape($section); ?>">
                             <button class="btn btn-sm btn-primary" type="submit" <?= empty($payment_history) ? 'disabled' : ''; ?>>
                                 <i class="fas fa-envelope me-1" aria-hidden="true"></i>Send to guardian
                             </button>
@@ -187,6 +218,7 @@
                                     <th>Payment method</th>
                                     <th>Reference</th>
                                     <th class="text-end">Amount</th>
+                                    <th>Recorded by</th>
                                     <th class="text-center px-3">Status</th>
                                     <th class="text-end px-3">Actions</th>
                                 </tr>
@@ -211,6 +243,7 @@
                                         <td><?= html_escape(ucwords(str_replace('_', ' ', $payment->payment_method))); ?></td>
                                         <td><?= html_escape($payment->reference_number ?: '—'); ?></td>
                                         <td class="text-end fw-semibold">₱<?= number_format((float) $payment->amount_paid, 2); ?></td>
+                                        <td><?= html_escape($payment->recorded_by_name ?? 'Unknown user'); ?></td>
                                         <td class="text-center px-3">
                                             <span class="badge <?= $payment->status === 'posted' ? 'bg-success' : 'bg-secondary'; ?>">
                                                 <?= html_escape(ucwords($payment->status)); ?>
@@ -275,7 +308,7 @@
                             <div class="modal-body">
                                 <input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">
                                 <input type="hidden" name="payment_id" id="voidPaymentId"><input type="hidden" name="student_id" value="<?= (int) $selected_student->student_id; ?>">
-                                <input type="hidden" name="search" value="<?= html_escape($search); ?>"><input type="hidden" name="academic_year" value="<?= html_escape($academic_year); ?>">
+                                <input type="hidden" name="search" value="<?= html_escape($search); ?>"><input type="hidden" name="academic_year" value="<?= html_escape($academic_year); ?>"><input type="hidden" name="grade_level" value="<?= html_escape($grade_level); ?>"><input type="hidden" name="section" value="<?= html_escape($section); ?>">
                                 <div class="alert alert-warning">The amount will be removed from paid totals and balances. The receipt and void reason remain in history.</div>
                                 <label for="voidPaymentReason" class="form-label">Reason for voiding</label>
                                 <textarea id="voidPaymentReason" name="reason" class="form-control" minlength="5" maxlength="500" rows="3" required></textarea>
@@ -291,7 +324,7 @@
                             <div class="modal-body">
                                 <input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">
                                 <input type="hidden" name="payment_id" id="correctPaymentId"><input type="hidden" name="student_id" value="<?= (int) $selected_student->student_id; ?>">
-                                <input type="hidden" name="search" value="<?= html_escape($search); ?>"><input type="hidden" name="academic_year" value="<?= html_escape($academic_year); ?>">
+                                <input type="hidden" name="search" value="<?= html_escape($search); ?>"><input type="hidden" name="academic_year" value="<?= html_escape($academic_year); ?>"><input type="hidden" name="grade_level" value="<?= html_escape($grade_level); ?>"><input type="hidden" name="section" value="<?= html_escape($section); ?>">
                                 <label for="correctPaymentMethod" class="form-label">Payment method</label>
                                 <select id="correctPaymentMethod" name="payment_method" class="form-select mb-3" required>
                                     <option value="">Choose payment method</option>
@@ -335,13 +368,13 @@
                                 <td class="px-3 fw-semibold"><?= html_escape($student_name); ?></td>
                                 <td><?= html_escape($student->student_no); ?></td>
                                 <td><?= html_escape($student->lrn ?: '—'); ?></td>
-                                <td><?= html_escape($student->academic_year . ' - Grade ' . $student->grade_level); ?></td>
+                                <td><?= html_escape($student->academic_year . ' - ' . $student->grade_level . (!empty($student->section) ? ' - ' . $student->section : '')); ?></td>
                                 <td class="text-center"><?= number_format((int) $student->outstanding_items); ?></td>
                                 <td class="text-end fw-semibold">₱<?= number_format((float) $student->outstanding_balance, 2); ?></td>
                                 <td class="text-end px-3">
                                     <a
                                         class="btn btn-sm btn-outline-primary"
-                                        href="<?= site_url('finance/payments?' . http_build_query(['search' => $search, 'student_id' => (int) $student->student_id, 'academic_year' => $student->academic_year])); ?>">
+                                        href="<?= site_url('finance/payments?' . http_build_query(['search' => $search, 'student_id' => (int) $student->student_id, 'academic_year' => $student->academic_year, 'grade_level' => $grade_level, 'section' => $section])); ?>">
                                         Payment
                                         <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i>
                                     </a>
@@ -380,6 +413,8 @@
                             <input type="hidden" name="student_id" value="<?= (int) $selected_student->student_id; ?>">
                             <input type="hidden" name="search" value="<?= html_escape($search); ?>">
                             <input type="hidden" name="academic_year" value="<?= html_escape($academic_year); ?>">
+                            <input type="hidden" name="grade_level" value="<?= html_escape($grade_level); ?>">
+                            <input type="hidden" name="section" value="<?= html_escape($section); ?>">
                             <div class="mb-3">
                                 <label for="amountPaid" class="form-label">Amount received</label>
                                 <input id="amountPaid" type="number" name="amount_paid" class="form-control" min="0.01" step="0.01" required>

@@ -86,20 +86,9 @@ class Otp_service
         $id
     )
     {
-        $this->CI
-             ->db
-             ->set(
-                 'attempts',
-                 'attempts+1',
-                 FALSE
-             )
-             ->where(
-                 'id',
-                 $id
-             )
-             ->update(
-                 'password_resets'
-             );
+        return $this->CI
+            ->Password_reset_model
+            ->incrementAttemptsById((int) $id);
     }
 
     /*
@@ -140,7 +129,7 @@ class Otp_service
 
         if($record)
         {
-            $this->CI
+            $saved = $this->CI
                 ->Password_reset_model
                 ->updateOTP(
                     $email,
@@ -150,7 +139,7 @@ class Otp_service
         }
         else
         {
-            $this->CI
+            $saved = $this->CI
                 ->Password_reset_model
                 ->create([
 
@@ -161,6 +150,10 @@ class Otp_service
                     'created_at'  => date('Y-m-d H:i:s')
 
                 ]);
+        }
+
+        if (!$saved) {
+            return false;
         }
 
         return $otp;

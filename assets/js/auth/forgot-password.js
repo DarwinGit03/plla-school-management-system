@@ -1,119 +1,62 @@
-$(document).ready(function(){
+$(document).ready(function () {
+    const forgotForm = $('#forgotForm');
+    const submitButton = forgotForm.find('button[type="submit"]');
+    let requestInProgress = false;
+    let redirectingToOtp = false;
 
-    $("#forgotForm").submit(function(e){
-        e.preventDefault();
-        
-        let formData = $(this).serializeArray();
-        formData.push({
-            name: CSRF.name,
-            value: CSRF.hash
-        });
+    forgotForm.on('submit', function (event) {
+        event.preventDefault();
+
+        if (requestInProgress || !this.checkValidity()) {
+            return;
+        }
+
+        requestInProgress = true;
+        submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Sending code...');
+
+        const formData = $(this).serializeArray();
+        formData.push({ name: CSRF.name, value: CSRF.hash });
 
         $.ajax({
-            // url: BASE_URL + "auth/send_otp",
-            url: BASE_URL + "auth/send_otp",
-            type:"POST",
-            // data: $(this).serialize(),
+            url: BASE_URL + 'auth/send_otp',
+            type: 'POST',
             data: $.param(formData),
-            dataType:"json",
-            // success:function(res){
-            //     if(res.status)
-            //     {
-            //         Swal.fire(
-            //             "Success",
-            //             res.message,
-            //             "success"
-            //         ).then(() => {
-
-            //             window.location =
-            //                 BASE_URL +
-            //                 "verify-otp";
-
-            //         });
-            //     }
-            //     else
-            //     {
-            //         Swal.fire(
-            //             "Error",
-            //             res.message,
-            //             "error"
-            //         );
-            //     }
-            // },
-            success:function(response)
-            {
-                if(response.status)
-                {
-                    const notyf = new Notyf({
-                        position: {
-                            x: 'right',
-                            y: 'top'
-                        }
-                    });
-
-                    notyf.success({
-                        message: response.message,
-                        duration: 2000 // 2 seconds
-                    });
-
-                    // Swal.fire({
-                    //     position: "top-end",
-                    //     icon: "success",
-                    //     title:'Verified',
-                    //     text:response.message,
-                    //     showConfirmButton: false,
-                    //     timer: 1500
-                    // });
-                    setTimeout(function () {
-                        window.location = BASE_URL + 'verify-otp-page';
-                    }, 1000);
-                }
-                else
-                {
+            dataType: 'json',
+            success: function (response) {
+                if (response.status) {
+                    redirectingToOtp = true;
                     Swal.fire({
-
-                        icon:'error',
-
-                        title:'Invalid OTP',
-
-                        text:
-                            response.message
-
+                        icon: 'success',
+                        title: 'OTP sent',
+                        text: response.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(function () {
+                        window.location = BASE_URL + 'verify-otp-page';
                     });
-
-                    if(response.remaining !== undefined)
-                    {
-                        $('#attempts')
-                            .text(
-                                response.remaining
-                            );
-                    }
-
-                    shakeOTP();
+                    return;
                 }
-            },
-            // error: function () {
-
-            //     Swal.fire({
-            //         icon: "error",
-            //         title: "Error",
-            //         text: "Server error occurred."
-            //     });
-
-            // },
-            error: function(xhr, status, error)
-            {
-                console.log(xhr.responseText);
 
                 Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: xhr.responseText
+                    icon: 'error',
+                    title: 'Unable to send code',
+                    text: response.message || 'Please try again.'
                 });
             },
-
+            error: function (xhr, status, error) {
+                console.error('Forgot password request failed:', status, error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Unable to send code',
+                    text: 'We could not process the request. Please try again.'
+                });
+            },
+            complete: function () {
+                if (!redirectingToOtp) {
+                    requestInProgress = false;
+                    submitButton.prop('disabled', false).text('Send verification code');
+                }
+            }
         });
-
     });
-
 });

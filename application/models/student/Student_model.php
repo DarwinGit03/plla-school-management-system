@@ -97,11 +97,7 @@ class Student_model extends CI_Model
         */
 
         if (!empty($filters['grade_level'])) {
-
-            $this->db->where(
-                'student_enrollments.grade_level',
-                $filters['grade_level']
-            );
+            $this->apply_grade_level_filter($filters['grade_level']);
         }
 
         /*
@@ -198,11 +194,7 @@ class Student_model extends CI_Model
         }
 
         if (!empty($filters['grade_level'])) {
-
-            $this->db->where(
-                'student_enrollments.grade_level',
-                $filters['grade_level']
-            );
+            $this->apply_grade_level_filter($filters['grade_level']);
         }
 
         if (!empty($filters['section'])) {
@@ -557,6 +549,8 @@ class Student_model extends CI_Model
             ->get()
             ->row();
 
+        if ($student) $student->grade_code = $this->grade_code_from_label($student->grade_level ?? '');
+
         return $student;
     }
 
@@ -702,6 +696,42 @@ class Student_model extends CI_Model
             ->order_by('section', 'ASC')
             ->get('academic_sections')
             ->result();
+    }
+
+    private function apply_grade_level_filter($grade)
+    {
+        $grade = trim((string) $grade);
+        $code = $this->grade_code_from_label($grade);
+        $label = $this->grade_label_from_code($code);
+        $values = array_values(array_unique(array_filter([$grade, $code, $label], 'strlen')));
+
+        $this->db->group_start();
+        foreach ($values as $index => $value) {
+            if ($index === 0) {
+                $this->db->where('student_enrollments.grade_level', $value);
+            } else {
+                $this->db->or_where('student_enrollments.grade_level', $value);
+            }
+        }
+        $this->db->group_end();
+    }
+
+    private function grade_code_from_label($grade)
+    {
+        $grade = trim((string) $grade);
+        if (strcasecmp($grade, 'Nursery') === 0) return 'N';
+        if (strcasecmp($grade, 'Kindergarten') === 0) return 'K';
+        if (preg_match('/^Grade\s*(.+)$/i', $grade, $matches)) return trim($matches[1]);
+        return $grade;
+    }
+
+    private function grade_label_from_code($grade)
+    {
+        $grade = trim((string) $grade);
+        if (strcasecmp($grade, 'N') === 0) return 'Nursery';
+        if (strcasecmp($grade, 'K') === 0) return 'Kindergarten';
+        if (ctype_digit($grade)) return 'Grade ' . $grade;
+        return $grade;
     }
 
     /**

@@ -1,5 +1,22 @@
 document.addEventListener('DOMContentLoaded', function () {
 
+    // Keep the mobile Bootstrap offcanvas open when a user expands a menu group.
+    // Close it only when they choose a real navigation destination.
+    const mobileSidebar = document.getElementById('sidebarMobile');
+    if (mobileSidebar) {
+        mobileSidebar.querySelectorAll('.nav-link:not([data-bs-toggle="collapse"])').forEach(function (link) {
+            link.addEventListener('click', function () {
+                const href = link.getAttribute('href');
+                if (!href || href === '#' || href.startsWith('javascript:')) {
+                    return;
+                }
+
+                const instance = bootstrap.Offcanvas.getOrCreateInstance(mobileSidebar);
+                instance.hide();
+            });
+        });
+    }
+
     function handleSidebarResize() {
 
         if (window.innerWidth < 992) {

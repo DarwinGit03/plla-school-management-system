@@ -24,6 +24,17 @@ class Password_reset_model extends CI_Model
             ->row();
     }
 
+    /** Return whether an OTP was issued for this email within the cooldown. */
+    public function wasRecentlySent($email, $cooldownSeconds)
+    {
+        $cutoff = date('Y-m-d H:i:s', time() - max(1, (int) $cooldownSeconds));
+
+        return $this->db
+            ->where('email', $email)
+            ->where('created_at >=', $cutoff)
+            ->count_all_results($this->table) > 0;
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Create Password Reset
@@ -86,6 +97,16 @@ class Password_reset_model extends CI_Model
                     ->update($this->table);
     }
 
+    /** Increment attempts for a reset record by its primary key. */
+    public function incrementAttemptsById($id)
+    {
+        $this->db->set('attempts', 'attempts + 1', false);
+
+        return $this->db
+            ->where('id', (int) $id)
+            ->update($this->table);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Reset Attempts
@@ -127,6 +148,8 @@ class Password_reset_model extends CI_Model
                 [
 
                     'otp'=>$otp,
+
+                    'created_at'=>date('Y-m-d H:i:s'),
 
                     'expires_at'=>
 

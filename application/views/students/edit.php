@@ -1215,7 +1215,7 @@
                             $selectedGrade =
                                 set_value(
                                     'grade_level',
-                                    $student->grade_level ?? ''
+                                    $student->grade_code ?? ($student->grade_level ?? '')
                                 );
 
                             ?>
@@ -1560,7 +1560,7 @@
             <?= json_encode(
                 set_value(
                     'grade_level',
-                    $student->grade_level ?? ''
+                    $student->grade_code ?? ($student->grade_level ?? '')
                 )
             ); ?>,
 

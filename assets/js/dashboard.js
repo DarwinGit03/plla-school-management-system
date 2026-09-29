@@ -22,10 +22,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 
-    document.querySelectorAll('#sidebarMobile .nav-link')
+    document.querySelectorAll('#sidebarMobile .nav-link:not([data-bs-toggle="collapse"])')
     .forEach(function(link){
 
         link.addEventListener('click',function(){
+
+            const href = link.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript:')) {
+                return;
+            }
 
             let sidebar =
                 bootstrap.Offcanvas.getInstance(

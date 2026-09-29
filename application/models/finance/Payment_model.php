@@ -6,30 +6,10 @@ class Payment_model extends CI_Model
 {
     protected $payments_table = 'student_fee_payments';
     protected $assessment_table = 'student_enrollment_fees';
-
-    /** Return school years that have an assessed fee schedule. */
-    public function get_payment_school_years()
-    {
-        $this->db->reset_query();
-
-        return $this->db
-            ->distinct()
-            ->select('enrollments.academic_year')
-            ->from('student_enrollments AS enrollments')
-            ->join(
-                $this->assessment_table . ' AS assessed_fees',
-                'assessed_fees.enrollment_id = enrollments.id',
-                'inner'
-            )
-            ->where('enrollments.academic_year IS NOT NULL', null, false)
-            ->where('enrollments.academic_year !=', '')
-            ->order_by('enrollments.academic_year', 'DESC')
-            ->get()
-            ->result();
-    }
+    protected $valid_payment_methods = ['cash', 'bank_transfer', 'card', 'gcash', 'maya', 'check', 'other'];
 
     /** Find enrolled students with fee assessments for finance payment lookup. */
-    public function search_students_for_payments($search, $academic_year = null)
+    public function search_students_for_payments($search, $academic_year = null, $grade_level = null, $section = null)
     {
         $this->db->reset_query();
 
@@ -45,6 +25,7 @@ class Payment_model extends CI_Model
                 enrollments.id AS enrollment_id,
                 enrollments.academic_year,
                 enrollments.grade_level,
+                enrollments.section,
                 COUNT(DISTINCT CASE
                     WHEN assessed_fees.amount > COALESCE(posted_payments.amount_paid, 0)
                     THEN assessed_fees.id
@@ -75,33 +56,55 @@ class Payment_model extends CI_Model
                 'left',
                 false
             )
-            ->where('students.deleted_at IS NULL', null, false)
-            ->group_start()
-            ->like('students.student_no', trim($search))
-            ->or_like('students.lrn', trim($search))
-            ->or_like('students.first_name', trim($search))
-            ->or_like('students.middle_name', trim($search))
-            ->or_like('students.last_name', trim($search))
-            ->or_like('students.suffix', trim($search))
-            ->or_like(
-                "CONCAT_WS(' ', students.first_name, NULLIF(students.middle_name, ''), students.last_name, NULLIF(students.suffix, ''))",
-                trim($search),
-                'both',
-                false
-            )
-            ->group_end();
+            ->where('students.deleted_at IS NULL', null, false);
+
+        if (trim((string) $search) !== '') {
+            $this->db
+                ->group_start()
+                ->like('students.student_no', trim($search))
+                ->or_like('students.lrn', trim($search))
+                ->or_like('students.first_name', trim($search))
+                ->or_like('students.middle_name', trim($search))
+                ->or_like('students.last_name', trim($search))
+                ->or_like('students.suffix', trim($search))
+                ->or_like(
+                    "CONCAT_WS(' ', students.first_name, NULLIF(students.middle_name, ''), students.last_name, NULLIF(students.suffix, ''))",
+                    trim($search),
+                    'both',
+                    false
+                )
+                ->group_end();
+        }
 
         if ($academic_year !== null && $academic_year !== '') {
             $this->db->where('enrollments.academic_year', $academic_year);
         }
+        if ($grade_level !== null && $grade_level !== '') {
+            $grade_code = $this->grade_code($grade_level);
+            $grade_label = $this->grade_label($grade_code);
+            $this->db->group_start()
+                ->where('enrollments.grade_level', $grade_level)
+                ->or_where('enrollments.grade_level', $grade_code)
+                ->or_where('enrollments.grade_level', $grade_label)
+                ->group_end();
+        }
+        if ($section !== null && $section !== '') {
+            $this->db->where('enrollments.section', $section);
+        }
 
-        return $this->db
+        $rows = $this->db
             ->group_by(['students.id', 'enrollments.id'])
             ->order_by('enrollments.academic_year', 'DESC')
             ->order_by('students.last_name', 'ASC')
             ->order_by('students.first_name', 'ASC')
             ->get()
             ->result();
+
+        foreach ($rows as $row) {
+            $row->grade_level = $this->grade_label($row->grade_level ?? '');
+        }
+
+        return $rows;
     }
 
     /** Get one student summary so the selected record can be confirmed. */
@@ -118,7 +121,8 @@ class Payment_model extends CI_Model
                 students.middle_name,
                 students.last_name,
                 students.suffix,
-                GROUP_CONCAT(DISTINCT CONCAT(enrollments.academic_year, ' - Grade ', enrollments.grade_level) ORDER BY enrollments.academic_year DESC SEPARATOR ', ') AS enrollments,
+                GROUP_CONCAT(DISTINCT CONCAT(enrollments.academic_year, ' - ', CASE WHEN UPPER(enrollments.grade_level) IN ('N', 'NURSERY') THEN 'Nursery' WHEN UPPER(enrollments.grade_level) IN ('K', 'KINDERGARTEN') THEN 'Kindergarten' WHEN enrollments.grade_level LIKE 'Grade %' THEN enrollments.grade_level ELSE CONCAT('Grade ', enrollments.grade_level) END) ORDER BY enrollments.academic_year DESC SEPARATOR ', ') AS enrollments,
+                GROUP_CONCAT(DISTINCT CONCAT(CASE WHEN UPPER(enrollments.grade_level) IN ('N', 'NURSERY') THEN 'Nursery' WHEN UPPER(enrollments.grade_level) IN ('K', 'KINDERGARTEN') THEN 'Kindergarten' WHEN enrollments.grade_level LIKE 'Grade %' THEN enrollments.grade_level ELSE CONCAT('Grade ', enrollments.grade_level) END, ', Section : ', COALESCE(NULLIF(enrollments.section, ''), 'No section')) SEPARATOR ', ') AS grade_section,
                 SUM(assessed_fees.amount) AS total_assessed,
                 SUM(COALESCE(posted_payments.amount_paid, 0)) AS total_paid,
                 SUM(assessed_fees.amount - COALESCE(posted_payments.amount_paid, 0)) AS balance
@@ -219,6 +223,7 @@ class Payment_model extends CI_Model
                 payments.reference_number,
                 payments.paid_at,
                 payments.status,
+                payments.recorded_by,
                 payments.enrollment_fee_id,
                 (SELECT audit.reason FROM student_fee_payment_audit AS audit
                  WHERE audit.payment_id = payments.id AND audit.action = "void"
@@ -228,7 +233,10 @@ class Payment_model extends CI_Model
                 assessed_fees.amount AS assessed_amount,
                 enrollments.academic_year,
                 enrollments.grade_level,
-                enrollments.payment_mode
+                enrollments.payment_mode,
+                recorder.first_name AS recorder_first_name,
+                recorder.last_name AS recorder_last_name,
+                recorder.username AS recorder_username
             ')
             ->from($this->payments_table . ' AS payments')
             ->join(
@@ -241,17 +249,27 @@ class Payment_model extends CI_Model
                 'enrollments.id = assessed_fees.enrollment_id',
                 'inner'
             )
+            ->join('users AS recorder', 'recorder.id = payments.recorded_by', 'left')
             ->where('enrollments.student_id', (int) $student_id);
 
         if ($academic_year !== null && $academic_year !== '') {
             $this->db->where('enrollments.academic_year', $academic_year);
         }
 
-        return $this->db
+        $payments = $this->db
             ->order_by('payments.paid_at', 'DESC')
             ->order_by('payments.id', 'DESC')
             ->get()
             ->result();
+
+        foreach ($payments as $payment) {
+            $name = trim(($payment->recorder_first_name ?? '') . ' ' . ($payment->recorder_last_name ?? ''));
+            $payment->recorded_by_name = $name !== ''
+                ? $name
+                : (($payment->recorder_username ?? '') !== '' ? $payment->recorder_username : 'Unknown user');
+        }
+
+        return $payments;
     }
 
     /** Return the preferred guardian contact for a payment statement. */
@@ -272,6 +290,22 @@ class Payment_model extends CI_Model
             ->row();
     }
 
+    /** Return the student's designated primary guardian for the printed signature. */
+    public function get_primary_guardian($student_id)
+    {
+        $this->db->reset_query();
+
+        return $this->db
+            ->select('first_name, last_name')
+            ->from('student_guardians')
+            ->where('student_id', (int) $student_id)
+            ->order_by('is_primary', 'DESC')
+            ->order_by('id', 'ASC')
+            ->limit(1)
+            ->get()
+            ->row();
+    }
+
     /** Record a payment without allowing it to exceed the assessed balance. */
     public function record_payment(
         $enrollment_fee_id,
@@ -281,6 +315,26 @@ class Payment_model extends CI_Model
         $reference_number,
         $recorded_by
     ) {
+        $enrollment_fee_id = (int) $enrollment_fee_id;
+        $student_id = (int) $student_id;
+        $recorded_by = (int) $recorded_by;
+        $amount = trim((string) $amount);
+        $payment_method = trim((string) $payment_method);
+        $reference_number = trim((string) $reference_number);
+
+        if ($enrollment_fee_id < 1 || $student_id < 1 || $recorded_by < 1) {
+            return ['ok' => false, 'code' => 'invalid_request'];
+        }
+        if (!preg_match('/^\d+(?:\.\d{1,2})?$/D', $amount) || (float) $amount <= 0) {
+            return ['ok' => false, 'code' => 'invalid_amount'];
+        }
+        if (!in_array($payment_method, $this->valid_payment_methods, true)) {
+            return ['ok' => false, 'code' => 'invalid_payment_method'];
+        }
+        if (strlen($reference_number) > 100) {
+            return ['ok' => false, 'code' => 'invalid_reference'];
+        }
+
         $this->db->trans_begin();
 
         $assessment = $this->db->query(
@@ -303,15 +357,16 @@ class Payment_model extends CI_Model
             ->where('status', 'posted')
             ->get($this->payments_table)
             ->row();
-        $balance = (float) $assessment->amount - (float) ($paid->amount_paid ?? 0);
-        $amount = round((float) $amount, 2);
+        $balance_cents = (int) round(((float) $assessment->amount - (float) ($paid->amount_paid ?? 0)) * 100);
+        $amount_cents = (int) round((float) $amount * 100);
 
-        if ($amount <= 0) {
+        if ($amount_cents <= 0) {
             return $this->rollback_with_error('invalid_amount');
         }
-        if ($amount > $balance) {
+        if ($amount_cents > $balance_cents) {
             return $this->rollback_with_error('amount_exceeds_balance');
         }
+        $amount = number_format($amount_cents / 100, 2, '.', '');
 
         $inserted = $this->db->insert($this->payments_table, [
             'enrollment_fee_id' => (int) $enrollment_fee_id,
@@ -339,6 +394,17 @@ class Payment_model extends CI_Model
 
     public function void_payment($payment_id, $student_id, $reason, $performed_by)
     {
+        $payment_id = (int) $payment_id;
+        $student_id = (int) $student_id;
+        $performed_by = (int) $performed_by;
+        $reason = trim((string) $reason);
+        if ($payment_id < 1 || $student_id < 1 || $performed_by < 1) {
+            return ['ok' => false, 'code' => 'invalid_request'];
+        }
+        if ($this->character_length($reason) < 5 || $this->character_length($reason) > 500) {
+            return ['ok' => false, 'code' => 'invalid_reason'];
+        }
+
         $this->db->trans_begin();
         $payment = $this->db->query(
             'SELECT payments.id, payments.status
@@ -371,6 +437,25 @@ class Payment_model extends CI_Model
 
     public function correct_payment_details($payment_id, $student_id, $payment_method, $reference_number, $reason, $performed_by)
     {
+        $payment_id = (int) $payment_id;
+        $student_id = (int) $student_id;
+        $performed_by = (int) $performed_by;
+        $payment_method = trim((string) $payment_method);
+        $reference_number = trim((string) $reference_number);
+        $reason = trim((string) $reason);
+        if ($payment_id < 1 || $student_id < 1 || $performed_by < 1) {
+            return ['ok' => false, 'code' => 'invalid_request'];
+        }
+        if (!in_array($payment_method, $this->valid_payment_methods, true)) {
+            return ['ok' => false, 'code' => 'invalid_payment_method'];
+        }
+        if (strlen($reference_number) > 100) {
+            return ['ok' => false, 'code' => 'invalid_reference'];
+        }
+        if ($this->character_length($reason) < 5 || $this->character_length($reason) > 500) {
+            return ['ok' => false, 'code' => 'invalid_reason'];
+        }
+
         $this->db->trans_begin();
         $payment = $this->db->query(
             'SELECT payments.id, payments.status, payments.payment_method, payments.reference_number
@@ -452,5 +537,28 @@ class Payment_model extends CI_Model
             'ok' => false,
             'code' => $code
         ];
+    }
+
+    private function character_length($value)
+    {
+        return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
+    }
+
+    private function grade_code($value)
+    {
+        $value = trim((string) $value);
+        if (strcasecmp($value, 'Nursery') === 0) return 'N';
+        if (strcasecmp($value, 'Kindergarten') === 0) return 'K';
+        if (preg_match('/^Grade\s*(.+)$/i', $value, $matches)) return trim($matches[1]);
+        return $value;
+    }
+
+    private function grade_label($value)
+    {
+        $value = trim((string) $value);
+        if (strcasecmp($value, 'N') === 0 || strcasecmp($value, 'Nursery') === 0) return 'Nursery';
+        if (strcasecmp($value, 'K') === 0 || strcasecmp($value, 'Kindergarten') === 0) return 'Kindergarten';
+        if (preg_match('/^Grade\s*(.+)$/i', $value, $matches)) return 'Grade ' . trim($matches[1]);
+        return ctype_digit($value) ? 'Grade ' . $value : $value;
     }
 }

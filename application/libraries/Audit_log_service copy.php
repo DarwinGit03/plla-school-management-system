@@ -20,10 +20,8 @@ class Audit_log_service
     )
     {
         return $this->CI
-                    ->db
-                    ->insert(
-                        'audit_logs',
-                        [
+                    ->Audit_log_model
+                    ->create([
                             'user_id' =>
                                 $user_id,
                             'module' =>
@@ -40,12 +38,7 @@ class Audit_log_service
                                 $this->CI
                                     ->input
                                     ->user_agent(),
-                            'created_at' =>
-                                date(
-                                    'Y-m-d H:i:s'
-                                )
-
-                        ]
-                    );
+                            'created_at' => date('Y-m-d H:i:s')
+                        ]);
     }
 }

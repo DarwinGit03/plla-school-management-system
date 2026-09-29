@@ -29,6 +29,7 @@ class Auth extends MY_Controller
         $this->guestOnly();
 
         $data['title']      = 'Login';
+        $data['page_css']   = 'assets/css/auth/auth.css';
         $data['page_js']    = 'assets/js/auth/login.js';
 
         $this->load->view(
@@ -41,6 +42,7 @@ class Auth extends MY_Controller
         $this->session->sess_destroy();
         $data = [
             'title'     => 'Forgot Password', 
+            'page_css'  => 'assets/css/auth/auth.css',
             'page_js'   =>  'assets/js/auth/forgot-password.js'
         ];
 
@@ -72,7 +74,7 @@ class Auth extends MY_Controller
         $data = [
             'title'     => 'Verify OTP',
             'page_js'   => 'assets/js/auth/verify-otp.js',
-            'page_css'  => 'assets/css/verify-otp.css',
+            'page_css'  => 'assets/css/auth/auth.css',
             'email'     => $email
         ];
 
@@ -143,7 +145,8 @@ class Auth extends MY_Controller
         }
 
         $data = [
-            'title'     => 'Verify OTP',
+            'title'     => 'Reset Password',
+            'page_css'  => 'assets/css/auth/auth.css',
             'page_js'   => 'assets/js/auth/reset-password.js',
             'email'     => $email
         ];

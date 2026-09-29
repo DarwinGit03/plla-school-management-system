@@ -207,7 +207,8 @@ class Enrollment_service
     public function validate_placement($student, $target_year, $target_grade, $allow_current_year_setup = false)
     {
         $current_year = trim((string) ($student->academic_year ?? ''));
-        $current_grade = trim((string) ($student->grade_level ?? ''));
+        $current_grade = $this->CI->fee_configuration_model->grade_code($student->grade_level ?? '');
+        $target_grade = $this->CI->fee_configuration_model->grade_code($target_grade);
         if ($current_year === '') return ['ok' => true];
 
         $current_start = $this->school_year_start($current_year);
@@ -246,8 +247,8 @@ class Enrollment_service
     {
         $grade = strtoupper(trim((string) $grade));
         if (preg_match('/^GRADE\s*(\d+)$/', $grade, $matches)) $grade = $matches[1];
-        if ($grade === 'N') return 0;
-        if ($grade === 'K') return 1;
+        if ($grade === 'N' || $grade === 'NURSERY') return 0;
+        if ($grade === 'K' || $grade === 'KINDERGARTEN') return 1;
         if (ctype_digit($grade)) return (int) $grade + 1;
         return null;
     }

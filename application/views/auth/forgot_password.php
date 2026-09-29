@@ -1,92 +1,43 @@
-<!DOCTYPE html>
-<html>
-<head>
+<?php $this->load->view('layouts/header'); ?>
 
-    <meta charset="utf-8">
+<main class="auth-page">
+    <div class="auth-card auth-card-compact">
+        <aside class="auth-brand-panel">
+            <div class="auth-brand-lockup">
+                <img src="<?= base_url('assets/images/logo.png'); ?>" alt="PLLA logo">
+                <span>PLLA <small>School Management</small></span>
+            </div>
+            <div class="auth-brand-copy">
+                <span class="auth-eyebrow">ACCOUNT SECURITY</span>
+                <h2>Get back to what matters.</h2>
+                <p>We’ll send a one-time verification code to the email address linked to your account.</p>
+            </div>
+            <div class="auth-brand-footer">Your account stays protected at every step.</div>
+        </aside>
 
-    <title>Forgot Password</title>
+        <section class="auth-form-panel">
+            <div class="auth-mobile-brand">
+                <img src="<?= base_url('assets/images/logo.png'); ?>" alt="PLLA logo">
+                <span>PLLA <small>School Management</small></span>
+            </div>
+            <a class="auth-back-link" href="<?= base_url('login'); ?>"><span aria-hidden="true">←</span> Back to sign in</a>
+            <div class="auth-heading">
+                <span class="auth-step">PASSWORD RECOVERY</span>
+                <h1>Forgot your password?</h1>
+                <p>Enter your account email and we’ll send you a one-time code.</p>
+            </div>
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1">
-
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet">
-    <link href="assets/css/auth/forgot-password.css"
-        rel="stylesheet">
-
-</head>
-
-<body class="bg-light">
-
-    <div class="container">
-        <div class="container vh-100 d-flex justify-content-center align-items-center">
-            <div class="card shadow border-0 p-4" style="width:400px;">
-                <div class="text-center">
-                    <img src="<?= base_url('assets/images/forgot-password.png') ?>" width="150">
+            <form id="forgotForm" class="auth-form">
+                <div class="auth-field">
+                    <label for="recovery-email">Email address</label>
+                    <input type="email" name="email" id="recovery-email" class="form-control" autocomplete="email" placeholder="you@school.edu.ph" required autofocus>
                 </div>
-                <h1>Forgot Password</h1>
-                <p>
-                    Enter your e-mail address, and we'll give you an OTP
-                </p>
-
-                <form id="forgotForm">
-                    <div class="mb-3">
-                        <div class="input-group">
-
-                            <span class="input-group-text">
-
-                                <i class="envelope">M</i>
-
-                            </span>
-
-                            <input
-                                type="email"
-                                name="email"
-                                class="form-control"
-                                placeholder="Enter E-mail Address"
-                                required>
-
-                        </div>
-
-                    </div>
-                    <button
-                        type="submit"
-                        class="btn btn-primary w-100">
-                        Send OTP
-                    </button>
-                </form>
-
-                <div
-                    class="text-center mt-3">
-
-                    <a href="<?= base_url('login')?>">
-
-                        Back to Login
-
-                    </a>
-
-                </div>
-        </div>
-
+                <button type="submit" class="btn auth-submit">Send verification code <span aria-hidden="true">→</span></button>
+            </form>
+            <div class="auth-info-note"><span aria-hidden="true">i</span><p>The verification code expires after 5 minutes. Check your inbox and spam folder.</p></div>
+        </section>
     </div>
+    <footer class="auth-page-footer">© <?= date('Y'); ?> Precious Little Lights Academy</footer>
+</main>
 
-</div>
-
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-    const BASE_URL ="<?= base_url(); ?>";
-    
-    const CSRF = { //use reusable for future
-        name: "<?= $this->security->get_csrf_token_name(); ?>",
-        hash: "<?= $this->security->get_csrf_hash(); ?>"
-    };
-</script>
-
-<script src="<?= base_url('assets/js/auth/forgot-password.js'); ?>"></script>
-
-</body>
-</html>
+<?php $this->load->view('layouts/footer'); ?>

@@ -75,7 +75,7 @@
             <span class="text-muted small"><?= number_format($total_students); ?> found</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 student-table">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
                 <thead class="table-light">
                     <tr><th>Student No.</th><th>Student</th><th>School Year</th><th>Grade</th><th>Section</th><th>Payment mode</th><th>Status</th><th></th></tr>
                 </thead>

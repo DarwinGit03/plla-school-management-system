@@ -131,7 +131,8 @@ document.addEventListener(
         {
             fetch(
                 BASE_URL +
-                'students/academic_years'
+                'students/academic_years' +
+                (classAssignmentMode === 'create' ? '?scope=active' : '')
             )
                 .then(response => {
 
@@ -230,7 +231,8 @@ document.addEventListener(
             fetch(
                 BASE_URL +
                 'students/grade_levels?year=' +
-                encodeURIComponent(year)
+                encodeURIComponent(year) +
+                (classAssignmentMode === 'create' ? '&scope=active' : '')
             )
                 .then(response => {
 

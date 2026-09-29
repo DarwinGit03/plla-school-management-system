@@ -37,9 +37,8 @@
          */
         public function academic_years()
         {
-            $years =
-                $this->student_service
-                    ->get_academic_years();
+            $active_only = $this->input->get('scope', true) === 'active';
+            $years = $this->fee_school_year_options($active_only);
 
 
             $this->output
@@ -82,11 +81,14 @@
             }
 
 
-            $grades =
-                $this->student_service
-                    ->get_grade_levels_by_year(
-                        $year
-                    );
+            $active_only = $this->input->get('scope', true) === 'active';
+            if ($active_only) {
+                $grades = array_map(function ($grade) {
+                    return (object) ['grade' => $grade->grade_code];
+                }, $this->fee_configuration_model->get_active_grade_codes($year));
+            } else {
+                $grades = $this->fee_configuration_model->get_grade_codes_by_year($year);
+            }
 
 
             $this->output
@@ -195,9 +197,7 @@
             |--------------------------------------------------------------------------
             */
 
-            $academic_years =
-                $this->student_service
-                    ->get_academic_years();
+            $academic_years = $this->fee_school_year_options();
 
 
             /*
@@ -210,11 +210,8 @@
 
             if (!empty($filters['academic_year'])) {
 
-                $grade_levels =
-                    $this->student_service
-                        ->get_grade_levels_by_year(
-                            $filters['academic_year']
-                        );
+                $grade_levels = $this->fee_configuration_model
+                    ->get_grade_codes_by_year($filters['academic_year']);
             }
 
 
@@ -330,7 +327,6 @@
 
             $data = [
 
-                'page_styles' => ['assets/css/students.css'],
 
                 'title' => 'Students',
 
@@ -407,7 +403,6 @@
             }
 
             $data = [
-                'page_styles' => ['assets/css/students.css'],
                 'title' => 'Enrollment',
                 'page_title' => 'Enrollment',
                 'page_subtitle' => 'Find a student and review their current enrollment.',
@@ -424,9 +419,9 @@
                     'semi_annual' => 'Semi-Annual',
                     'annual' => 'Annual'
                 ],
-                'academic_years' => $this->student_service->get_academic_years(),
+                'academic_years' => $this->fee_school_year_options(),
                 'grade_levels' => $filters['academic_year']
-                    ? $this->student_service->get_grade_levels_by_year($filters['academic_year'])
+                    ? $this->fee_configuration_model->get_grade_codes_by_year($filters['academic_year'])
                     : [],
                 'sections' => ($filters['academic_year'] && $filters['grade_level'])
                     ? $this->student_service->get_sections_by_year_and_grade(
@@ -489,6 +484,7 @@
                 show_404();
                 return;
             }
+            $student->grade_code = $this->fee_configuration_model->grade_code($student->grade_level ?? '');
 
             $initial_flow_requested = $this->input->get('flow', true) === 'initial';
             $is_admin = (int) $this->session->userdata('role_id') === 1;
@@ -502,7 +498,7 @@
                 $this->session->set_flashdata('error', 'This enrollment cannot be edited because a payment has already been recorded.');
                 return redirect('students/enroll/' . (int) $student_id . '?' . http_build_query([
                     'academic_year' => $student->academic_year,
-                    'grade_code' => $student->grade_level,
+                    'grade_code' => $student->grade_code,
                     'payment_mode' => $student->payment_mode
                 ]));
             }
@@ -540,13 +536,13 @@
             if ($initial_flow_requested && $year === (string) ($student->academic_year ?? '')) {
                 $has_current_grade = false;
                 foreach ($grades as $available_grade) {
-                    if ((string) $available_grade->grade_code === (string) $student->grade_level) {
+                    if ((string) $available_grade->grade_code === (string) $student->grade_code) {
                         $has_current_grade = true;
                         break;
                     }
                 }
-                if (!$has_current_grade && !empty($student->grade_level)) {
-                    $grades[] = (object) ['grade_code' => $student->grade_level];
+                if (!$has_current_grade && !empty($student->grade_code)) {
+                    $grades[] = (object) ['grade_code' => $student->grade_code];
                 }
             }
             $grade = trim((string) $this->input->get('grade_code', true));
@@ -554,7 +550,7 @@
                 && (string) $student->academic_year === $year
                 && !$admin_edit;
             if ($saved_enrollment_for_year) {
-                $grade = (string) $student->grade_level;
+                $grade = (string) $student->grade_code;
                 $grade_exists = false;
                 foreach ($grades as $available_grade) {
                     if ((string) $available_grade->grade_code === $grade) {
@@ -567,9 +563,9 @@
                 }
             }
             if ($initial_flow_requested && $grade === '') {
-                $grade = (string) ($student->grade_level ?? '');
+                $grade = (string) ($student->grade_code ?? '');
             }
-            if ($admin_edit && $grade === '') $grade = (string) ($student->grade_level ?? '');
+            if ($admin_edit && $grade === '') $grade = (string) ($student->grade_code ?? '');
             $valid_grades = array_map(function ($item) {
                 return (string) $item->grade_code;
             }, $grades);
@@ -580,7 +576,7 @@
             $initial_flow = $initial_flow_requested
                 && $year !== ''
                 && $year === (string) ($student->academic_year ?? '')
-                && $grade === (string) ($student->grade_level ?? '');
+                && $grade === (string) ($student->grade_code ?? '');
 
             $placement_error = '';
             if ($year !== '' && !$saved_enrollment_for_year && !$admin_edit) {
@@ -672,7 +668,6 @@
             }
 
             $this->load->view('dashboard/layouts/master', [
-                'page_styles' => ['assets/css/students.css'],
                 'title' => 'Enroll Student',
                 'page_title' => 'Enroll Student',
                 'page_subtitle' => 'Review placement and configured fees.',
@@ -1754,9 +1749,7 @@
             |--------------------------------------------------------------------------
             */
 
-            $academic_years =
-                $this->student_service
-                    ->get_academic_years();
+            $academic_years = $this->fee_school_year_options();
 
 
             /*
@@ -1774,11 +1767,8 @@
                 )
             ) {
 
-                $grade_levels =
-                    $this->student_service
-                        ->get_grade_levels_by_year(
-                            $student->academic_year
-                        );
+                $grade_levels = $this->fee_configuration_model
+                    ->get_grade_codes_by_year($student->academic_year);
             }
 
 
@@ -1797,7 +1787,7 @@
                 )
                 &&
                 !empty(
-                    $student->grade_level
+                    $student->grade_code
                 )
             ) {
 
@@ -1807,7 +1797,7 @@
 
                             $student->academic_year,
 
-                            $student->grade_level
+                            $student->grade_code
                         );
             }
 
@@ -1822,7 +1812,6 @@
 
                 [
 
-                    'page_styles' => ['assets/css/students.css'],
 
                     'title' =>
                         'Edit Student',
@@ -1881,6 +1870,18 @@
             );
         }
 
+        /** Normalize fee configuration school years for the existing student form fields. */
+        private function fee_school_year_options($active_only = false)
+        {
+            $years = $active_only
+                ? $this->fee_configuration_model->get_active_school_years()
+                : $this->fee_configuration_model->get_school_years();
+
+            return array_map(function ($year) {
+                return (object) ['year' => $year->school_year];
+            }, $years);
+        }
+
         /**
          * Display the student registration form.
          *
@@ -1893,7 +1894,6 @@
             $data = array_merge(
 
                 [
-                    'page_styles' => ['assets/css/students.css'],
                     'title' =>
                         'Register Student',
 
@@ -1993,7 +1993,6 @@
 
             $data = [
 
-                'page_styles' => ['assets/css/students.css'],
 
                 'title' =>
                     'Student Profile',

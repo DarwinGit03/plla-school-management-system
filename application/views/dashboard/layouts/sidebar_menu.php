@@ -10,6 +10,13 @@ $currentMethod =
         $this->router->fetch_method()
     );
 
+$menuSuffix = preg_replace('/[^A-Za-z0-9_-]/', '', $menu_suffix ?? 'Menu');
+$academicMenuId = 'academicMenu' . $menuSuffix;
+$studentMenuId = 'studentMenu' . $menuSuffix;
+$facultyMenuId = 'facultyMenu' . $menuSuffix;
+$financeMenuId = 'financeMenu' . $menuSuffix;
+$adminMenuId = 'adminMenu' . $menuSuffix;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +26,9 @@ $currentMethod =
 
 $isDashboard =
     ($currentController === 'dashboard');
+
+$isAcademicSections =
+    ($currentController === 'sections');
 
 
 $isStudents =
@@ -95,12 +105,12 @@ $isEnrollment =
     <li class="nav-item">
 
         <a
-            href="#academicMenu"
+            href="#<?= $academicMenuId; ?>"
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
-            aria-expanded="false"
-            aria-controls="academicMenu">
+            aria-expanded="<?= $isAcademicSections ? 'true' : 'false'; ?>"
+            aria-controls="<?= $academicMenuId; ?>">
 
             <span>
 
@@ -116,8 +126,8 @@ $isEnrollment =
 
 
         <div
-            class="collapse"
-            id="academicMenu">
+            class="collapse <?= $isAcademicSections ? 'show' : ''; ?>"
+            id="<?= $academicMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
 
@@ -147,17 +157,19 @@ $isEnrollment =
                 </li>
 
 
+                <?php if (in_array((int) $this->session->userdata('role_id'), [1, 2], true)): ?>
                 <li class="nav-item">
 
                     <a
-                        href="#"
-                        class="nav-link text-secondary">
+                        href="<?= site_url('academic/sections'); ?>"
+                        class="nav-link text-secondary <?= $isAcademicSections ? 'submenu-active' : ''; ?>">
 
                         Sections
 
                     </a>
 
                 </li>
+                <?php endif; ?>
 
 
                 <li class="nav-item">
@@ -186,12 +198,12 @@ $isEnrollment =
     <li class="nav-item">
 
         <a
-            href="#studentMenu"
+            href="#<?= $studentMenuId; ?>"
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
             aria-expanded="<?= $isStudents ? 'true' : 'false'; ?>"
-            aria-controls="studentMenu">
+            aria-controls="<?= $studentMenuId; ?>">
 
             <span>
 
@@ -209,7 +221,7 @@ $isEnrollment =
         <div
             class="collapse
                 <?= $isStudents ? 'show' : ''; ?>"
-            id="studentMenu">
+            id="<?= $studentMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
 
@@ -287,12 +299,12 @@ $isEnrollment =
     <li class="nav-item">
 
         <a
-            href="#facultyMenu"
+            href="#<?= $facultyMenuId; ?>"
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
             aria-expanded="false"
-            aria-controls="facultyMenu">
+            aria-controls="<?= $facultyMenuId; ?>">
 
             <span>
 
@@ -309,7 +321,7 @@ $isEnrollment =
 
         <div
             class="collapse"
-            id="facultyMenu">
+            id="<?= $facultyMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
 
@@ -364,16 +376,16 @@ $isEnrollment =
 
     <li class="nav-item">
         <a
-            href="#financeMenu"
+            href="#<?= $financeMenuId; ?>"
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
             aria-expanded="<?= $isFinance ? 'true' : 'false'; ?>"
-            aria-controls="financeMenu">
+            aria-controls="<?= $financeMenuId; ?>">
             <span><i class="fas fa-coins me-2"></i>Finance</span>
             <i class="fas fa-chevron-down small"></i>
         </a>
-        <div class="collapse <?= $isFinance ? 'show' : ''; ?>" id="financeMenu">
+        <div class="collapse <?= $isFinance ? 'show' : ''; ?>" id="<?= $financeMenuId; ?>">
             <ul class="nav flex-column ms-3">
                 <li class="nav-item">
                     <a href="<?= site_url('finance'); ?>" class="nav-link text-secondary <?= $isFinance && $currentMethod === 'index' ? 'submenu-active' : ''; ?>">
@@ -416,12 +428,12 @@ $isEnrollment =
     <li class="nav-item">
 
         <a
-            href="#adminMenu"
+            href="#<?= $adminMenuId; ?>"
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
             aria-expanded="false"
-            aria-controls="adminMenu">
+            aria-controls="<?= $adminMenuId; ?>">
 
             <span>
 
@@ -438,7 +450,7 @@ $isEnrollment =
 
         <div
             class="collapse"
-            id="adminMenu">
+            id="<?= $adminMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
 

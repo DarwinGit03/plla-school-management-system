@@ -28,7 +28,7 @@ class Auth_service
         */
 
         $this->CI->load->model('auth/User_model');
-        $this->CI->load->model('Password_reset_model');
+        $this->CI->load->model('auth/Password_reset_model');
         $this->CI->load->model(
             'auth/Login_log_model'
         );
@@ -570,6 +570,18 @@ class Auth_service
             ];
         }
 
+        $cooldownSeconds = (int) $this->CI->config->item('otp_send_cooldown_seconds');
+        if ($cooldownSeconds < 1) {
+            $cooldownSeconds = 60;
+        }
+
+        if ($this->CI->Password_reset_model->wasRecentlySent($email, $cooldownSeconds)) {
+            return [
+                'status' => false,
+                'message' => 'A verification code was just sent. Please wait a minute before requesting another.'
+            ];
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Create OTP
@@ -577,6 +589,13 @@ class Auth_service
         */
 
         $otp = $this->CI->otp_service->createOTP($email);
+
+        if (!$otp) {
+            return [
+                'status' => false,
+                'message' => 'We could not create a verification code. Please try again.'
+            ];
+        }
 
         /*
         |--------------------------------------------------------------------------
