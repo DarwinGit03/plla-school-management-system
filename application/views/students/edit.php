@@ -1236,7 +1236,7 @@
                                         ? 'selected'
                                         : ''; ?>>
 
-                                    <?= html_escape($gradeValue); ?>
+                                    <?= html_escape($this->fee_configuration_model->grade_label($gradeValue)); ?>
 
                                 </option>
 
@@ -1247,64 +1247,12 @@
                     </div>
 
 
-                    <!-- Section -->
-
                     <div class="col-12 col-md-6 col-lg-4">
-
-                        <label
-                            for="section"
-                            class="form-label">
-
-                            Section
-
-                        </label>
-
-                        <select
-                            name="section"
-                            id="section"
-                            class="form-select"
-                            <?= empty($selectedGrade)
-                                ? 'disabled'
-                                : ''; ?>>
-
-                            <option value="">
-                                Select Section
-                            </option>
-
-                            <?php
-
-                            $selectedSection =
-                                set_value(
-                                    'section',
-                                    $student->section ?? ''
-                                );
-
-                            ?>
-
-                            <?php foreach ($sections ?? [] as $section): ?>
-
-                                <?php
-                                $sectionValue =
-                                    is_object($section)
-                                        ? $section->section
-                                        : $section;
-                                ?>
-
-                                <option
-                                    value="<?= html_escape($sectionValue); ?>"
-                                    <?= (string) $selectedSection ===
-                                        (string) $sectionValue
-                                        ? 'selected'
-                                        : ''; ?>>
-
-                                    <?= html_escape($sectionValue); ?>
-
-                                </option>
-
-                            <?php endforeach; ?>
-
-                        </select>
-
+                        <label class="form-label">Section</label>
+                        <div class="form-control-plaintext">
+                            <?= html_escape($student->section ?: 'Unassigned'); ?>
+                            <span class="text-muted small ms-1">Manage from Students &gt; Section Assignment.</span>
+                        </div>
                     </div>
 
 

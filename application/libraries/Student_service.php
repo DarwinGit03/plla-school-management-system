@@ -116,8 +116,6 @@ class Student_service
         */
 
         $enrollment_data['student_id'] = $student_id;
-        $enrollment_data['grade_level'] = $this->CI->fee_configuration_model
-            ->grade_label($enrollment_data['grade_level'] ?? '');
         //test now
         $enrollment_data['created_by'] =
             $employee_no;
@@ -421,8 +419,6 @@ class Student_service
 
         //test now
         // $enrollment_data['updated_by'] = $employee_no;
-        $enrollment_data['grade_level'] = $this->CI->fee_configuration_model
-            ->grade_label($enrollment_data['grade_level'] ?? '');
 
         $updated =
             $this->CI

@@ -158,7 +158,7 @@
                                 <?= (string) $filters['grade_level'] === (string) $grade->grade
                                     ? 'selected'
                                     : ''; ?>>
-                                <?= html_escape($grade->grade); ?>
+                                <?= html_escape($this->fee_configuration_model->grade_label($grade->grade)); ?>
                             </option>
                         <?php endforeach; ?>
 
@@ -386,7 +386,9 @@
                                     <td>
 
                                         <?= html_escape(
-                                            $student->grade_level ?: '—'
+                                            !empty($student->grade_level)
+                                                ? $this->fee_configuration_model->grade_label($student->grade_level)
+                                                : '—'
                                         ); ?>
 
                                     </td>
@@ -531,7 +533,7 @@
                                                                 'UTF-8'
                                                             ); ?>"
                                                             data-grade="<?= htmlspecialchars(
-                                                                $student->grade_level ?? '',
+                                                                !empty($student->grade_level) ? $this->fee_configuration_model->grade_label($student->grade_level) : '',
                                                                 ENT_QUOTES,
                                                                 'UTF-8'
                                                             ); ?>"
@@ -570,7 +572,7 @@
                                                                 'UTF-8'
                                                             ); ?>"
                                                             data-grade="<?= htmlspecialchars(
-                                                                $student->grade_level ?? '',
+                                                                !empty($student->grade_level) ? $this->fee_configuration_model->grade_label($student->grade_level) : '',
                                                                 ENT_QUOTES,
                                                                 'UTF-8'
                                                             ); ?>"

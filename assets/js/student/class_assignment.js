@@ -18,11 +18,7 @@ document.addEventListener(
             );
 
 
-        if (
-            !academicYear ||
-            !gradeLevel ||
-            !section
-        ) {
+        if (!academicYear || !gradeLevel) {
             return;
         }
 
@@ -34,7 +30,7 @@ document.addEventListener(
         */
 
         gradeLevel.disabled = true;
-        section.disabled = true;
+        if (section) section.disabled = true;
 
 
         /*
@@ -63,16 +59,14 @@ document.addEventListener(
                     )
                 );
 
-                resetSelect(
-                    section,
-                    getPlaceholder(
-                        'section'
-                    )
-                );
+                if (section) {
+                    resetSelect(section, getPlaceholder('section'));
+                    section.disabled = true;
+                }
 
 
                 gradeLevel.disabled = true;
-                section.disabled = true;
+                if (section) section.disabled = true;
 
 
                 if (!this.value) {
@@ -97,26 +91,19 @@ document.addEventListener(
             'change',
             function () {
 
-                resetSelect(
-                    section,
-                    getPlaceholder(
-                        'section'
-                    )
-                );
-
-
-                section.disabled = true;
+                if (section) {
+                    resetSelect(
+                        section,
+                        getPlaceholder('section')
+                    );
+                }
 
 
                 if (!this.value) {
                     return;
                 }
 
-
-                loadSections(
-                    academicYear.value,
-                    this.value
-                );
+                if (section) loadSections(academicYear.value, this.value);
             }
         );
 
@@ -270,9 +257,7 @@ document.addEventListener(
                                 item.grade;
 
 
-                            option.textContent =
-                                'Grade ' +
-                                item.grade;
+                            option.textContent = gradeLabel(item.grade);
 
 
                             gradeLevel.appendChild(
@@ -338,6 +323,8 @@ document.addEventListener(
             grade
         )
         {
+            if (!section) return;
+
             fetch(
                 BASE_URL +
                 'students/sections?year=' +
@@ -422,6 +409,15 @@ document.addEventListener(
                     );
 
                 });
+        }
+
+        function gradeLabel(value)
+        {
+            const code = String(value || '').trim();
+            if (code.toUpperCase() === 'N') return 'Nursery';
+            if (code.toUpperCase() === 'K') return 'Kindergarten';
+            if (/^grade\s/i.test(code)) return code;
+            return /^\d+$/.test(code) ? 'Grade ' + code : code;
         }
 
 

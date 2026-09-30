@@ -12,7 +12,7 @@ class Academic_section_model extends CI_Model
             ->from($this->table . ' AS sections')
             ->join(
                 'student_enrollments AS enrollments',
-                'enrollments.academic_year = sections.year AND (enrollments.grade_level = sections.grade OR enrollments.grade_level = CONCAT("Grade ", sections.grade) OR (sections.grade = "N" AND enrollments.grade_level IN ("N", "Nursery")) OR (sections.grade = "K" AND enrollments.grade_level IN ("K", "Kindergarten"))) AND (enrollments.section = sections.section OR CAST(enrollments.section AS CHAR) = CAST(sections.id AS CHAR))',
+                'enrollments.academic_year = sections.year AND (enrollments.grade_level = sections.grade OR enrollments.grade_level = CONCAT("Grade ", sections.grade) OR (sections.grade = "N" AND enrollments.grade_level IN ("N", "Nursery")) OR (sections.grade = "K" AND enrollments.grade_level IN ("K", "Kindergarten"))) AND (enrollments.section_id = sections.id OR enrollments.section = sections.section OR CAST(enrollments.section AS CHAR) = CAST(sections.id AS CHAR))',
                 'left'
             );
 

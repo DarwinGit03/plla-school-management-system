@@ -9,7 +9,6 @@ class Dashboard extends MY_Controller
 
         $this->requireLogin();
 
-        $this->load->model('Dashboard_model');
     }
 
     public function index()
@@ -53,7 +52,7 @@ class Dashboard extends MY_Controller
 
             case 3:
 
-                echo "Teacher Dashboard";
+                redirect('my-payroll');
 
             break;
 

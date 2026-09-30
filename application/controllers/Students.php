@@ -1101,11 +1101,6 @@
                             'grade_level'
                         ),
 
-                    'section' =>
-                        $this->input->post(
-                            'section'
-                        ),
-
                     'admission_type' =>
                         $this->input->post(
                             'admission_type'
@@ -1635,11 +1630,6 @@
                     'grade_level' =>
                         $this->input->post(
                             'grade_level'
-                        ),
-
-                    'section' =>
-                        $this->input->post(
-                            'section'
                         ),
 
                     'admission_type' =>

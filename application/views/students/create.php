@@ -1088,30 +1088,11 @@
                     </div> -->
 
 
-                    <!-- Section -->
-
                     <div class="col-12 col-md-6 col-lg-4">
-
-                        <label
-                            for="section"
-                            class="form-label">
-
-                            Section
-
-                        </label>
-
-                        <select
-                            name="section"
-                            id="section"
-                            class="form-select"
-                            disabled>
-
-                            <option value="">
-                                
-                            </option>
-
-                        </select>
-
+                        <label class="form-label">Section</label>
+                        <div class="form-control-plaintext text-muted">
+                            Assign the student after saving, from Students &gt; Section Assignment.
+                        </div>
                     </div>
 
 

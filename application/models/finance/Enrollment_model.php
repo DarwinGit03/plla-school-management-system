@@ -63,7 +63,7 @@ class Enrollment_model extends CI_Model
 
         $updated = $this->db->where('id', (int) $enrollment_id)->update($this->enrollments_table, [
             'academic_year' => $placement['academic_year'],
-            'grade_level' => $this->fee_configuration_model->grade_label($placement['grade_level']),
+            'grade_level' => $this->fee_configuration_model->grade_code($placement['grade_level']),
             'payment_mode' => $placement['payment_mode'],
             'fee_configuration_id' => $placement['fee_configuration_id'],
             'section' => null,
@@ -153,7 +153,7 @@ class Enrollment_model extends CI_Model
             $this->db
                 ->where('id', $enrollment_id)
                 ->update($this->enrollments_table, [
-                    'grade_level' => $this->fee_configuration_model->grade_label($placement['grade_level']),
+                    'grade_level' => $this->fee_configuration_model->grade_code($placement['grade_level']),
                     'payment_mode' => $placement['payment_mode'],
                     'fee_configuration_id' => $placement['fee_configuration_id'],
                     'updated_at' => date('Y-m-d H:i:s'),
@@ -189,7 +189,7 @@ class Enrollment_model extends CI_Model
                 'student_id' => $student_id,
                 'lrn' => $lrn,
                 'academic_year' => $placement['academic_year'],
-                'grade_level' => $this->fee_configuration_model->grade_label($placement['grade_level']),
+                'grade_level' => $this->fee_configuration_model->grade_code($placement['grade_level']),
                 'section' => null,
                 'payment_mode' => $placement['payment_mode'],
                 'fee_configuration_id' => $placement['fee_configuration_id'],

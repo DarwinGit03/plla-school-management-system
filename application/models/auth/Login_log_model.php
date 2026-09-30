@@ -62,19 +62,4 @@ class Login_log_model extends CI_Model
                     );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get Latest Login
-    |--------------------------------------------------------------------------
-    */
-
-    public function getLatest($user_id)
-    {
-        return $this->db
-                    ->where('user_id', $user_id)
-                    ->order_by('id', 'DESC')
-                    ->limit(1)
-                    ->get($this->table)
-                    ->row();
-    }
 }

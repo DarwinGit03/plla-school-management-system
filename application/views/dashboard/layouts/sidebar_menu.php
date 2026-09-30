@@ -16,6 +16,7 @@ $studentMenuId = 'studentMenu' . $menuSuffix;
 $facultyMenuId = 'facultyMenu' . $menuSuffix;
 $financeMenuId = 'financeMenu' . $menuSuffix;
 $adminMenuId = 'adminMenu' . $menuSuffix;
+$isAdministration = ($currentController === 'administration');
 
 
 /*
@@ -32,10 +33,16 @@ $isAcademicSections =
 
 
 $isStudents =
-    ($currentController === 'students');
+    in_array($currentController, ['students', 'section_assignments'], true);
 
-$isFinance =
-    ($currentController === 'finance');
+$isSectionAssignments = ($currentController === 'section_assignments');
+$isTeachers = ($currentController === 'teachers');
+$isPayroll = ($currentController === 'payroll');
+$isMyPayroll = ($currentController === 'my_payroll');
+
+$isFinance = ($currentController === 'finance');
+$isFinanceStaffPayroll = (int) $this->session->userdata('role_id') === 4
+    && in_array($currentController, ['payroll', 'teachers'], true);
 
 $isParentPaymentHistory =
     ($currentController === 'parents' && $currentMethod === 'payment_history');
@@ -85,6 +92,15 @@ $isEnrollment =
         </a>
 
     </li>
+
+    <?php if ((int) $this->session->userdata('role_id') === 3): ?>
+        <li class="nav-item">
+            <a href="<?= site_url('my-payroll'); ?>" class="nav-link text-white <?= $isMyPayroll ? 'active' : ''; ?>">
+                <i class="fas fa-file-invoice-dollar me-2"></i>
+                My pay history
+            </a>
+        </li>
+    <?php endif; ?>
 
     <?php if ((int) $this->session->userdata('role_id') === 5): ?>
         <li class="nav-item">
@@ -142,7 +158,6 @@ $isEnrollment =
                     </a>
 
                 </li>
-
 
                 <li class="nav-item">
 
@@ -271,6 +286,18 @@ $isEnrollment =
 
                 </li>
 
+                <li class="nav-item">
+
+                    <a
+                        href="<?= site_url('students/section-assignments'); ?>"
+                        class="nav-link text-secondary <?= $isSectionAssignments ? 'submenu-active' : ''; ?>">
+
+                        Section Assignment
+
+                    </a>
+
+                </li>
+
                 <!-- Alumni -->
 
                 <li class="nav-item">
@@ -292,6 +319,7 @@ $isEnrollment =
     </li>
 
 
+    <?php if (in_array((int) $this->session->userdata('role_id'), [1, 2], true)): ?>
     <!-- =====================================================
          FACULTY
     ====================================================== -->
@@ -303,7 +331,7 @@ $isEnrollment =
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
-            aria-expanded="false"
+            aria-expanded="<?= ($isTeachers || $isPayroll) ? 'true' : 'false'; ?>"
             aria-controls="<?= $facultyMenuId; ?>">
 
             <span>
@@ -320,7 +348,7 @@ $isEnrollment =
 
 
         <div
-            class="collapse"
+            class="collapse <?= ($isTeachers || $isPayroll) ? 'show' : ''; ?>"
             id="<?= $facultyMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
@@ -328,8 +356,8 @@ $isEnrollment =
                 <li class="nav-item">
 
                     <a
-                        href="#"
-                        class="nav-link text-secondary">
+                        href="<?= site_url('teachers'); ?>"
+                        class="nav-link <?= $isTeachers ? 'active' : 'text-secondary'; ?>">
 
                         Faculty List
 
@@ -337,37 +365,20 @@ $isEnrollment =
 
                 </li>
 
-
                 <li class="nav-item">
-
-                    <a
-                        href="#"
-                        class="nav-link text-secondary">
-
-                        Departments
-
+                    <a href="<?= site_url('payroll'); ?>" class="nav-link <?= $isPayroll ? 'active' : 'text-secondary'; ?>">
+                        Payroll
                     </a>
-
                 </li>
 
-
-                <li class="nav-item">
-
-                    <a
-                        href="#"
-                        class="nav-link text-secondary">
-
-                        Teaching Load
-
-                    </a>
-
-                </li>
 
             </ul>
 
         </div>
 
     </li>
+
+    <?php endif; ?>
 
 
     <!-- =====================================================
@@ -385,7 +396,7 @@ $isEnrollment =
             <span><i class="fas fa-coins me-2"></i>Finance</span>
             <i class="fas fa-chevron-down small"></i>
         </a>
-        <div class="collapse <?= $isFinance ? 'show' : ''; ?>" id="<?= $financeMenuId; ?>">
+        <div class="collapse <?= ($isFinance || $isFinanceStaffPayroll) ? 'show' : ''; ?>" id="<?= $financeMenuId; ?>">
             <ul class="nav flex-column ms-3">
                 <li class="nav-item">
                     <a href="<?= site_url('finance'); ?>" class="nav-link text-secondary <?= $isFinance && $currentMethod === 'index' ? 'submenu-active' : ''; ?>">
@@ -397,6 +408,14 @@ $isEnrollment =
                         Record Payments
                     </a>
                 </li>
+                <?php if ((int) $this->session->userdata('role_id') === 4): ?>
+                    <li class="nav-item">
+                        <a href="<?= site_url('teachers'); ?>" class="nav-link text-secondary <?= $currentController === 'teachers' ? 'submenu-active' : ''; ?>">Faculty salaries</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="<?= site_url('payroll'); ?>" class="nav-link text-secondary <?= $isPayroll ? 'submenu-active' : ''; ?>">Teacher payroll</a>
+                    </li>
+                <?php endif; ?>
             </ul>
         </div>
     </li>
@@ -421,6 +440,7 @@ $isEnrollment =
     </li>
 
 
+    <?php if (in_array((int) $this->session->userdata('role_id'), [1, 2], true)): ?>
     <!-- =====================================================
          ADMINISTRATION
     ====================================================== -->
@@ -432,7 +452,7 @@ $isEnrollment =
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
-            aria-expanded="false"
+            aria-expanded="<?= $isAdministration ? 'true' : 'false'; ?>"
             aria-controls="<?= $adminMenuId; ?>">
 
             <span>
@@ -449,7 +469,7 @@ $isEnrollment =
 
 
         <div
-            class="collapse"
+            class="collapse <?= $isAdministration ? 'show' : ''; ?>"
             id="<?= $adminMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
@@ -457,8 +477,8 @@ $isEnrollment =
                 <li class="nav-item">
 
                     <a
-                        href="#"
-                        class="nav-link text-secondary">
+                        href="<?= site_url('admin/users'); ?>"
+                        class="nav-link text-secondary <?= $isAdministration && $currentMethod === 'users' ? 'submenu-active' : ''; ?>">
 
                         Users
 
@@ -470,8 +490,8 @@ $isEnrollment =
                 <li class="nav-item">
 
                     <a
-                        href="#"
-                        class="nav-link text-secondary">
+                        href="<?= site_url('admin/roles'); ?>"
+                        class="nav-link text-secondary <?= $isAdministration && $currentMethod === 'roles' ? 'submenu-active' : ''; ?>">
 
                         Roles
 
@@ -483,8 +503,8 @@ $isEnrollment =
                 <li class="nav-item">
 
                     <a
-                        href="#"
-                        class="nav-link text-secondary">
+                        href="<?= site_url('admin/audit-logs'); ?>"
+                        class="nav-link text-secondary <?= $isAdministration && $currentMethod === 'audit_logs' ? 'submenu-active' : ''; ?>">
 
                         Audit Logs
 
@@ -496,8 +516,8 @@ $isEnrollment =
                 <li class="nav-item">
 
                     <a
-                        href="#"
-                        class="nav-link text-secondary">
+                        href="<?= site_url('admin/settings'); ?>"
+                        class="nav-link text-secondary <?= $isAdministration && $currentMethod === 'settings' ? 'submenu-active' : ''; ?>">
 
                         Settings
 
@@ -510,5 +530,6 @@ $isEnrollment =
         </div>
 
     </li>
+    <?php endif; ?>
 
 </ul>

@@ -31,7 +31,7 @@
                         <select name="grade_level" id="grade_level" class="form-select" <?= empty($filters['academic_year']) ? 'disabled' : ''; ?>>
                             <option value="">All grades</option>
                             <?php foreach ($grade_levels as $grade): ?>
-                                <option value="<?= html_escape($grade->grade); ?>" <?= (string) $filters['grade_level'] === (string) $grade->grade ? 'selected' : ''; ?>><?= html_escape($grade->grade); ?></option>
+                                <option value="<?= html_escape($grade->grade); ?>" <?= (string) $filters['grade_level'] === (string) $grade->grade ? 'selected' : ''; ?>><?= html_escape($this->fee_configuration_model->grade_label($grade->grade)); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -86,7 +86,7 @@
                                 <td><?= html_escape($student->student_no); ?></td>
                                 <td><?= html_escape(trim($student->first_name . ' ' . $student->middle_name . ' ' . $student->last_name . ' ' . $student->suffix)); ?></td>
                                 <td><?= html_escape($student->academic_year ?: '—'); ?></td>
-                                <td><?= html_escape($student->grade_level ?: '—'); ?></td>
+                                <td><?= html_escape(!empty($student->grade_level) ? $this->fee_configuration_model->grade_label($student->grade_level) : '—'); ?></td>
                                 <td><?= html_escape($student->section ?: '—'); ?></td>
                                 <td><?= html_escape($payment_modes[$student->payment_mode] ?? 'â€”'); ?></td>
                                 <td><span class="badge text-bg-<?= $student->status === 'active' ? 'success' : 'secondary'; ?>"><?= html_escape(ucfirst($student->status)); ?></span></td>
