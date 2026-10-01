@@ -30,16 +30,16 @@
     </div>
 </div>
 
-<div class="alert alert-warning">Role IDs 4 and 5 are named Parent and Finance in the database, but some application access checks use the opposite mapping. Review the role page before changing an account's role.</div>
+<div class="alert alert-info">Users inherit access from their role. Use Manage access to grant or deny specific permissions for an individual account.</div>
 
 <section class="card border-0 shadow-sm">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h2 class="h6 fw-bold mb-0">User accounts</h2>
-        <span class="small text-secondary"><?= number_format($total_users); ?> matching accounts</span>
+        <div class="d-flex align-items-center gap-3"><span class="small text-secondary"><?= number_format($total_users); ?> matching accounts</span><a class="btn btn-primary btn-sm" href="<?= site_url('admin/users/create'); ?>"><i class="fas fa-user-plus me-1"></i>Create user</a></div>
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th class="ps-3">User</th><th>Username</th><th>Employee no.</th><th>Role</th><th>Status</th><th>Last login</th></tr></thead>
+            <thead class="table-light"><tr><th class="ps-3">User</th><th>Username</th><th>Employee no.</th><th>Role</th><th>Status</th><th>Last login</th><th class="text-end pe-3">Access</th></tr></thead>
             <tbody>
             <?php if ($users): foreach ($users as $user): ?>
                 <tr>
@@ -49,9 +49,10 @@
                     <td><?= html_escape($user->role_name ?: 'Unassigned'); ?></td>
                     <td><span class="badge text-bg-<?= $user->is_active ? 'success' : 'secondary'; ?>"><?= $user->is_active ? 'Active' : 'Inactive'; ?></span></td>
                     <td><?= $user->last_login ? html_escape($user->last_login) : 'Never'; ?></td>
+                    <td class="text-end pe-3"><a class="btn btn-sm btn-outline-primary" href="<?= site_url('admin/users/' . (int) $user->id . '/access'); ?>">Manage access</a></td>
                 </tr>
             <?php endforeach; else: ?>
-                <tr><td colspan="6" class="text-center text-secondary py-5">No user accounts match these filters.</td></tr>
+                <tr><td colspan="7" class="text-center text-secondary py-5">No user accounts match these filters.</td></tr>
             <?php endif; ?>
             </tbody>
         </table>

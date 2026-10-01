@@ -1,62 +1,56 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/** Dependency-free single-page PDF output for finalized payroll snapshots. */
+/** Small dependency-free PDF output for finalized payroll snapshots. */
 class Teacher_payslip_pdf
 {
-    private $width = 612;
-    private $height = 792;
+    // US half-letter / half-bond paper: 5.5 x 8.5 inches at 72 points per inch.
+    private $width = 396;
+    private $height = 612;
     private $content = '';
+    private $pages = [];
 
     public function generate($item, array $deductions, $taxes = null)
     {
         $this->content = '';
-        $this->text(306, 42, 'PRECIOUS LITTLE LIGHTS ACADEMY', 16, true, 'center');
-        $this->text(306, 68, 'TEACHER PAYSLIP', 12, true, 'center', [0.08, 0.35, 0.75]);
-        $this->line(48, 91, 564, 91);
+        $this->pages = [];
+        $this->draw_header($item, false);
 
-        $this->text(54, 111, 'PAY PERIOD', 8, true, 'left', [0.35, 0.35, 0.35]);
-        $this->text(54, 126, $item->period_start . ' to ' . $item->period_end, 10, true);
-        $this->text(360, 111, 'PAY DATE', 8, true, 'left', [0.35, 0.35, 0.35]);
-        $this->text(360, 126, $item->pay_date, 10, true);
+        $this->text(30, 65, 'PAY PERIOD', 7, true, 'left', [0.35, 0.35, 0.35]);
+        $this->text(30, 77, $item->period_start . ' to ' . $item->period_end, 8, true);
+        $this->text(242, 65, 'PAY DATE', 7, true, 'left', [0.35, 0.35, 0.35]);
+        $this->text(242, 77, $item->pay_date, 8, true);
 
-        $this->text(54, 159, 'EMPLOYEE', 8, true, 'left', [0.35, 0.35, 0.35]);
-        $this->text(54, 174, $item->teacher_name_snapshot, 11, true);
-        $this->text(360, 159, 'EMPLOYEE NO.', 8, true, 'left', [0.35, 0.35, 0.35]);
-        $this->text(360, 174, $item->employee_no_snapshot, 10, true);
-        if (!empty($item->position_snapshot)) {
-            $this->text(54, 195, 'POSITION: ' . $item->position_snapshot, 9);
-        }
+        $this->text(30, 97, 'EMPLOYEE', 7, true, 'left', [0.35, 0.35, 0.35]);
+        $this->text(30, 109, $item->employee_name_snapshot, 9, true);
+        $this->text(30, 127, 'EMPLOYEE NO. ' . $item->employee_no_snapshot, 7);
+        if (!empty($item->position_snapshot)) $this->text(205, 127, 'POSITION: ' . $item->position_snapshot, 7);
 
-        $top = 226;
-        $this->rect(48, $top, 516, 25, [0.91, 0.94, 0.97]);
-        $this->text(60, $top + 7, 'PAY DETAILS', 9, true);
-        $this->text(550, $top + 7, 'AMOUNT (PHP)', 8, true, 'right');
-        $rowTop = $top + 25;
+        $tableTop = 145;
+        $this->rect(24, $tableTop, 348, 19, [0.91, 0.94, 0.97]);
+        $this->text(31, $tableTop + 5, 'PAY DETAILS', 7, true);
+        $this->text(367, $tableTop + 5, 'AMOUNT (PHP)', 7, true, 'right');
+
+        $rowTop = $tableTop + 19;
         $rateLabel = $item->salary_type_snapshot === 'daily' ? 'Daily salary rate' : 'Monthly salary rate';
         $rate = $item->salary_type_snapshot === 'daily' ? $item->daily_salary_snapshot : $item->monthly_salary_snapshot;
-        $this->row($rowTop, $rateLabel, $this->money($rate));
-        $rowTop += 28;
-        $this->row($rowTop, 'Days attended', number_format((float) $item->payable_days, 2, '.', ''));
-        $rowTop += 28;
-        $this->row($rowTop, 'Paid leave days', number_format((float) $item->paid_leave_days, 2, '.', ''));
-        $rowTop += 28;
-        $this->row($rowTop, 'Days absent', number_format((float) $item->absence_days, 2, '.', ''));
-        $rowTop += 28;
-        $this->row($rowTop, 'Basic pay', $this->money($item->basic_pay), true);
-        $rowTop += 34;
-        $this->text(60, $rowTop, 'DEDUCTIONS', 8, true, 'left', [0.35, 0.35, 0.35]);
-        $rowTop += 18;
+        $rowTop += $this->row($rowTop, $rateLabel, $this->money($rate));
+        $rowTop += $this->row($rowTop, 'Days attended', number_format((float) $item->payable_days, 2, '.', ''));
+        $rowTop += $this->row($rowTop, 'Paid leave days', number_format((float) $item->paid_leave_days, 2, '.', ''));
+        $rowTop += $this->row($rowTop, 'Days absent', number_format((float) $item->absence_days, 2, '.', ''));
+        $rowTop += $this->row($rowTop, 'Basic pay', $this->money($item->basic_pay), true);
 
+        $this->text(31, $rowTop + 2, 'DEDUCTIONS', 7, true, 'left', [0.35, 0.35, 0.35]);
+        $rowTop += 15;
+
+        $deductionRows = [];
         if ((float) $item->absence_deduction > 0) {
-            $this->row($rowTop, 'Absence deduction', $this->money($item->absence_deduction));
-            $rowTop += 25;
+            $deductionRows[] = ['Absence deduction', $this->money($item->absence_deduction)];
         }
         foreach ($deductions as $deduction) {
             $label = $deduction->description;
-            if (!empty($deduction->notes)) $label .= ' — ' . $deduction->notes;
-            $this->row($rowTop, $label, $this->money($deduction->amount));
-            $rowTop += 25;
+            if (!empty($deduction->notes)) $label .= ' - ' . $deduction->notes;
+            $deductionRows[] = [$label, $this->money($deduction->amount)];
         }
         foreach ([
             'SSS employee share' => (float) ($taxes->sss_amount ?? 0),
@@ -64,31 +58,76 @@ class Teacher_payslip_pdf
             'Pag-IBIG employee share' => (float) ($taxes->pagibig_amount ?? 0),
             'Withholding tax' => (float) ($taxes->withholding_tax_amount ?? 0)
         ] as $label => $amount) {
-            if ($amount <= 0) continue;
-            $this->row($rowTop, $label, $this->money($amount));
-            $rowTop += 25;
+            if ($amount > 0) $deductionRows[] = [$label, $this->money($amount)];
         }
-        if (!$deductions && (float) ($taxes->sss_amount ?? 0) <= 0 && (float) ($taxes->philhealth_amount ?? 0) <= 0 && (float) ($taxes->pagibig_amount ?? 0) <= 0 && (float) ($taxes->withholding_tax_amount ?? 0) <= 0 && (float) $item->absence_deduction <= 0) {
-            $this->row($rowTop, 'No deductions', '0.00');
-            $rowTop += 25;
+        if (!$deductionRows) $deductionRows[] = ['No deductions', '0.00'];
+
+        foreach ($deductionRows as $deductionRow) {
+            $lineCount = count($this->wrap_label($deductionRow[0]));
+            $estimatedHeight = max(15, $lineCount * 9 + 5);
+            if ($rowTop + $estimatedHeight + 51 > $this->height - 20) {
+                $this->start_continued_page($item);
+                $rowTop = 86;
+            }
+            $rowTop += $this->row($rowTop, $deductionRow[0], $deductionRow[1]);
         }
 
-        $this->line(48, $rowTop + 5, 564, $rowTop + 5);
-        $this->text(60, $rowTop + 19, 'TOTAL DEDUCTIONS', 9, true);
-        $this->text(550, $rowTop + 19, $this->money($item->total_deductions), 9, true, 'right');
-        $this->rect(48, $rowTop + 45, 516, 42, [0.91, 0.96, 0.92]);
-        $this->text(60, $rowTop + 59, 'NET PAY', 11, true);
-        $this->text(550, $rowTop + 59, 'PHP ' . $this->money($item->net_pay), 12, true, 'right');
-        $this->text(306, 744, 'Generated from the school payroll system.', 8, false, 'center', [0.4, 0.4, 0.4]);
+        if ($rowTop + 51 > $this->height - 20) {
+            $this->start_continued_page($item);
+            $rowTop = 86;
+        }
+        $this->draw_totals($item, $rowTop);
+        $this->text(198, 594, 'Generated from the school payroll system.', 6, false, 'center', [0.4, 0.4, 0.4]);
+        $this->pages[] = $this->content;
 
         return $this->make_pdf();
     }
 
+    private function draw_header($item, $continued)
+    {
+        $this->text(198, 19, 'PRECIOUS LITTLE LIGHTS ACADEMY', 10, true, 'center');
+        $this->text(198, 36, $continued ? 'TEACHER PAYSLIP - CONTINUED' : 'TEACHER PAYSLIP', 8, true, 'center', [0.08, 0.35, 0.75]);
+        $this->line(24, 51, 372, 51);
+        if ($continued) {
+            $this->text(30, 59, $item->employee_name_snapshot . '  |  ' . $item->period_start . ' to ' . $item->period_end, 7, true);
+            $this->text(30, 75, 'DEDUCTIONS (CONTINUED)', 7, true, 'left', [0.35, 0.35, 0.35]);
+        }
+    }
+
+    private function start_continued_page($item)
+    {
+        $this->text(198, 594, 'Continued on next page.', 6, false, 'center', [0.4, 0.4, 0.4]);
+        $this->pages[] = $this->content;
+        $this->content = '';
+        $this->draw_header($item, true);
+    }
+
+    private function draw_totals($item, $top)
+    {
+        $this->line(24, $top + 2, 372, $top + 2);
+        $this->text(31, $top + 8, 'TOTAL DEDUCTIONS', 8, true);
+        $this->text(367, $top + 8, $this->money($item->total_deductions), 8, true, 'right');
+        $this->rect(24, $top + 22, 348, 29, [0.91, 0.96, 0.92]);
+        $this->text(31, $top + 31, 'NET PAY', 9, true);
+        $this->text(367, $top + 31, 'PHP ' . $this->money($item->net_pay), 9, true, 'right');
+    }
+
     private function row($top, $label, $amount, $bold = false)
     {
-        $this->text(60, $top + 7, $label, 9, $bold);
-        $this->text(550, $top + 7, $amount, 9, $bold, 'right');
-        $this->line(48, $top + 24, 564, $top + 24);
+        $lines = $this->wrap_label($label);
+        $size = 7;
+        foreach ($lines as $index => $line) {
+            $this->text(31, $top + 3 + ($index * 9), $line, $size, $bold);
+        }
+        $this->text(367, $top + 3, $amount, $size, $bold, 'right');
+        $height = max(15, count($lines) * 9 + 5);
+        $this->line(24, $top + $height, 372, $top + $height);
+        return $height;
+    }
+
+    private function wrap_label($label)
+    {
+        return explode("\n", wordwrap((string) $label, 74, "\n", true));
     }
 
     private function money($amount)
@@ -96,7 +135,7 @@ class Teacher_payslip_pdf
         return number_format((float) $amount, 2, '.', ',');
     }
 
-    private function text($x, $top, $value, $size = 10, $bold = false, $align = 'left', $color = [0, 0, 0])
+    private function text($x, $top, $value, $size = 8, $bold = false, $align = 'left', $color = [0, 0, 0])
     {
         $value = $this->pdf_text((string) $value);
         $width = strlen($value) * $size * 0.48;
@@ -128,7 +167,6 @@ class Teacher_payslip_pdf
 
     private function pdf_text($value)
     {
-        $value = str_replace(['₱', '—', '–', '·'], ['PHP ', '-', '-', '-'], $value);
         if (function_exists('iconv')) {
             $converted = @iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $value);
             if ($converted !== false) return $converted;
@@ -143,13 +181,21 @@ class Teacher_payslip_pdf
 
     private function make_pdf()
     {
+        $pageCount = count($this->pages);
         $objects = [
-            1 => '<< /Type /Catalog /Pages 2 0 R >>',
-            2 => '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-            3 => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> /F2 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >> >> >> /Contents 4 0 R >>',
-            4 => "<< /Length " . strlen($this->content) . ">>\nstream\n" . $this->content . "endstream",
-            5 => '<< /Title (Teacher Payslip) >>'
+            1 => '<< /Type /Catalog /Pages 2 0 R >>'
         ];
+        $pageReferences = [];
+        for ($index = 0; $index < $pageCount; $index++) {
+            $pageId = 3 + ($index * 2);
+            $streamId = $pageId + 1;
+            $pageReferences[] = $pageId . ' 0 R';
+            $objects[$pageId] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' . $this->width . ' ' . $this->height . '] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> /F2 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >> >> >> /Contents ' . $streamId . ' 0 R >>';
+            $objects[$streamId] = "<< /Length " . strlen($this->pages[$index]) . ">>\nstream\n" . $this->pages[$index] . "endstream";
+        }
+        $objects[2] = '<< /Type /Pages /Kids [' . implode(' ', $pageReferences) . '] /Count ' . $pageCount . ' >>';
+        ksort($objects);
+
         $pdf = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";
         $offsets = [0];
         foreach ($objects as $id => $object) {
@@ -157,8 +203,9 @@ class Teacher_payslip_pdf
             $pdf .= $id . " 0 obj\n" . $object . "\nendobj\n";
         }
         $xref = strlen($pdf);
-        $pdf .= "xref\n0 6\n0000000000 65535 f \n";
-        for ($id = 1; $id <= 5; $id++) $pdf .= sprintf("%010d 00000 n \n", $offsets[$id]);
-        return $pdf . "trailer\n<< /Size 6 /Root 1 0 R /Info 5 0 R >>\nstartxref\n" . $xref . "\n%%EOF";
+        $size = max(array_keys($objects)) + 1;
+        $pdf .= "xref\n0 " . $size . "\n0000000000 65535 f \n";
+        for ($id = 1; $id < $size; $id++) $pdf .= sprintf("%010d 00000 n \n", $offsets[$id]);
+        return $pdf . "trailer\n<< /Size " . $size . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF";
     }
 }

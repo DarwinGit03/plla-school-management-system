@@ -7,16 +7,17 @@ class Finance extends MY_Controller
         parent::__construct();
 
         $this->requireLogin();
-        $this->requireRole([1, 2, 5]);
 
         $this->load->model(
             'finance/fee_configuration_model'
         );
         $this->load->model('finance/payment_model');
+        $this->load->model('finance/finance_report_model');
     }
 
     public function index()
     {
+        $this->requirePermission('finance.fees.manage');
         $years = $this->fee_configuration_model->get_school_years();
         $requested_year = trim((string) $this->input->get('school_year', true));
         $year_values = array_map(function ($year) { return (string) $year->school_year; }, $years);
@@ -43,8 +44,150 @@ class Finance extends MY_Controller
         ]);
     }
 
+    /** Display collection totals and current fee balances by enrollment group. */
+    public function reports()
+    {
+        $this->requirePermission('finance.reports.view');
+        $filters = $this->finance_report_filters();
+        $this->load->library('Student_service');
+
+        // Use the same fee-year/grade and active academic-section sources as
+        // the Student List so the filters always show the same choices.
+        $years = array_map(function ($year) {
+            return (object) ['year' => $year->school_year];
+        }, $this->fee_configuration_model->get_school_years());
+        $yearValues = array_map(function ($year) { return (string) $year->year; }, $years);
+        if ($filters['school_year'] !== '' && !in_array($filters['school_year'], $yearValues, true)) {
+            $filters['school_year'] = '';
+            $filters['grade'] = '';
+            $filters['section'] = '';
+        }
+
+        $grades = $filters['school_year'] !== ''
+            ? $this->fee_configuration_model->get_grade_codes_by_year($filters['school_year'])
+            : [];
+        $gradeValues = array_map(function ($grade) { return (string) $grade->grade; }, $grades);
+        if ($filters['grade'] !== '' && !in_array($filters['grade'], $gradeValues, true)) {
+            $filters['grade'] = '';
+            $filters['section'] = '';
+        }
+        if ($filters['grade'] !== '') {
+            $gradeLabel = $this->fee_configuration_model->grade_label($filters['grade']);
+            $filters['grade_values'] = array_values(array_unique([$filters['grade'], $gradeLabel]));
+        } else {
+            $filters['grade_values'] = [];
+        }
+
+        $sections = ($filters['school_year'] !== '' && $filters['grade'] !== '')
+            ? $this->student_service->get_sections_by_year_and_grade($filters['school_year'], $filters['grade'])
+            : [];
+        $sectionValues = array_map(function ($section) { return (string) $section->section; }, $sections);
+        if ($filters['section'] !== '' && !in_array($filters['section'], $sectionValues, true)) {
+            $filters['section'] = '';
+        }
+
+        $data = $filters['_error'] === ''
+            ? $this->finance_report_model->get_report($filters)
+            : ['rows' => [], 'assessed' => 0, 'collected' => 0, 'outstanding' => 0];
+
+        $this->load->view('dashboard/layouts/master', [
+            'title' => 'Finance Reports',
+            'page_title' => 'Finance Reports',
+            'page_subtitle' => 'Review posted collections and current outstanding fee balances.',
+            'breadcrumb' => ['Reports', 'Finance'],
+            'content' => 'finance/reports/index',
+            'page_scripts' => ['assets/js/finance/reports.js'],
+            'filters' => $filters,
+            'years' => $years,
+            'grades' => $grades,
+            'sections' => $sections,
+            'report' => $data,
+            'filter_error' => $filters['_error']
+        ]);
+    }
+
+    /** Export the filtered finance summary as spreadsheet-safe CSV. */
+    public function download_reports_csv()
+    {
+        $this->requirePermission('finance.reports.view');
+        $filters = $this->finance_report_filters();
+        if ($filters['_error'] !== '') {
+            $this->session->set_flashdata('error', $filters['_error']);
+            return redirect('finance/reports');
+        }
+
+        $report = $this->finance_report_model->get_report($filters);
+        $filename = 'finance-report-' . date('Ymd-His') . '.csv';
+        $this->output->set_header('Content-Type: text/csv; charset=UTF-8');
+        $this->output->set_header('Content-Disposition: attachment; filename="' . $filename . '"');
+        $this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate');
+        $this->output->set_header('Pragma: no-cache');
+        $this->output->set_output($this->finance_report_csv($report['rows']));
+    }
+
+    private function finance_report_filters()
+    {
+        $filterError = '';
+        $filters = [
+            'school_year' => trim((string) $this->input->get('school_year', true)),
+            'grade' => trim((string) $this->input->get('grade', true)),
+            'section' => trim((string) $this->input->get('section', true)),
+            'date_from' => trim((string) $this->input->get('date_from', true)),
+            'date_to' => trim((string) $this->input->get('date_to', true)),
+            '_error' => ''
+        ];
+        foreach (['date_from', 'date_to'] as $key) {
+            if ($filters[$key] !== '' && !$this->is_iso_date($filters[$key])) {
+                $filterError = 'Enter valid collection dates in YYYY-MM-DD format.';
+                $filters[$key] = '';
+            }
+        }
+        if ($filters['date_from'] !== '' && $filters['date_to'] !== ''
+            && $filters['date_from'] > $filters['date_to']) {
+            $filterError = 'The collection start date must be on or before the end date.';
+            $filters['date_from'] = '';
+            $filters['date_to'] = '';
+        }
+        $filters['_error'] = $filterError;
+        return $filters;
+    }
+
+    private function is_iso_date($value)
+    {
+        $date = DateTime::createFromFormat('!Y-m-d', $value);
+        return $date && $date->format('Y-m-d') === $value;
+    }
+
+    private function finance_report_csv(array $rows)
+    {
+        $stream = fopen('php://temp', 'r+');
+        fwrite($stream, "\xEF\xBB\xBF");
+        fputcsv($stream, ['School year', 'Grade', 'Section', 'Assessed (PHP)', 'Collected in date range (PHP)', 'Outstanding balance (PHP)']);
+        foreach ($rows as $row) {
+            fputcsv($stream, [
+                $this->spreadsheet_safe_value($row->school_year),
+                $this->spreadsheet_safe_value($row->grade),
+                $this->spreadsheet_safe_value($row->section),
+                number_format((float) $row->assessed, 2, '.', ''),
+                number_format((float) $row->collected, 2, '.', ''),
+                number_format((float) $row->outstanding, 2, '.', '')
+            ]);
+        }
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+        return $csv;
+    }
+
+    private function spreadsheet_safe_value($value)
+    {
+        $value = (string) $value;
+        return preg_match('/^[\\s]*[=+@\\-]/u', $value) ? "'" . $value : $value;
+    }
+
     public function edit_configuration($configuration_id)
     {
+        $this->requirePermission('finance.fees.manage');
         $configuration = $this->fee_configuration_model->get_configuration_by_id((int) $configuration_id);
         if (!$configuration) { show_404(); return; }
         if ($this->input->method() === 'post') {
@@ -71,6 +214,7 @@ class Finance extends MY_Controller
 
     public function duplicate_school_year()
     {
+        $this->requirePermission('finance.fees.manage');
         if ($this->input->method() !== 'post') { show_404(); return; }
         $source_year = trim((string) $this->input->post('source_school_year', true));
         $target_year = trim((string) $this->input->post('target_school_year', true));
@@ -86,6 +230,7 @@ class Finance extends MY_Controller
 
     public function delete_school_year()
     {
+        $this->requirePermission('finance.fees.manage');
         if ($this->input->method() !== 'post') { show_404(); return; }
         $school_year = trim((string) $this->input->post('school_year', true));
         if ($this->input->post('confirm_delete') !== '1') {
@@ -101,6 +246,7 @@ class Finance extends MY_Controller
 
     public function update_school_year_status()
     {
+        $this->requirePermission('finance.fees.manage');
         if ($this->input->method() !== 'post') { show_404(); return; }
         $school_year = trim((string) $this->input->post('school_year', true));
         $status = trim((string) $this->input->post('status', true));
@@ -115,6 +261,7 @@ class Finance extends MY_Controller
 
     public function view($configuration_id)
     {
+        $this->requirePermission('finance.fees.manage');
         $configuration = $this->fee_configuration_model
             ->get_configuration_by_id((int) $configuration_id);
 
@@ -141,6 +288,7 @@ class Finance extends MY_Controller
     /** Search unpaid assessed charges and record a finance payment. */
     public function payments()
     {
+        $this->requirePermission('finance.payments.manage');
         $search = trim((string) $this->input->get('search', true));
         $student_id = (int) $this->input->get('student_id');
         $school_years = $this->fee_configuration_model->get_school_years();
@@ -279,6 +427,7 @@ class Finance extends MY_Controller
 
     public function void_payment()
     {
+        $this->requirePermission('finance.payments.manage');
         if ($this->input->method() !== 'post') { show_404(); return; }
         $this->load->library('Payment_service');
         $student_id = (int) $this->input->post('student_id');
@@ -294,6 +443,7 @@ class Finance extends MY_Controller
 
     public function correct_payment()
     {
+        $this->requirePermission('finance.payments.manage');
         if ($this->input->method() !== 'post') { show_404(); return; }
         $this->load->library('Payment_service');
         $student_id = (int) $this->input->post('student_id');
@@ -325,6 +475,7 @@ class Finance extends MY_Controller
     /** Download the selected student's payment statement as a PDF. */
     public function payment_statement($student_id, $display = 'attachment')
     {
+        $this->requirePermission('finance.payments.manage');
         $academic_year = $this->normalize_payment_school_year($this->input->get('academic_year', true));
         $statement = $this->build_payment_statement((int) $student_id, $academic_year);
         if (!$statement) {
@@ -350,6 +501,7 @@ class Finance extends MY_Controller
     /** Email the generated payment statement to the student's primary guardian. */
     public function email_payment_statement($student_id)
     {
+        $this->requirePermission('finance.payments.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -449,8 +601,7 @@ class Finance extends MY_Controller
             $name = trim((string) ($user->username ?? ''));
         }
 
-        $role_id = (int) ($user->role_id ?? $this->session->userdata('role_id'));
-        $role = $role_id === 1 ? 'ADMIN' : ($role_id === 2 ? 'PRINCIPAL' : 'AUTHORIZED FINANCE STAFF');
+        $role = strtoupper((string) ($user->role_name ?? 'AUTHORIZED FINANCE STAFF'));
 
         return [
             'name' => $name !== '' ? $name : 'Authorized school representative',

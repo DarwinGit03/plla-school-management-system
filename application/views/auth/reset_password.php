@@ -32,7 +32,7 @@
                 <div class="auth-field">
                     <label for="password">New password</label>
                     <div class="auth-password-control">
-                        <input type="password" name="password" id="password" class="form-control" autocomplete="new-password" placeholder="Create a new password" required>
+                        <input type="password" name="password" id="password" class="form-control" minlength="12" maxlength="72" autocomplete="new-password" placeholder="Create a new password" required>
                         <button type="button" class="auth-password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
                             <svg class="auth-eye-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>
                             <svg class="auth-eye-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.7 10.7 0 0 1 12 6c6.1 0 9.5 6 9.5 6a16 16 0 0 1-3 3.6M6.2 6.8C3.8 8.4 2.5 12 2.5 12s3.4 6 9.5 6c1.3 0 2.5-.3 3.5-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -42,7 +42,7 @@
                 <div class="auth-field">
                     <label for="confirm_password">Confirm new password</label>
                     <div class="auth-password-control">
-                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" autocomplete="new-password" placeholder="Enter it again" required>
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" minlength="12" maxlength="72" autocomplete="new-password" placeholder="Enter it again" required>
                         <button type="button" class="auth-password-toggle" data-password-toggle="confirm_password" aria-label="Show confirm password" aria-pressed="false">
                             <svg class="auth-eye-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>
                             <svg class="auth-eye-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.7 10.7 0 0 1 12 6c6.1 0 9.5 6 9.5 6a16 16 0 0 1-3 3.6M6.2 6.8C3.8 8.4 2.5 12 2.5 12s3.4 6 9.5 6c1.3 0 2.5-.3 3.5-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -55,7 +55,7 @@
                 <div class="auth-requirements">
                     <h2>Password requirements</h2>
                     <ul id="passwordChecklist">
-                        <li id="checkLength">At least 8 characters</li>
+                        <li id="checkLength">12 to 72 characters</li>
                         <li id="checkUpper">One uppercase letter</li>
                         <li id="checkLower">One lowercase letter</li>
                         <li id="checkNumber">One number</li>

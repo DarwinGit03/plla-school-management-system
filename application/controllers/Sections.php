@@ -7,7 +7,7 @@ class Sections extends MY_Controller
     {
         parent::__construct();
         $this->requireLogin();
-        $this->requireRole([1, 2]);
+        $this->requirePermission('academic.sections.manage');
 
         $this->load->library('form_validation');
         $this->load->model('academic/academic_section_model');

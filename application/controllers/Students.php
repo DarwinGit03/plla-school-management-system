@@ -37,6 +37,7 @@
          */
         public function academic_years()
         {
+            $this->requireAnyPermission(['students.view', 'students.enrollment.manage']);
             $active_only = $this->input->get('scope', true) === 'active';
             $years = $this->fee_school_year_options($active_only);
 
@@ -54,6 +55,7 @@
          */
         public function grade_levels()
         {
+            $this->requireAnyPermission(['students.view', 'students.enrollment.manage']);
             $year =
                 trim(
                     $this->input->get(
@@ -106,6 +108,7 @@
          */
         public function sections()
         {
+            $this->requireAnyPermission(['students.view', 'students.enrollment.manage']);
             $year =
                 trim(
                     $this->input->get(
@@ -167,6 +170,7 @@
          */
         public function index()
         {
+            $this->requirePermission('students.view');
             /*
             |--------------------------------------------------------------------------
             | Filters
@@ -384,6 +388,7 @@
         /** Search existing student records for enrollment work. */
         public function enroll()
         {
+            $this->requirePermission('students.enrollment.manage');
             $filters = [
                 'search' => trim((string) $this->input->get('search', true)),
                 'status' => trim((string) $this->input->get('status', true)),
@@ -440,10 +445,11 @@
         /** Show the selected student's proposed enrollment and configured fees. */
         public function enroll_student($student_id)
         {
+            $this->requirePermission('students.enrollment.manage');
             if ($this->input->method() === 'post') {
                 $is_admin_edit = $this->input->post('edit_enrollment', true) === '1';
-                if ($is_admin_edit && (int) $this->session->userdata('role_id') !== 1) {
-                    show_error('Only an administrator can edit a saved enrollment.', 403);
+                if ($is_admin_edit && !$this->can('students.enrollment.manage')) {
+                    show_error('You do not have permission to edit a saved enrollment.', 403);
                     return;
                 }
                 $this->load->library('Enrollment_service');
@@ -487,7 +493,7 @@
             $student->grade_code = $this->fee_configuration_model->grade_code($student->grade_level ?? '');
 
             $initial_flow_requested = $this->input->get('flow', true) === 'initial';
-            $is_admin = (int) $this->session->userdata('role_id') === 1;
+            $is_admin = $this->can('students.enrollment.manage');
             $admin_edit = $this->input->get('edit', true) === '1';
             if ($admin_edit && !$is_admin) {
                 show_error('Only an administrator can edit a saved enrollment.', 403);
@@ -703,6 +709,7 @@
         
         public function create()
         {
+            $this->requirePermission('students.manage');
             /*
             |--------------------------------------------------------------------------
             | Handle Form Submission
@@ -1183,15 +1190,7 @@
         
         public function edit($id)
         {
-
-            /*
-            |--------------------------------------------------------------------------
-            | Determine LRN Permission
-            |--------------------------------------------------------------------------
-            */
-
-            // $role_id = (int) $this->session->userdata('role_id');
-            // $is_admin = in_array($role_id, [3, 2], true);
+            $this->requirePermission('students.manage');
 
             /*
             |--------------------------------------------------------------------------
@@ -1371,24 +1370,6 @@
                         )
                 ];
 
-                /*
-                |--------------------------------------------------------------------------
-                | Admin-only fields
-                |--------------------------------------------------------------------------
-                */
-
-                // if ($this->is_admin()) {
-
-                //     $student_data['lrn'] =
-                //         trim(
-                //             $this->input->post('lrn')
-                //         );
-
-                //     $student_data['student_no'] =
-                //         trim(
-                //             $this->input->post('student_no')
-                //         );
-                // }
 
 
                 /*
@@ -1918,6 +1899,7 @@
 
         public function view($id)
         {
+            $this->requirePermission('students.view');
             /*
             |--------------------------------------------------------------------------
             | Get Student
@@ -2272,6 +2254,7 @@
 
         public function change_status($id)
         {
+            $this->requirePermission('students.manage');
             if (
                 $this->input->method() !== 'post'
             ) {

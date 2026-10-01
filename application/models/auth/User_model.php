@@ -46,6 +46,16 @@ class User_model extends CI_Model
                     ]);
     }
 
+    public function updatePasswordAndSession($id, $password_hash, $session_token)
+    {
+        return $this->db
+            ->where('id', (int) $id)
+            ->update('users', [
+                'password' => $password_hash,
+                'session_token' => $session_token
+            ]);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Update Last Login
@@ -71,6 +81,18 @@ class User_model extends CI_Model
                     ->where('users.id', $id)
                     ->get()
                     ->row();
+    }
+
+    public function getByLoginIdentity($identity)
+    {
+        $identity = trim((string) $identity);
+        return $this->db
+            ->group_start()
+                ->where('email', $identity)
+                ->or_where('username', $identity)
+            ->group_end()
+            ->get($this->table)
+            ->row();
     }
     /*
     |--------------------------------------------------------------------------

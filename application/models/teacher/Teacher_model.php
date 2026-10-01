@@ -3,43 +3,43 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Teacher_model extends CI_Model
 {
-    protected $table = 'teachers';
+    protected $table = 'employees';
 
     public function get_teachers(array $filters = [])
     {
-        $latestRateSql = '(SELECT rates.teacher_id, rates.salary_type, rates.pay_frequency, rates.monthly_salary, rates.daily_salary
-            FROM teacher_salary_history AS rates
+        $latestRateSql = '(SELECT rates.employee_id, rates.salary_type, rates.pay_frequency, rates.monthly_salary, rates.daily_salary
+            FROM employee_salary_history AS rates
             INNER JOIN (
-                SELECT teacher_id, MAX(effective_from) AS effective_from
-                FROM teacher_salary_history
+                SELECT employee_id, MAX(effective_from) AS effective_from
+                FROM employee_salary_history
                 WHERE effective_from <= CURRENT_DATE
-                GROUP BY teacher_id
-            ) AS current_rate ON current_rate.teacher_id = rates.teacher_id
+                GROUP BY employee_id
+            ) AS current_rate ON current_rate.employee_id = rates.employee_id
                 AND current_rate.effective_from = rates.effective_from) AS current_salary';
         $this->db
-            ->select('teachers.*, current_salary.salary_type AS salary_type, current_salary.pay_frequency AS pay_frequency, current_salary.monthly_salary AS monthly_salary, current_salary.daily_salary AS daily_salary')
-            ->from($this->table . ' AS teachers')
-            ->join($latestRateSql, 'current_salary.teacher_id = teachers.id', 'left', false);
+            ->select('employees.*, current_salary.salary_type AS salary_type, current_salary.pay_frequency AS pay_frequency, current_salary.monthly_salary AS monthly_salary, current_salary.daily_salary AS daily_salary')
+            ->from($this->table . ' AS employees')
+            ->join($latestRateSql, 'current_salary.employee_id = employees.id', 'left', false);
 
         if (isset($filters['status']) && $filters['status'] !== '') {
-            $this->db->where('teachers.status', $filters['status']);
+            $this->db->where('employees.status', $filters['status']);
         }
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $this->db->group_start()
-                ->like('teachers.employee_no', $search)
-                ->or_like('teachers.first_name', $search)
-                ->or_like('teachers.middle_name', $search)
-                ->or_like('teachers.last_name', $search)
-                ->or_like('teachers.work_email', $search)
-                ->or_like('teachers.position_title', $search)
+                ->like('employees.employee_no', $search)
+                ->or_like('employees.first_name', $search)
+                ->or_like('employees.middle_name', $search)
+                ->or_like('employees.last_name', $search)
+                ->or_like('employees.work_email', $search)
+                ->or_like('employees.position_title', $search)
                 ->group_end();
         }
 
         return $this->db
-            ->order_by('teachers.last_name', 'ASC')
-            ->order_by('teachers.first_name', 'ASC')
+            ->order_by('employees.last_name', 'ASC')
+            ->order_by('employees.first_name', 'ASC')
             ->get()
             ->result();
     }
@@ -60,16 +60,17 @@ class Teacher_model extends CI_Model
             ->row();
     }
 
-    public function get_linkable_user_accounts($teacher_id = 0)
+    public function get_linkable_user_accounts($employee_id = 0)
     {
         return $this->db
-            ->select('users.id, users.employee_no, users.first_name, users.last_name')
+            ->select('users.id, users.employee_no, users.first_name, users.last_name, users.email')
             ->from('users')
-            ->join('teachers AS linked_teacher', 'linked_teacher.user_id = users.id', 'left')
-            ->where('users.role_id', 3)
+            ->join('roles', 'roles.id = users.role_id', 'inner')
+            ->join('employees AS linked_teacher', 'linked_teacher.user_id = users.id', 'left')
+            ->where('roles.role_name', 'Teacher')
             ->group_start()
                 ->where('linked_teacher.id IS NULL', null, false)
-                ->or_where('linked_teacher.id', (int) $teacher_id)
+                ->or_where('linked_teacher.id', (int) $employee_id)
             ->group_end()
             ->order_by('users.last_name', 'ASC')
             ->order_by('users.first_name', 'ASC')
@@ -77,7 +78,21 @@ class Teacher_model extends CI_Model
             ->result();
     }
 
-    private function can_link_user_account($user_id, $teacher_id = 0)
+    public function get_unlinked_employees()
+    {
+        return $this->db
+            ->select('id, employee_no, first_name, middle_name, last_name, work_email, position_title')
+            ->where('status', 'active')
+            ->where('user_id IS NULL', null, false)
+            ->where('work_email IS NOT NULL', null, false)
+            ->where('work_email !=', '')
+            ->order_by('last_name', 'ASC')
+            ->order_by('first_name', 'ASC')
+            ->get($this->table)
+            ->result();
+    }
+
+    private function can_link_user_account($user_id, $employee_id = 0)
     {
         if (empty($user_id)) {
             return true;
@@ -85,12 +100,13 @@ class Teacher_model extends CI_Model
         $account = $this->db
             ->select('users.id')
             ->from('users')
-            ->join('teachers AS linked_teacher', 'linked_teacher.user_id = users.id', 'left')
+            ->join('roles', 'roles.id = users.role_id', 'inner')
+            ->join('employees AS linked_teacher', 'linked_teacher.user_id = users.id', 'left')
             ->where('users.id', (int) $user_id)
-            ->where('users.role_id', 3)
+            ->where('roles.role_name', 'Teacher')
             ->group_start()
                 ->where('linked_teacher.id IS NULL', null, false)
-                ->or_where('linked_teacher.id', (int) $teacher_id)
+                ->or_where('linked_teacher.id', (int) $employee_id)
             ->group_end()
             ->get()
             ->row();
@@ -157,7 +173,7 @@ class Teacher_model extends CI_Model
             return ['ok' => false, 'code' => 'save_failed'];
         }
         $this->db->trans_commit();
-        return ['ok' => true, 'teacher_id' => $teacherId, 'salary_id' => $salaryId];
+        return ['ok' => true, 'employee_id' => $teacherId, 'salary_id' => $salaryId];
     }
 
     public function update_status($id, $status, $updated_by)
@@ -172,20 +188,20 @@ class Teacher_model extends CI_Model
             ->update($this->table);
     }
 
-    public function get_salary_history($teacher_id)
+    public function get_salary_history($employee_id)
     {
         return $this->db
-            ->where('teacher_id', (int) $teacher_id)
+            ->where('employee_id', (int) $employee_id)
             ->order_by('effective_from', 'DESC')
             ->order_by('id', 'DESC')
-            ->get('teacher_salary_history')
+            ->get('employee_salary_history')
             ->result();
     }
 
-    public function get_salary_for_date($teacher_id, $date)
+    public function get_salary_for_date($employee_id, $date)
     {
         return $this->db
-            ->where('teacher_id', (int) $teacher_id)
+            ->where('employee_id', (int) $employee_id)
             ->where('effective_from <=', $date)
             ->group_start()
                 ->where('effective_to IS NULL', null, false)
@@ -193,20 +209,20 @@ class Teacher_model extends CI_Model
             ->group_end()
             ->order_by('effective_from', 'DESC')
             ->limit(1)
-            ->get('teacher_salary_history')
+            ->get('employee_salary_history')
             ->row();
     }
 
-    public function add_salary_rate($teacher_id, $salary_type, $pay_frequency, $amount, $effective_from, $created_by, $change_reason)
+    public function add_salary_rate($employee_id, $salary_type, $pay_frequency, $amount, $effective_from, $created_by, $change_reason)
     {
         $this->db->trans_begin();
         $this->db
             ->select('id, effective_from, effective_to')
-            ->where('teacher_id', (int) $teacher_id)
+            ->where('employee_id', (int) $employee_id)
             ->order_by('effective_from', 'DESC')
             ->order_by('id', 'DESC')
             ->limit(1);
-        $latestQuery = $this->db->get_compiled_select('teacher_salary_history');
+        $latestQuery = $this->db->get_compiled_select('employee_salary_history');
         $latest = $this->db->query($latestQuery . ' FOR UPDATE')->row();
 
         if ($latest && $effective_from <= $latest->effective_from) {
@@ -216,12 +232,12 @@ class Teacher_model extends CI_Model
 
         if ($latest && empty($latest->effective_to)) {
             $previousEnd = (new DateTime($effective_from))->modify('-1 day')->format('Y-m-d');
-            $this->db->where('id', (int) $latest->id)->update('teacher_salary_history', [
+            $this->db->where('id', (int) $latest->id)->update('employee_salary_history', [
                 'effective_to' => $previousEnd
             ]);
         }
 
-        $salaryId = $this->insert_salary_rate($teacher_id, $salary_type, $pay_frequency, $amount, $effective_from, $created_by, $change_reason);
+        $salaryId = $this->insert_salary_rate($employee_id, $salary_type, $pay_frequency, $amount, $effective_from, $created_by, $change_reason);
         if (!$salaryId || $this->db->trans_status() === false) {
             $this->db->trans_rollback();
             return ['ok' => false, 'code' => 'save_failed'];
@@ -231,10 +247,10 @@ class Teacher_model extends CI_Model
         return ['ok' => true, 'id' => $salaryId];
     }
 
-    private function insert_salary_rate($teacher_id, $salary_type, $pay_frequency, $amount, $effective_from, $created_by, $change_reason)
+    private function insert_salary_rate($employee_id, $salary_type, $pay_frequency, $amount, $effective_from, $created_by, $change_reason)
     {
-        if (!$this->db->insert('teacher_salary_history', [
-            'teacher_id' => (int) $teacher_id,
+        if (!$this->db->insert('employee_salary_history', [
+            'employee_id' => (int) $employee_id,
             'salary_type' => $salary_type,
             'pay_frequency' => $pay_frequency,
             'monthly_salary' => $salary_type === 'monthly' ? number_format((float) $amount, 2, '.', '') : null,

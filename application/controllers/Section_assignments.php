@@ -7,7 +7,7 @@ class Section_assignments extends MY_Controller
     {
         parent::__construct();
         $this->requireLogin();
-        $this->requireRole([1, 2]);
+        $this->requirePermission('students.section.assign');
 
         $this->load->model('academic/section_assignment_model');
         $this->load->model('finance/fee_configuration_model');

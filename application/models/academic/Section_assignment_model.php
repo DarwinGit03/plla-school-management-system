@@ -44,6 +44,21 @@ class Section_assignment_model extends CI_Model
             ->result();
     }
 
+    public function is_active_enrollment_for_assignment($enrollmentId, $year, $grade)
+    {
+        $this->db
+            ->select('enrollments.id')
+            ->from('student_enrollments AS enrollments')
+            ->join('students', 'students.id = enrollments.student_id', 'inner')
+            ->where('enrollments.id', (int) $enrollmentId)
+            ->where('enrollments.academic_year', $year)
+            ->where('enrollments.status', 'active')
+            ->where('students.deleted_at IS NULL', null, false);
+        $this->apply_grade_filter($grade, 'enrollments.grade_level');
+
+        return $this->db->limit(1)->get()->num_rows() === 1;
+    }
+
     public function assign_enrollments(array $enrollment_ids, $section, $employee_no)
     {
         $enrollment_ids = array_values(array_unique(array_map('intval', $enrollment_ids)));

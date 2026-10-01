@@ -1,8 +1,5 @@
 <?php
-    // $is_admin = $this->session->userdata('role_id') === '3' || $this->session->userdata('role_id') === '2';
-    
-    $role_id = (int) $this->session->userdata('role_id');
-    $is_admin = in_array($role_id, [1, 2], true);
+    $is_admin = has_permission('students.enrollment.manage');
 ?>
 
 <div class="container-fluid">

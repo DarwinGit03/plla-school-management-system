@@ -40,10 +40,6 @@ $teacherValue = function ($field, $default = '') use ($teacher) {
                 <input id="last_name" name="last_name" class="form-control" maxlength="100" value="<?= html_escape($teacherValue('last_name')); ?>" required>
             </div>
             <div class="col-12 col-md-4">
-                <label for="suffix" class="form-label">Suffix</label>
-                <input id="suffix" name="suffix" class="form-control" maxlength="30" value="<?= html_escape($teacherValue('suffix')); ?>" placeholder="Jr., III">
-            </div>
-            <div class="col-12 col-md-4">
                 <label for="position_title" class="form-label">Position</label>
                 <input id="position_title" name="position_title" class="form-control" maxlength="100" value="<?= html_escape($teacherValue('position_title')); ?>" placeholder="Teacher I">
             </div>
@@ -70,11 +66,11 @@ $teacherValue = function ($field, $default = '') use ($teacher) {
             </div>
             <div class="col-12 col-md-4">
                 <label for="linked_user_id" class="form-label">Teacher login account</label>
-                <?php $linkedUserId = set_value('linked_user_id', $teacher && !empty($teacher->user_id) ? $teacher->user_id : ''); ?>
+                <?php $linkedUserId = set_value('linked_user_id', $teacher && !empty($teacher->user_id) ? $teacher->user_id : ($preselected_user_id ?? '')); ?>
                 <select id="linked_user_id" name="linked_user_id" class="form-select">
                     <option value="">Not linked</option>
                     <?php foreach ($user_accounts as $account): ?>
-                        <option value="<?= (int) $account->id; ?>" <?= (string) $linkedUserId === (string) $account->id ? 'selected' : ''; ?>>
+                        <option value="<?= (int) $account->id; ?>" data-employee-no="<?= html_escape($account->employee_no); ?>" data-first-name="<?= html_escape($account->first_name); ?>" data-last-name="<?= html_escape($account->last_name); ?>" data-email="<?= html_escape($account->email); ?>" <?= (string) $linkedUserId === (string) $account->id ? 'selected' : ''; ?>>
                             <?= html_escape($account->employee_no . ' — ' . $account->first_name . ' ' . $account->last_name); ?>
                         </option>
                     <?php endforeach; ?>
@@ -136,3 +132,26 @@ $teacherValue = function ($field, $default = '') use ($teacher) {
         <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1" aria-hidden="true"></i>Save teacher</button>
     </div>
 </form>
+<script>
+    (function () {
+        const accountSelect = document.getElementById('linked_user_id');
+        if (!accountSelect) return;
+        const fields = {
+            employee_no: 'employee-no',
+            first_name: 'first-name',
+            last_name: 'last-name',
+            work_email: 'email'
+        };
+        function fillFromAccount(onlyEmpty) {
+            const option = accountSelect.options[accountSelect.selectedIndex];
+            if (!option || !option.value) return;
+            Object.keys(fields).forEach(function (fieldName) {
+                const field = document.getElementById(fieldName);
+                const value = option.dataset[fields[fieldName]] || '';
+                if (field && value && (!onlyEmpty || !field.value)) field.value = value;
+            });
+        }
+        fillFromAccount(true);
+        accountSelect.addEventListener('change', function () { fillFromAccount(true); });
+    })();
+</script>

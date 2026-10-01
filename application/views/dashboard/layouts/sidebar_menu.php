@@ -27,9 +27,12 @@ $isAdministration = ($currentController === 'administration');
 
 $isDashboard =
     ($currentController === 'dashboard');
+$isEvents = ($currentController === 'events');
 
 $isAcademicSections =
     ($currentController === 'sections');
+$isAcademicSubjects = ($currentController === 'subjects');
+$isMyClasses = ($currentController === 'my_classes');
 
 
 $isStudents =
@@ -41,9 +44,6 @@ $isPayroll = ($currentController === 'payroll');
 $isMyPayroll = ($currentController === 'my_payroll');
 
 $isFinance = ($currentController === 'finance');
-$isFinanceStaffPayroll = (int) $this->session->userdata('role_id') === 4
-    && in_array($currentController, ['payroll', 'teachers'], true);
-
 $isParentPaymentHistory =
     ($currentController === 'parents' && $currentMethod === 'payment_history');
 
@@ -93,16 +93,16 @@ $isEnrollment =
 
     </li>
 
-    <?php if ((int) $this->session->userdata('role_id') === 3): ?>
+    <?php if (has_permission('payroll.self.view')): ?>
         <li class="nav-item">
             <a href="<?= site_url('my-payroll'); ?>" class="nav-link text-white <?= $isMyPayroll ? 'active' : ''; ?>">
                 <i class="fas fa-file-invoice-dollar me-2"></i>
-                My pay history
+                My Account and payslips
             </a>
         </li>
     <?php endif; ?>
 
-    <?php if ((int) $this->session->userdata('role_id') === 5): ?>
+    <?php if (has_permission('parent.payments.view')): ?>
         <li class="nav-item">
             <a
                 href="<?= site_url('parents/payment-history'); ?>"
@@ -125,7 +125,7 @@ $isEnrollment =
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
-            aria-expanded="<?= $isAcademicSections ? 'true' : 'false'; ?>"
+            aria-expanded="<?= ($isAcademicSections || $isAcademicSubjects || $isMyClasses || $isEvents) ? 'true' : 'false'; ?>"
             aria-controls="<?= $academicMenuId; ?>">
 
             <span>
@@ -142,7 +142,7 @@ $isEnrollment =
 
 
         <div
-            class="collapse <?= $isAcademicSections ? 'show' : ''; ?>"
+            class="collapse <?= ($isAcademicSections || $isAcademicSubjects || $isMyClasses || $isEvents) ? 'show' : ''; ?>"
             id="<?= $academicMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
@@ -160,19 +160,23 @@ $isEnrollment =
                 </li>
 
                 <li class="nav-item">
-
-                    <a
-                        href="#"
-                        class="nav-link text-secondary">
-
-                        Subjects
-
-                    </a>
-
+                    <a href="<?= site_url('events'); ?>" class="nav-link text-secondary <?= $isEvents ? 'submenu-active' : ''; ?>">Events</a>
                 </li>
 
+                <?php if (has_permission('academic.subjects.manage')): ?>
+                <li class="nav-item">
+                    <a href="<?= site_url('academic/subjects'); ?>" class="nav-link text-secondary <?= $isAcademicSubjects ? 'submenu-active' : ''; ?>">Subjects and Assignments</a>
+                </li>
+                <?php endif; ?>
 
-                <?php if (in_array((int) $this->session->userdata('role_id'), [1, 2], true)): ?>
+                <?php if (has_permission('academic.subjects.view_own')): ?>
+                <li class="nav-item">
+                    <a href="<?= site_url('my-classes'); ?>" class="nav-link text-secondary <?= $isMyClasses ? 'submenu-active' : ''; ?>">My classes</a>
+                </li>
+                <?php endif; ?>
+
+
+                <?php if (has_permission('academic.sections.manage')): ?>
                 <li class="nav-item">
 
                     <a
@@ -210,6 +214,7 @@ $isEnrollment =
          STUDENTS
     ====================================================== -->
 
+    <?php if (has_permission('students.view') || has_permission('students.manage') || has_permission('students.enrollment.manage') || has_permission('students.section.assign')): ?>
     <li class="nav-item">
 
         <a
@@ -298,7 +303,7 @@ $isEnrollment =
 
                 </li>
 
-                <!-- Alumni -->
+    <!-- Alumni -->
 
                 <li class="nav-item">
 
@@ -319,11 +324,13 @@ $isEnrollment =
     </li>
 
 
-    <?php if (in_array((int) $this->session->userdata('role_id'), [1, 2], true)): ?>
+    <?php endif; ?>
+
     <!-- =====================================================
          FACULTY
     ====================================================== -->
 
+    <?php if (has_permission('faculty.view') || has_permission('payroll.manage')): ?>
     <li class="nav-item">
 
         <a
@@ -385,6 +392,7 @@ $isEnrollment =
          FINANCE
     ====================================================== -->
 
+    <?php if (has_permission('finance.fees.manage') || has_permission('finance.payments.manage') || has_permission('finance.reports.view')): ?>
     <li class="nav-item">
         <a
             href="#<?= $financeMenuId; ?>"
@@ -396,51 +404,40 @@ $isEnrollment =
             <span><i class="fas fa-coins me-2"></i>Finance</span>
             <i class="fas fa-chevron-down small"></i>
         </a>
-        <div class="collapse <?= ($isFinance || $isFinanceStaffPayroll) ? 'show' : ''; ?>" id="<?= $financeMenuId; ?>">
+        <div class="collapse <?= $isFinance ? 'show' : ''; ?>" id="<?= $financeMenuId; ?>">
             <ul class="nav flex-column ms-3">
+                <?php if (has_permission('finance.fees.manage')): ?>
                 <li class="nav-item">
                     <a href="<?= site_url('finance'); ?>" class="nav-link text-secondary <?= $isFinance && $currentMethod === 'index' ? 'submenu-active' : ''; ?>">
                         Fee Configurations
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if (has_permission('finance.payments.manage')): ?>
                 <li class="nav-item">
                     <a href="<?= site_url('finance/payments'); ?>" class="nav-link text-secondary <?= $isFinance && $currentMethod === 'payments' ? 'submenu-active' : ''; ?>">
                         Record Payments
                     </a>
                 </li>
-                <?php if ((int) $this->session->userdata('role_id') === 4): ?>
-                    <li class="nav-item">
-                        <a href="<?= site_url('teachers'); ?>" class="nav-link text-secondary <?= $currentController === 'teachers' ? 'submenu-active' : ''; ?>">Faculty salaries</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="<?= site_url('payroll'); ?>" class="nav-link text-secondary <?= $isPayroll ? 'submenu-active' : ''; ?>">Teacher payroll</a>
-                    </li>
+                <?php endif; ?>
+                <?php if (has_permission('finance.reports.view')): ?>
+                <li class="nav-item">
+                    <a href="<?= site_url('finance/reports'); ?>" class="nav-link text-secondary <?= $isFinance && $currentMethod === 'reports' ? 'submenu-active' : ''; ?>">
+                        Finance Reports
+                    </a>
+                </li>
                 <?php endif; ?>
             </ul>
         </div>
     </li>
+    <?php endif; ?>
 
 
     <!-- =====================================================
          REPORTS
     ====================================================== -->
 
-    <li class="nav-item">
-
-        <a
-            href="#"
-            class="nav-link text-white">
-
-            <i class="fas fa-chart-line me-2"></i>
-
-            Reports
-
-        </a>
-
-    </li>
-
-
-    <?php if (in_array((int) $this->session->userdata('role_id'), [1, 2], true)): ?>
+    <?php if (has_permission('administration.users.manage') || has_permission('administration.roles.manage') || has_permission('administration.audit.view') || has_permission('administration.settings.manage')): ?>
     <!-- =====================================================
          ADMINISTRATION
     ====================================================== -->
@@ -474,7 +471,7 @@ $isEnrollment =
 
             <ul class="nav flex-column ms-3">
 
-                <li class="nav-item">
+                <?php if (has_permission('administration.users.manage')): ?><li class="nav-item">
 
                     <a
                         href="<?= site_url('admin/users'); ?>"
@@ -484,10 +481,10 @@ $isEnrollment =
 
                     </a>
 
-                </li>
+                </li><?php endif; ?>
 
 
-                <li class="nav-item">
+                <?php if (has_permission('administration.roles.manage')): ?><li class="nav-item">
 
                     <a
                         href="<?= site_url('admin/roles'); ?>"
@@ -497,10 +494,10 @@ $isEnrollment =
 
                     </a>
 
-                </li>
+                </li><?php endif; ?>
 
 
-                <li class="nav-item">
+                <?php if (has_permission('administration.audit.view')): ?><li class="nav-item">
 
                     <a
                         href="<?= site_url('admin/audit-logs'); ?>"
@@ -510,10 +507,10 @@ $isEnrollment =
 
                     </a>
 
-                </li>
+                </li><?php endif; ?>
 
 
-                <li class="nav-item">
+                <?php if (has_permission('administration.settings.manage')): ?><li class="nav-item">
 
                     <a
                         href="<?= site_url('admin/settings'); ?>"
@@ -523,7 +520,7 @@ $isEnrollment =
 
                     </a>
 
-                </li>
+                </li><?php endif; ?>
 
             </ul>
 

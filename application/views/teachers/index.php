@@ -66,7 +66,7 @@ $csrfHash = $this->security->get_csrf_hash();
                     <tr><td colspan="7" class="py-5 text-center text-secondary">No teacher profiles found. Register a teacher to get started.</td></tr>
                 <?php else: ?>
                     <?php foreach ($teachers as $teacher): ?>
-                        <?php $name = trim(implode(' ', array_filter([$teacher->first_name, $teacher->middle_name, $teacher->last_name, $teacher->suffix]))); ?>
+                        <?php $name = trim(implode(' ', array_filter([$teacher->first_name, $teacher->middle_name, $teacher->last_name]))); ?>
                         <tr>
                             <td class="ps-3 fw-semibold"><?= html_escape($teacher->employee_no); ?></td>
                             <td>

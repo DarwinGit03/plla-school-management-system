@@ -27,11 +27,11 @@ $(document).ready(function () {
         const password = passwordInput.val();
         const confirmation = confirmInput.val();
         const checks = [
-            { id: 'checkLength', label: 'At least 8 characters', passed: password.length >= 8 },
+            { id: 'checkLength', label: '12 to 72 characters', passed: password.length >= 12 && password.length <= 72 },
             { id: 'checkUpper', label: 'One uppercase letter', passed: /[A-Z]/.test(password) },
             { id: 'checkLower', label: 'One lowercase letter', passed: /[a-z]/.test(password) },
             { id: 'checkNumber', label: 'One number', passed: /[0-9]/.test(password) },
-            { id: 'checkSpecial', label: 'One special character', passed: /[!@#$%^&*()_\-+=<>?{}\[\]~]/.test(password) }
+            { id: 'checkSpecial', label: 'One special character', passed: /[^A-Za-z0-9\s]/.test(password) }
         ];
 
         let score = 0;
@@ -59,7 +59,7 @@ $(document).ready(function () {
 
         const password = passwordInput.val();
         const confirmation = confirmInput.val();
-        const validPassword = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*()_\-+=<>?{}\[\]~]/.test(password);
+        const validPassword = password.length >= 12 && password.length <= 72 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9\s]/.test(password);
         const errorBox = $('#ResetErrorMessage');
 
         if (password !== confirmation) {

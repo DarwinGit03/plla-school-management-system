@@ -7,7 +7,7 @@ class Teachers extends MY_Controller
     {
         parent::__construct();
         $this->requireLogin();
-        $this->requireRole([1, 2, 4]);
+        $this->requirePermission('faculty.view');
 
         $this->load->library('form_validation');
         $this->load->model('teacher/teacher_model');
@@ -31,7 +31,7 @@ class Teachers extends MY_Controller
             ]),
             'search' => trim((string) $this->input->get('q', true)),
             'selected_status' => $status,
-            'can_manage_profiles' => in_array((int) $this->session->userdata('role_id'), [1, 2], true),
+            'can_manage_profiles' => $this->can('faculty.manage'),
             'success_message' => $this->session->flashdata('success'),
             'error_message' => $this->session->flashdata('error')
         ]);
@@ -39,13 +39,13 @@ class Teachers extends MY_Controller
 
     public function create()
     {
-        $this->requireRole([1, 2]);
-        $this->render_form(null, 'Register teacher');
+        $this->requirePermission('faculty.manage');
+        $this->render_form(null, 'Register teacher', (int) $this->input->get('user_id', true));
     }
 
     public function edit($id)
     {
-        $this->requireRole([1, 2]);
+        $this->requirePermission('faculty.manage');
         $teacher = $this->teacher_model->get_by_id($id);
         if (!$teacher) {
             show_404();
@@ -57,7 +57,7 @@ class Teachers extends MY_Controller
 
     public function save()
     {
-        $this->requireRole([1, 2]);
+        $this->requirePermission('faculty.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -74,7 +74,6 @@ class Teachers extends MY_Controller
         $this->form_validation->set_rules('first_name', 'First name', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('middle_name', 'Middle name', 'trim|max_length[100]');
         $this->form_validation->set_rules('last_name', 'Last name', 'trim|required|max_length[100]');
-        $this->form_validation->set_rules('suffix', 'Suffix', 'trim|max_length[30]');
         $this->form_validation->set_rules('work_email', 'Work email', 'trim|valid_email|max_length[150]');
         $this->form_validation->set_rules('phone', 'Phone', 'trim|max_length[40]');
         $this->form_validation->set_rules('position_title', 'Position', 'trim|max_length[100]');
@@ -107,7 +106,6 @@ class Teachers extends MY_Controller
             'first_name' => trim((string) $this->input->post('first_name', true)),
             'middle_name' => $this->nullable_post('middle_name'),
             'last_name' => trim((string) $this->input->post('last_name', true)),
-            'suffix' => $this->nullable_post('suffix'),
             'work_email' => $this->nullable_post('work_email'),
             'phone' => $this->nullable_post('phone'),
             'position_title' => $this->nullable_post('position_title'),
@@ -138,7 +136,7 @@ class Teachers extends MY_Controller
                 trim((string) $this->input->post('salary_effective_from', true)),
                 trim((string) $this->input->post('salary_change_reason', true))
             );
-            $saved = !empty($result['ok']) ? (int) $result['teacher_id'] : false;
+            $saved = !empty($result['ok']) ? (int) $result['employee_id'] : false;
             $salaryId = !empty($result['salary_id']) ? (int) $result['salary_id'] : 0;
         } else {
             $saved = $this->teacher_model->save($data, $id);
@@ -164,11 +162,11 @@ class Teachers extends MY_Controller
 
         if ($id === 0 && $salaryId > 0) {
             $this->audit_log_service->log(
-                'teacher_salary_history',
+                'employee_salary_history',
                 'TEACHER_SALARY_RATE_ADDED',
                 $salaryId,
                 'Initial teacher salary rate added during registration.',
-                ['teacher_id' => $recordId, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'change_reason' => trim((string) $this->input->post('salary_change_reason', true))]
+                ['employee_id' => $recordId, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'change_reason' => trim((string) $this->input->post('salary_change_reason', true))]
             );
         }
 
@@ -178,6 +176,7 @@ class Teachers extends MY_Controller
 
     public function salary($id)
     {
+        $this->requirePermission('faculty.salary.manage');
         $teacher = $this->teacher_model->get_by_id($id);
         if (!$teacher) {
             show_404();
@@ -198,12 +197,13 @@ class Teachers extends MY_Controller
 
     public function save_salary()
     {
+        $this->requirePermission('faculty.salary.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
         }
 
-        $teacherId = (int) $this->input->post('teacher_id', true);
+        $teacherId = (int) $this->input->post('employee_id', true);
         $teacher = $teacherId > 0 ? $this->teacher_model->get_by_id($teacherId) : null;
         if (!$teacher) {
             show_404();
@@ -250,11 +250,11 @@ class Teachers extends MY_Controller
         }
 
         $this->audit_log_service->log(
-            'teacher_salary_history',
+            'employee_salary_history',
             'TEACHER_SALARY_RATE_ADDED',
             $result['id'],
             'Teacher salary rate added.',
-            ['teacher_id' => (int) $teacher->id, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'effective_from' => $effectiveFrom, 'change_reason' => trim((string) $this->input->post('change_reason', true))]
+            ['employee_id' => (int) $teacher->id, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'effective_from' => $effectiveFrom, 'change_reason' => trim((string) $this->input->post('change_reason', true))]
         );
         $this->session->set_flashdata('success', ucfirst($salaryType) . ' salary rate saved.');
         return redirect('payroll');
@@ -262,7 +262,7 @@ class Teachers extends MY_Controller
 
     public function change_status()
     {
-        $this->requireRole([1, 2]);
+        $this->requirePermission('faculty.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -325,7 +325,7 @@ class Teachers extends MY_Controller
         return $value === '' ? null : $value;
     }
 
-    private function render_form($teacher, $heading)
+    private function render_form($teacher, $heading, $preselected_user_id = 0)
     {
         $this->render_page('teachers/form', [
             'title' => $heading,
@@ -333,6 +333,7 @@ class Teachers extends MY_Controller
             'page_subtitle' => 'Teacher profiles are managed separately from login accounts.',
             'breadcrumb' => ['Faculty', 'Faculty Directory', $heading],
             'teacher' => $teacher,
+            'preselected_user_id' => (int) $preselected_user_id,
             'user_accounts' => $this->teacher_model->get_linkable_user_accounts($teacher ? $teacher->id : 0),
             'error_message' => $this->session->flashdata('error')
         ]);

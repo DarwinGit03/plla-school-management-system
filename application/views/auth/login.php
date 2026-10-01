@@ -29,8 +29,8 @@
 
             <form id="loginForm" class="auth-form">
                 <div class="auth-field">
-                    <label for="email">Email address</label>
-                    <input type="email" name="email" id="email" class="form-control" autocomplete="username" placeholder="you@school.edu.ph" required autofocus>
+                    <label for="email">Username or email</label>
+                    <input type="text" name="email" id="email" class="form-control" autocomplete="username" placeholder="Username or email address" required autofocus>
                 </div>
                 <div class="auth-field">
                     <label for="password">Password</label>

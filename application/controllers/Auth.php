@@ -14,6 +14,7 @@ class Auth extends MY_Controller
         */
 
         $this->load->library('auth_service');
+        $this->load->library('password_validator');
     }
 
     /*
@@ -205,31 +206,10 @@ class Auth extends MY_Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Password Length
-        |--------------------------------------------------------------------------
-        */
-
-        if(
-            strlen($password)
-            <
-            $this->config->item('password_min_length')
-        )
-        {
-            return $this->jsonResponse(
-
-                false,
-
-                'Password must be at least '
-                .
-                $this->config->item('password_min_length')
-                .
-                ' characters.'
-
-            );
+        $passwordErrors = $this->password_validator->validate($password);
+        if ($passwordErrors) {
+            return $this->jsonResponse(false, $this->password_validator->error_message($passwordErrors));
         }
-
 
         $result = $this->auth_service->savePassword(
             $password
@@ -262,7 +242,8 @@ class Auth extends MY_Controller
 
         return $this->jsonResponse(
             $result['status'],
-            $result['message']
+            $result['message'],
+            isset($result['code']) ? ['code' => $result['code']] : []
         );
     }
 
@@ -336,42 +317,6 @@ class Auth extends MY_Controller
         redirect('login');
     }
 
-    // admin access 
-    /*
-    |--------------------------------------------------------------------------
-    | Unlock User Account
-    |--------------------------------------------------------------------------
-    */
-
-    public function unlockAccount($user_id)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | RBAC
-        |--------------------------------------------------------------------------
-        */
-
-        if(
-            !in_array(
-                $this->session->userdata('role_id'),
-                [1,2] // Administrator & Principal
-            )
-        )
-        {
-            show_error(
-                'Unauthorized',
-                403
-            );
-        }
-
-        $result =
-            $this->auth_service
-                ->unlockAccount(
-                    $user_id
-                );
-        echo json_encode($result);
-    }
-    
     public function keepAlive()
     {
         $this->session_service->touch();

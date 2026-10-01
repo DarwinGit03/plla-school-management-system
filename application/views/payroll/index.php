@@ -18,7 +18,7 @@ $frequencyValue = $payrollForm['frequency'] ?? 'semi_monthly';
             <p class="small text-secondary mb-0">Each run contains every employee paid on that schedule. Download the period summary or open a run to review and pay employees.</p>
         </div>
         <div class="d-flex gap-2">
-            <?php if (in_array((int) $this->session->userdata('role_id'), [1, 2], true)): ?><a class="btn btn-outline-secondary" href="<?= site_url('payroll/settings'); ?>">Deduction settings</a><?php endif; ?>
+            <?php if (has_permission('payroll.settings.manage')): ?><a class="btn btn-outline-secondary" href="<?= site_url('payroll/settings'); ?>">Deduction settings</a><?php endif; ?>
             <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#preparePayrollModal">
                 <i class="fas fa-plus me-1" aria-hidden="true"></i>Prepare payroll run
             </button>
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <tr><td colspan="9" class="py-5 text-center text-secondary"><?= $search !== '' ? 'No paid records match that employee.' : 'No employee payments have been recorded yet.'; ?></td></tr>
                 <?php else: foreach ($paid_history as $paid): ?>
                     <tr>
-                        <td class="ps-3"><div class="fw-semibold"><?= html_escape($paid->teacher_name_snapshot); ?></div><div class="small text-secondary"><?= html_escape($paid->employee_no_snapshot); ?></div></td>
+                        <td class="ps-3"><div class="fw-semibold"><?= html_escape($paid->employee_name_snapshot); ?></div><div class="small text-secondary"><?= html_escape($paid->employee_no_snapshot); ?></div></td>
                         <td><?= html_escape($paid->period_start . ' to ' . $paid->period_end); ?><div class="small text-secondary"><?= html_escape($paid->payable_days); ?> attended · <?= html_escape($paid->paid_leave_days); ?> paid leave · <?= html_escape($paid->absence_days); ?> unpaid absent</div></td>
                         <td><?= html_escape($paid->pay_date); ?></td>
                         <td><?= $paid->frequency === 'weekly' ? 'Weekly' : '15th and month-end'; ?></td>
@@ -146,7 +146,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td class="text-end">PHP <?= number_format((float) $paid->basic_pay, 2); ?></td>
                         <td class="text-end">PHP <?= number_format((float) $paid->total_deductions, 2); ?></td>
                         <td class="text-end fw-semibold">PHP <?= number_format((float) $paid->net_pay, 2); ?></td>
-                        <td class="text-end pe-3"><a href="<?= site_url('payroll/payslip/' . (int) $paid->payroll_item_id); ?>" class="btn btn-sm btn-outline-primary">Payslip</a></td>
+                        <td class="text-end pe-3">
+                            <div class="d-flex flex-wrap justify-content-end gap-1">
+                                <a href="<?= site_url('payroll/payslip/' . (int) $paid->payroll_item_id); ?>" class="btn btn-sm btn-outline-primary">Payslip</a>
+                                <form method="post" action="<?= site_url('payroll/payslip/' . (int) $paid->payroll_item_id . '/email'); ?>">
+                                    <input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Email payslip"><i class="fas fa-envelope" aria-hidden="true"></i></button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                 <?php endforeach; endif; ?>
             </tbody>

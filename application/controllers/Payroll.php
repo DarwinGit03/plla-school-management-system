@@ -7,7 +7,6 @@ class Payroll extends MY_Controller
     {
         parent::__construct();
         $this->requireLogin();
-        $this->requireRole([1, 2, 4]);
         $this->load->library('form_validation');
         $this->load->model('teacher/payroll_model');
         $this->load->model('teacher/teacher_model');
@@ -15,6 +14,7 @@ class Payroll extends MY_Controller
 
     public function index()
     {
+        $this->requirePermission('payroll.manage');
         $search = trim((string) $this->input->get('q', true));
 
         $this->render('payroll/index', [
@@ -36,7 +36,7 @@ class Payroll extends MY_Controller
 
     public function deduction_settings()
     {
-        $this->requireRole([1, 2]);
+        $this->requirePermission('payroll.settings.manage');
         $current = $this->payroll_model->get_deduction_settings();
         if (!$current) show_error('Payroll deduction settings are missing. Apply the payroll deduction settings migration.', 500);
         $this->render('payroll/deduction_settings', [
@@ -53,7 +53,7 @@ class Payroll extends MY_Controller
 
     public function save_deduction_settings()
     {
-        $this->requireRole([1, 2]);
+        $this->requirePermission('payroll.settings.manage');
         if ($this->input->method() !== 'post') { show_404(); return; }
         $date = trim((string) $this->input->post('effective_from', true));
         $this->form_validation->set_rules('effective_from', 'Effective from', 'trim|required|callback_valid_date');
@@ -84,9 +84,10 @@ class Payroll extends MY_Controller
         return redirect('payroll/settings');
     }
 
-    public function teacher_history($teacher_id)
+    public function teacher_history($employee_id)
     {
-        $teacher = $this->teacher_model->get_by_id($teacher_id);
+        $this->requirePermission('payroll.manage');
+        $teacher = $this->teacher_model->get_by_id($employee_id);
         if (!$teacher) {
             show_404();
             return;
@@ -95,7 +96,6 @@ class Payroll extends MY_Controller
             $teacher->first_name,
             $teacher->middle_name,
             $teacher->last_name,
-            $teacher->suffix
         ])));
         $this->render('payroll/teacher_history', [
             'title' => 'Employee Payroll',
@@ -103,12 +103,15 @@ class Payroll extends MY_Controller
             'page_subtitle' => 'Payroll periods, deductions, and payments for ' . $name . '.',
             'breadcrumb' => ['Faculty', 'Payroll', 'Employee Payroll'],
             'teacher' => $teacher,
-            'payroll_items' => $this->payroll_model->get_teacher_history($teacher->id)
+            'payroll_items' => $this->payroll_model->get_teacher_history($teacher->id),
+            'success_message' => $this->session->flashdata('success'),
+            'error_message' => $this->session->flashdata('error')
         ]);
     }
 
     public function create_period()
     {
+        $this->requirePermission('payroll.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -165,6 +168,7 @@ class Payroll extends MY_Controller
 
     public function period($id)
     {
+        $this->requirePermission('payroll.manage');
         $period = $this->payroll_model->get_period($id);
         if (!$period) {
             show_404();
@@ -179,6 +183,7 @@ class Payroll extends MY_Controller
         $itemIds = array_map(function ($item) { return (int) $item->id; }, $items);
         $this->render('payroll/period', [
             'title' => 'Payroll Period',
+            'page_styles' => ['assets/css/payroll-period.css'],
             'page_title' => 'Payroll Period',
             'page_subtitle' => 'Confirm attendance and absences for each employee, then review deductions for this salary period.',
             'breadcrumb' => ['Faculty', 'Payroll', 'Payroll Period'],
@@ -193,6 +198,7 @@ class Payroll extends MY_Controller
 
     public function download_summary($id)
     {
+        $this->requirePermission('payroll.manage');
         $period = $this->payroll_model->get_period($id);
         if (!$period) {
             show_404();
@@ -237,7 +243,7 @@ class Payroll extends MY_Controller
 
             fputcsv($stream, [
                 $this->csv_safe($item->employee_no_snapshot),
-                $this->csv_safe($item->teacher_name_snapshot),
+                $this->csv_safe($item->employee_name_snapshot),
                 $this->csv_safe($item->position_snapshot),
                 $salaryType === 'daily' ? 'Daily' : 'Monthly',
                 $rate,
@@ -275,6 +281,7 @@ class Payroll extends MY_Controller
     }
     public function add_deduction()
     {
+        $this->requirePermission('payroll.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -324,6 +331,7 @@ class Payroll extends MY_Controller
 
     public function set_payable_days()
     {
+        $this->requirePermission('payroll.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -362,6 +370,7 @@ class Payroll extends MY_Controller
 
     public function delete_deduction()
     {
+        $this->requirePermission('payroll.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -388,6 +397,7 @@ class Payroll extends MY_Controller
 
     public function finalize()
     {
+        $this->requirePermission('payroll.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -426,6 +436,7 @@ class Payroll extends MY_Controller
 
     public function mark_paid()
     {
+        $this->requirePermission('payroll.manage');
         if ($this->input->method() !== 'post') {
             show_404();
             return;
@@ -473,6 +484,7 @@ class Payroll extends MY_Controller
     }
     public function payslip($item_id)
     {
+        $this->requirePermission('payroll.manage');
         $item = $this->payroll_model->get_item($item_id);
         if (!$item || $item->period_status !== 'finalized') {
             show_404();
@@ -490,6 +502,54 @@ class Payroll extends MY_Controller
             ->set_content_type('application/pdf')
             ->set_header('Content-Disposition: attachment; filename="' . $filename . '"')
             ->set_output($pdf);
+    }
+
+    public function email_payslip($item_id)
+    {
+        $this->requirePermission('payroll.manage');
+        if ($this->input->method() !== 'post') { show_404(); return; }
+
+        $item = $this->payroll_model->get_item((int) $item_id);
+        if (!$item || $item->period_status !== 'finalized') { show_404(); return; }
+
+        $employee = $this->teacher_model->get_by_id((int) $item->employee_id);
+        if (!$employee || !filter_var($employee->work_email, FILTER_VALIDATE_EMAIL)) {
+            $this->session->set_flashdata('error', 'This employee does not have a valid work email address on file.');
+            return redirect('payroll/teacher/' . (int) $item->employee_id);
+        }
+
+        $this->load->library('mail_service');
+        $this->load->library('teacher_payslip_pdf');
+        $deductions = $this->payroll_model->get_deductions_for_items([(int) $item->id]);
+        $taxDeductions = $this->payroll_model->get_tax_deductions_for_items([(int) $item->id]);
+        $pdf = $this->teacher_payslip_pdf->generate($item, $deductions[$item->id] ?? [], $taxDeductions[$item->id] ?? null);
+        $filename = preg_replace('/[^A-Za-z0-9_-]/', '_', $item->employee_no_snapshot)
+            . '_payslip_' . $item->period_start . '.pdf';
+        $adminAccount = $this->User_model->getById((int) $this->session->userdata('user_id'));
+        $cc = $adminAccount && filter_var($adminAccount->email, FILTER_VALIDATE_EMAIL)
+            && strcasecmp($adminAccount->email, $employee->work_email) !== 0
+            ? [$adminAccount->email] : [];
+        $sent = $this->mail_service->sendWithAttachment(
+            $employee->work_email,
+            'Employee payslip - ' . $item->period_start . ' to ' . $item->period_end,
+            '<p>Dear ' . html_escape($item->employee_name_snapshot) . ',</p>'
+                . '<p>Your finalized payslip for ' . html_escape($item->period_start . ' to ' . $item->period_end) . ' is attached.</p>'
+                . '<p>Regards,<br>Precious Little Lights Academy</p>',
+            $pdf,
+            $filename,
+            'application/pdf',
+            $cc
+        );
+
+        if (!$sent['status']) {
+            $this->session->set_flashdata('error', 'The payslip email could not be sent: ' . ($sent['message'] ?? 'Please try again later.'));
+        } else {
+            $this->audit_log_service->log('payroll_items', 'PAYSLIP_EMAILED', (int) $item->id, 'Payroll administrator emailed a finalized payslip to the employee.');
+            $message = 'Payslip sent to ' . $employee->work_email . '.';
+            if ($cc) $message .= ' A copy was sent to your account email.';
+            $this->session->set_flashdata('success', $message);
+        }
+        return redirect('payroll/teacher/' . (int) $item->employee_id);
     }
 
     public function valid_date($value)

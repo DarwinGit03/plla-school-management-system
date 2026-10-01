@@ -65,7 +65,6 @@ $route['auth/verify_otp'] = 'auth/verify_otp';
 
 $route['reset-password'] = 'auth/reset_password'; //pages
 $route['reset-password-page'] = 'auth/reset_password_page'; //pages
-$route['dashboard'] = 'dashboard';
 
 $route['send-otp'] = 'auth/send_otp';
 $route['check-otp'] = 'auth/check_otp';
@@ -73,6 +72,10 @@ $route['auth/save_password'] = 'auth/save_password';
 
 
 $route['dashboard'] = 'dashboard/index';
+$route['events'] = 'events/index';
+$route['events/save'] = 'events/save';
+$route['events/cancel/(:num)'] = 'events/cancel/$1';
+$route['events/edit/(:num)'] = 'events/edit/$1';
 $route['students'] = 'students/index';
 $route['students/enroll'] = 'students/enroll';
 $route['students/enroll/(:num)'] = 'students/enroll_student/$1';
@@ -97,14 +100,28 @@ $route['payroll/payable-days'] = 'payroll/set_payable_days';
 $route['payroll/deductions/delete'] = 'payroll/delete_deduction';
 $route['payroll/finalize'] = 'payroll/finalize';
 $route['payroll/mark-paid'] = 'payroll/mark_paid';
+$route['payroll/payslip/(:num)/email'] = 'payroll/email_payslip/$1';
 $route['payroll/payslip/(:num)'] = 'payroll/payslip/$1';
 $route['my-payroll'] = 'my_payroll/index';
+$route['my-payroll/profile'] = 'my_payroll/update_profile';
+$route['my-payroll/password'] = 'my_payroll/update_password';
+$route['my-payroll/payslip/(:num)/email'] = 'my_payroll/email_payslip/$1';
 $route['my-payroll/payslip/(:num)'] = 'my_payroll/payslip/$1';
 $route['academic/sections'] = 'sections/index';
 $route['academic/sections/grades'] = 'sections/grades';
 $route['academic/sections/save'] = 'sections/save';
 $route['academic/sections/status'] = 'sections/change_status';
+$route['academic/subjects'] = 'subjects/index';
+$route['academic/subjects/save'] = 'subjects/save_subject';
+$route['academic/subjects/status'] = 'subjects/subject_status';
+$route['academic/subjects/assign'] = 'subjects/assign';
+$route['academic/subjects/assignment-status'] = 'subjects/assignment_status';
+$route['my-classes'] = 'my_classes/index';
+$route['my-classes/(:num)/grades'] = 'my_classes/save_grade/$1';
+$route['my-classes/(:num)'] = 'my_classes/roster/$1';
 $route['finance/payments'] = 'finance/payments';
+$route['finance/reports'] = 'finance/reports';
+$route['finance/reports/csv'] = 'finance/download_reports_csv';
 $route['finance/payments/void'] = 'finance/void_payment';
 $route['finance/payments/correct'] = 'finance/correct_payment';
 $route['finance/configuration/edit/(:num)'] = 'finance/edit_configuration/$1';
@@ -117,12 +134,17 @@ $route['finance/payments/email-statement/(:num)'] = 'finance/email_payment_state
 $route['parents/payment-history'] = 'parents/payment_history';
 $route['admin'] = 'administration/index';
 $route['admin/users'] = 'administration/users';
+$route['admin/users/create'] = 'administration/user_create';
+$route['admin/users/save'] = 'administration/save_user';
+$route['admin/users/(:num)/access'] = 'administration/user_access/$1';
+$route['admin/users/(:num)/access/save'] = 'administration/save_user_access/$1';
 $route['admin/roles'] = 'administration/roles';
+$route['admin/roles/create'] = 'administration/role_create';
+$route['admin/roles/save'] = 'administration/save_role';
+$route['admin/roles/(:num)/edit'] = 'administration/role_edit/$1';
 $route['admin/audit-logs'] = 'administration/audit_logs';
 $route['admin/settings'] = 'administration/settings';
-
-//admin 
-$route['admin/unlock-account/(:num)'] = 'auth/unlockAccount/$1';
+$route['settings'] = 'administration/settings';
 
 //security
 $route['keep-alive'] = 'auth/keepAlive';

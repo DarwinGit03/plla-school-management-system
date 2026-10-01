@@ -19,6 +19,8 @@ class MY_Controller extends CI_Controller
 
     protected $data = [];
 
+    private $effective_permissions = null;
+
     public function __construct()
     {
         parent::__construct();
@@ -51,7 +53,7 @@ class MY_Controller extends CI_Controller
 
         $this->load->helper([
             'url',
-            'auth'
+            'permission'
         ]);
 
         /*
@@ -117,6 +119,9 @@ class MY_Controller extends CI_Controller
 
             if ($sessionId)
             {
+                // This model is only needed when closing a timed-out login.
+                $this->load->model('auth/Login_log_model');
+
                 $logoutUpdated =
                     $this->Login_log_model
                         ->updateLogout(
@@ -177,15 +182,30 @@ class MY_Controller extends CI_Controller
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Role Middleware
-    |--------------------------------------------------------------------------
-    */
-
-    protected function requireRole($roles)
+    protected function requirePermission($permission)
     {
-        require_role($roles);
+        if (!$this->can($permission)) {
+            show_error('Access denied.', 403, 'Forbidden');
+        }
+    }
+
+    protected function requireAnyPermission(array $permissions)
+    {
+        foreach ($permissions as $permission) {
+            if ($this->can($permission)) return;
+        }
+        show_error('Access denied.', 403, 'Forbidden');
+    }
+
+    public function can($permission)
+    {
+        if ($this->effective_permissions === null) {
+            $this->load->model('rbac/Permission_model', 'permission_model');
+            $this->effective_permissions = $this->permission_model->get_effective_permissions(
+                (int) $this->session->userdata('user_id')
+            );
+        }
+        return isset($this->effective_permissions[(string) $permission]);
     }
 
     /*

@@ -73,13 +73,28 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $active_group = 'default';
 $query_builder = TRUE;
 
+$database_host = getenv('DB_HOST');
+$database_user = getenv('DB_USER');
+$database_password = getenv('DB_PASSWORD');
+$database_name = getenv('DB_NAME');
+
+if (ENVIRONMENT === 'production') {
+	if (!$database_host || !$database_user || $database_password === false || $database_password === '' || !$database_name) {
+		throw new RuntimeException('Production database credentials must be provided with DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME.');
+	}
+} else {
+	$database_host = $database_host ?: '127.0.0.1:3307';
+	$database_user = $database_user ?: 'root';
+	$database_password = $database_password === false ? '' : $database_password;
+	$database_name = $database_name ?: 'school_management_system';
+}
+
 $db['default'] = array(
 	'dsn'	=> '',
-	// 'hostname' => 'localhost', //if using port 3306
-	'hostname' => '127.0.0.1:3307', // if using port 3307
-	'username' => 'root',
-	'password' => '',
-	'database' => 'school_management_system',
+	'hostname' => $database_host,
+	'username' => $database_user,
+	'password' => $database_password,
+	'database' => $database_name,
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
@@ -93,5 +108,5 @@ $db['default'] = array(
 	'compress' => FALSE,
 	'stricton' => FALSE,
 	'failover' => array(),
-	'save_queries' => TRUE
+	'save_queries' => (ENVIRONMENT !== 'production')
 );

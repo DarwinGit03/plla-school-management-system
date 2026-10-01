@@ -27,7 +27,7 @@ $(document).ready(function () {
                     redirectingToOtp = true;
                     Swal.fire({
                         icon: 'success',
-                        title: 'OTP sent',
+                        title: response.code === 'cooldown' ? 'Code already sent' : 'OTP sent',
                         text: response.message,
                         showConfirmButton: false,
                         timer: 1500

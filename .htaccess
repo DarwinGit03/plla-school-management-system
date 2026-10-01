@@ -2,8 +2,15 @@
     RewriteEngine On
     RewriteBase /plla/
 
+    RewriteRule (^|/)\.(git|env)(/|\.|$) - [F,L,NC]
+    RewriteRule ^vendor/ - [F,L,NC]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
 
     RewriteRule ^(.*)$ index.php/$1 [L]
+</IfModule>
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
 </IfModule>

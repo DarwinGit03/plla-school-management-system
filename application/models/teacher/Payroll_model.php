@@ -130,7 +130,7 @@ class Payroll_model extends CI_Model
     public function get_paid_history($search = '', $limit = null)
     {
         $this->db
-            ->select('items.id AS payroll_item_id, items.teacher_id, items.employee_no_snapshot, items.teacher_name_snapshot, items.salary_type_snapshot, items.payable_days, items.paid_leave_days, items.absence_days, items.absence_deduction, items.basic_pay, items.total_deductions, items.net_pay, items.payment_method, items.payment_reference, items.paid_at, periods.period_start, periods.period_end, periods.pay_date, periods.frequency, periods.finalized_at')
+            ->select('items.id AS payroll_item_id, items.employee_id, items.employee_no_snapshot, items.employee_name_snapshot, items.salary_type_snapshot, items.payable_days, items.paid_leave_days, items.absence_days, items.absence_deduction, items.basic_pay, items.total_deductions, items.net_pay, items.payment_method, items.payment_reference, items.paid_at, periods.period_start, periods.period_end, periods.pay_date, periods.frequency, periods.finalized_at')
             ->from('payroll_items AS items')
             ->join('payroll_periods AS periods', 'periods.id = items.payroll_period_id')
             ->where('periods.status', 'finalized')
@@ -139,14 +139,14 @@ class Payroll_model extends CI_Model
         $search = trim((string) $search);
         if ($search !== '') {
             $this->db->group_start()
-                ->like('items.teacher_name_snapshot', $search)
+                ->like('items.employee_name_snapshot', $search)
                 ->or_like('items.employee_no_snapshot', $search)
                 ->group_end();
         }
 
         $this->db
             ->order_by('periods.pay_date', 'DESC')
-            ->order_by('items.teacher_name_snapshot', 'ASC');
+            ->order_by('items.employee_name_snapshot', 'ASC');
         if ($limit !== null) {
             $this->db->limit(max(1, (int) $limit));
         }
@@ -162,7 +162,7 @@ class Payroll_model extends CI_Model
     {
         return $this->db
             ->where('payroll_period_id', (int) $period_id)
-            ->order_by('teacher_name_snapshot', 'ASC')
+            ->order_by('employee_name_snapshot', 'ASC')
             ->get('payroll_items')
             ->result();
     }
@@ -187,13 +187,13 @@ class Payroll_model extends CI_Model
         return true;
     }
 
-    public function get_teacher_history($teacher_id, $finalized_only = false)
+    public function get_teacher_history($employee_id, $finalized_only = false)
     {
         $this->db
             ->select('items.*, periods.period_start, periods.period_end, periods.pay_date, periods.frequency, periods.status AS period_status, ((SELECT COALESCE(SUM(deduction.amount), 0) FROM payroll_deductions AS deduction WHERE deduction.payroll_item_id = items.id) + items.absence_deduction + (SELECT COALESCE(SUM(tax.sss_amount + tax.philhealth_amount + tax.pagibig_amount + tax.withholding_tax_amount), 0) FROM payroll_tax_deductions AS tax WHERE tax.payroll_item_id = items.id)) AS total_deductions', false)
             ->from('payroll_items AS items')
             ->join('payroll_periods AS periods', 'periods.id = items.payroll_period_id')
-            ->where('items.teacher_id', (int) $teacher_id);
+            ->where('items.employee_id', (int) $employee_id);
         if ($finalized_only) {
             $this->db->where('periods.status', 'finalized');
         }
@@ -265,9 +265,9 @@ class Payroll_model extends CI_Model
         }
 
         $salaryChange = $this->db
-            ->from('teacher_salary_history AS salary')
-            ->join('teachers', 'teachers.id = salary.teacher_id')
-            ->where('teachers.status', 'active')
+            ->from('employee_salary_history AS salary')
+            ->join('employees', 'employees.id = salary.employee_id')
+            ->where('employees.status', 'active')
             ->where('salary.effective_from >', $data['period_start'])
             ->where('salary.effective_from <=', $data['period_end'])
             ->count_all_results();
@@ -276,42 +276,42 @@ class Payroll_model extends CI_Model
             return ['ok' => false, 'code' => 'salary_change_in_period'];
         }
 
-        $teachers = $this->db
-            ->select('teachers.id, teachers.employee_no, teachers.first_name, teachers.middle_name, teachers.last_name, teachers.suffix, teachers.position_title, salary.salary_type, salary.pay_frequency, salary.monthly_salary, salary.daily_salary')
-            ->from('teachers')
+        $employees = $this->db
+            ->select('employees.id, employees.employee_no, employees.first_name, employees.middle_name, employees.last_name, employees.position_title, salary.salary_type, salary.pay_frequency, salary.monthly_salary, salary.daily_salary')
+            ->from('employees')
             ->join(
-                'teacher_salary_history AS salary',
-                'salary.teacher_id = teachers.id AND salary.effective_from <= ' . $this->db->escape($data['period_start']) . ' AND (salary.effective_to IS NULL OR salary.effective_to >= ' . $this->db->escape($data['period_start']) . ')',
+                'employee_salary_history AS salary',
+                'salary.employee_id = employees.id AND salary.effective_from <= ' . $this->db->escape($data['period_start']) . ' AND (salary.effective_to IS NULL OR salary.effective_to >= ' . $this->db->escape($data['period_start']) . ')',
                 'inner',
                 false
             )
-            ->where('teachers.status', 'active')
-            ->order_by('teachers.id', 'ASC')
+            ->where('employees.status', 'active')
+            ->order_by('employees.id', 'ASC')
             ->get()
             ->result();
 
-        $activeCount = $this->db->where('status', 'active')->count_all_results('teachers');
+        $activeCount = $this->db->where('status', 'active')->count_all_results('employees');
         if ($activeCount === 0) {
             $this->db->trans_rollback();
             return ['ok' => false, 'code' => 'no_active_teachers'];
         }
         $allActiveRates = $this->db
-            ->select('teachers.id')
-            ->from('teachers')
+            ->select('employees.id')
+            ->from('employees')
             ->join(
-                'teacher_salary_history AS salary',
-                'salary.teacher_id = teachers.id AND salary.effective_from <= ' . $this->db->escape($data['period_start']) . ' AND (salary.effective_to IS NULL OR salary.effective_to >= ' . $this->db->escape($data['period_start']) . ')',
+                'employee_salary_history AS salary',
+                'salary.employee_id = employees.id AND salary.effective_from <= ' . $this->db->escape($data['period_start']) . ' AND (salary.effective_to IS NULL OR salary.effective_to >= ' . $this->db->escape($data['period_start']) . ')',
                 'inner',
                 false
             )
-            ->where('teachers.status', 'active')
+            ->where('employees.status', 'active')
             ->get()
             ->result();
         if (count($allActiveRates) !== $activeCount) {
             $this->db->trans_rollback();
             return ['ok' => false, 'code' => 'missing_salary'];
         }
-        if (!$teachers) {
+        if (!$employees) {
             $this->db->trans_rollback();
             return ['ok' => false, 'code' => 'no_teachers_for_schedule'];
         }
@@ -332,7 +332,7 @@ class Payroll_model extends CI_Model
         }
 
         $items = [];
-        foreach ($teachers as $teacher) {
+        foreach ($employees as $teacher) {
             $salaryType = $teacher->salary_type ?: 'monthly';
             $monthlySalary = $salaryType === 'monthly' ? (float) $teacher->monthly_salary : null;
             $dailySalary = $salaryType === 'daily' ? (float) $teacher->daily_salary : null;
@@ -345,13 +345,12 @@ class Payroll_model extends CI_Model
             }
             $items[] = [
                 'payroll_period_id' => $periodId,
-                'teacher_id' => (int) $teacher->id,
+                'employee_id' => (int) $teacher->id,
                 'employee_no_snapshot' => $teacher->employee_no,
-                'teacher_name_snapshot' => trim(implode(' ', array_filter([
+                'employee_name_snapshot' => trim(implode(' ', array_filter([
                     $teacher->first_name,
                     $teacher->middle_name,
                     $teacher->last_name,
-                    $teacher->suffix
                 ]))),
                 'salary_type_snapshot' => $salaryType,
                 'position_snapshot' => $teacher->position_title,

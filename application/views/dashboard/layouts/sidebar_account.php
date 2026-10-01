@@ -6,7 +6,7 @@ if ($sidebarName === '') {
 }
 $sidebarRole = trim((string) ($sidebarUser->role_name ?? ''));
 if ($sidebarRole === '') {
-    $sidebarRole = 'Role ' . (int) ($sidebarUser->role_id ?? $this->session->userdata('role_id'));
+    $sidebarRole = 'User';
 }
 ?>
 

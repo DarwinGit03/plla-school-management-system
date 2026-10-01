@@ -1,115 +1,16 @@
-<div class="row g-4">
-
-    <!-- Students -->
-
-    <div class="col-xl-3 col-lg-6">
-
-        <div class="card dashboard-card">
-
-            <div class="card-body">
-
-                <div class="card-icon bg-primary">
-
-                    <i class="fas fa-user-graduate"></i>
-
-                </div>
-
-                <div class="card-content">
-
-                    <small>Total Students</small>
-
-                    <h3>0</h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <article class="dashboard-stat-card dashboard-stat-students h-100">
+            <div class="dashboard-stat-icon"><i class="fas fa-user-graduate" aria-hidden="true"></i></div>
+            <div><div class="dashboard-stat-label">Active student enrollments</div><div class="dashboard-stat-value"><?= number_format((int) ($active_student_count ?? 0)); ?></div><div class="dashboard-stat-note"><?= !empty($selected_school_year) ? 'School year ' . html_escape($selected_school_year) : 'No active school year selected'; ?></div></div>
+            <i class="fas fa-user-graduate dashboard-stat-watermark" aria-hidden="true"></i>
+        </article>
     </div>
-
-    <!-- Faculty -->
-
-    <div class="col-xl-3 col-lg-6">
-
-        <div class="card dashboard-card">
-
-            <div class="card-body">
-
-                <div class="card-icon bg-success">
-
-                    <i class="fas fa-chalkboard-teacher"></i>
-
-                </div>
-
-                <div class="card-content">
-
-                    <small>Faculty Members</small>
-
-                    <h3>0</h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <div class="col-md-6">
+        <article class="dashboard-stat-card dashboard-stat-employees h-100">
+            <div class="dashboard-stat-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
+            <div><div class="dashboard-stat-label">Active employees</div><div class="dashboard-stat-value"><?= number_format((int) ($active_employee_count ?? 0)); ?></div><div class="dashboard-stat-note">Faculty and staff</div></div>
+            <i class="fas fa-users dashboard-stat-watermark" aria-hidden="true"></i>
+        </article>
     </div>
-
-    <!-- Programs -->
-
-    <div class="col-xl-3 col-lg-6">
-
-        <div class="card dashboard-card">
-
-            <div class="card-body">
-
-                <div class="card-icon bg-warning">
-
-                    <i class="fas fa-book-open"></i>
-
-                </div>
-
-                <div class="card-content">
-
-                    <small>Programs</small>
-
-                    <h3>0</h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- Revenue -->
-
-    <div class="col-xl-3 col-lg-6">
-
-        <div class="card dashboard-card">
-
-            <div class="card-body">
-
-                <div class="card-icon bg-danger">
-
-                    <i class="fas fa-coins"></i>
-
-                </div>
-
-                <div class="card-content">
-
-                    <small>Revenue</small>
-
-                    <h3>₱0</h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
 </div>

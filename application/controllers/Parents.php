@@ -6,7 +6,7 @@ class Parents extends MY_Controller
 
         $this->requireLogin();
 
-        $this->requireRole([5]);
+        $this->requirePermission('parent.payments.view');
 
         $this->load->model('parent/Parent_model');
     }

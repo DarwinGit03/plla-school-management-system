@@ -3,9 +3,11 @@ $teacherName = trim(implode(' ', array_filter([
     $teacher->first_name,
     $teacher->middle_name,
     $teacher->last_name,
-    $teacher->suffix
 ])));
 ?>
+
+<?php if (!empty($success_message)): ?><div class="alert alert-success alert-dismissible fade show" role="status"><?= html_escape($success_message); ?><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div><?php endif; ?>
+<?php if (!empty($error_message)): ?><div class="alert alert-danger alert-dismissible fade show" role="alert"><?= html_escape($error_message); ?><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div><?php endif; ?>
 
 <section class="card border-0 shadow-sm">
     <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-3">
@@ -50,7 +52,13 @@ $teacherName = trim(implode(' ', array_filter([
                             <td><span class="badge text-bg-<?= $paymentBadge; ?>"><?= html_escape($paymentLabel); ?></span></td>
                             <td class="text-end pe-3">
                                 <?php if ($item->period_status === 'finalized'): ?>
-                                    <a href="<?= site_url('payroll/payslip/' . (int) $item->id); ?>" class="btn btn-sm btn-outline-primary">Download</a>
+                                    <div class="d-flex flex-wrap justify-content-end gap-1">
+                                        <a href="<?= site_url('payroll/payslip/' . (int) $item->id); ?>" class="btn btn-sm btn-outline-primary">Download</a>
+                                        <form method="post" action="<?= site_url('payroll/payslip/' . (int) $item->id . '/email'); ?>">
+                                            <input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="fas fa-envelope me-1" aria-hidden="true"></i>Email</button>
+                                        </form>
+                                    </div>
                                 <?php else: ?>
                                     <span class="small text-secondary">After finalization</span>
                                 <?php endif; ?>

@@ -20,6 +20,10 @@ class Session_service
 
         $this->CI->load->library('session');
 
+        // Session timeout is configured here and must be available on every
+        // request, including the first request after login.
+        $this->CI->load->config('auth');
+
         $this->CI->load->helper('url');
 
         $this->CI->load->model('auth/User_model');

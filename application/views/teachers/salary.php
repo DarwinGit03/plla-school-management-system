@@ -1,7 +1,7 @@
-﻿<?php
+<?php
 $csrfName = $this->security->get_csrf_token_name();
 $csrfHash = $this->security->get_csrf_hash();
-$teacherName = trim(implode(' ', array_filter([$teacher->first_name, $teacher->middle_name, $teacher->last_name, $teacher->suffix])));
+$teacherName = trim(implode(' ', array_filter([$teacher->first_name, $teacher->middle_name, $teacher->last_name])));
 $currentRate = !empty($salary_history) ? $salary_history[0] : null;
 $currentAmount = $currentRate ? (float) ($currentRate->salary_type === 'daily' ? $currentRate->daily_salary : $currentRate->monthly_salary) : null;
 $currentUnit = $currentRate ? ($currentRate->salary_type === 'daily' ? 'day' : 'month') : '';
@@ -38,7 +38,7 @@ $currentUnit = $currentRate ? ($currentRate->salary_type === 'daily' ? 'day' : '
     </div>
     <form method="post" action="<?= site_url('teachers/salary/save'); ?>">
         <input type="hidden" name="<?= html_escape($csrfName); ?>" value="<?= html_escape($csrfHash); ?>">
-        <input type="hidden" name="teacher_id" value="<?= (int) $teacher->id; ?>">
+        <input type="hidden" name="employee_id" value="<?= (int) $teacher->id; ?>">
         <div class="card-body">
             <p class="small text-secondary">Each change is kept in salary history. The pay schedule determines which payroll periods include this teacher.</p>
             <div class="row g-3">

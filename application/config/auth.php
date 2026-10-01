@@ -15,6 +15,7 @@ $config['otp_expiry'] = 300;
 $config['otp_send_cooldown_seconds'] = 60;
 $config['otp_max_attempts'] = 5;
 $config['session_token_length'] = 32;
-$config['password_min_length'] = 8;
+  $config['password_min_length'] = 12;
+  $config['password_max_length'] = 72;
 
 $config['failed_attempt_reset_minutes'] = 10;

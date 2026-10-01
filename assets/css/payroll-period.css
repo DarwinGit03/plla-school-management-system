@@ -1,0 +1,46 @@
+.payroll-employee-card {
+    border-color: #e2e8f0;
+    border-radius: .75rem;
+}
+
+.payroll-employee-card .card-body {
+    min-width: 0;
+}
+
+.payroll-summary-box,
+.payroll-net-box {
+    height: 100%;
+    padding: .85rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .65rem;
+    background: #f8fafc;
+}
+
+.payroll-summary-box > strong,
+.payroll-net-box > strong {
+    display: block;
+    margin-top: .2rem;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+}
+
+.payroll-net-box {
+    color: #14532d;
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+.payroll-net-box .small {
+    color: #166534;
+}
+
+.payroll-employee-card summary {
+    cursor: pointer;
+}
+
+@media (max-width: 575.98px) {
+    .payroll-employee-card .edit-payroll-button,
+    .payroll-employee-card form .btn {
+        width: 100%;
+    }
+}

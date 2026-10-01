@@ -40,8 +40,8 @@ foreach ($items as $item) {
     <div class="card-header bg-white d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 py-3">
         <div>
             <h2 class="h6 fw-bold mb-1">Employees in this payroll</h2>
-            <p class="small text-secondary mb-2"><span id="payrollEmployeeCount"><?= count($items); ?></span> employees. Confirm attendance, paid leave, and unpaid absences before finalizing.</p>
-            <p class="small text-secondary mb-2">Statutory contributions and withholding tax are calculated from the shared payroll settings.</p>
+            <p class="small text-secondary mb-2"><span id="payrollEmployeeCount"><?= count($items); ?></span> employees included. Review each employee's pay, attendance, and deductions before finalizing.</p>
+            <p class="small text-secondary mb-2">Statutory contributions and withholding tax are calculated automatically from payroll settings.</p>
             <label class="visually-hidden" for="payrollEmployeeSearch">Search employees</label>
             <input type="search" id="payrollEmployeeSearch" class="form-control form-control-sm w-auto" placeholder="Search name or employee number">
         </div>
@@ -55,85 +55,93 @@ foreach ($items as $item) {
             <span class="badge text-bg-success fs-6">Finalized</span>
         <?php endif; ?>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr><th class="ps-3">Employee</th><th>Employee no.</th><th class="text-end">Rate</th><th>Attendance</th><th class="text-end">Gross pay</th><th>Deductions</th><th class="text-end">Net pay</th><th>Payment</th><th class="text-end pe-3">Payslip</th></tr>
-            </thead>
-            <tbody>
-            <?php if (empty($items)): ?>
-                <tr><td colspan="9" class="py-5 text-center text-secondary">No employees were included in this payroll.</td></tr>
-            <?php else: foreach ($items as $item): ?>
+    <div class="p-3 p-lg-4">
+        <?php if (empty($items)): ?>
+            <div class="text-center text-secondary py-5">No employees were included in this payroll.</div>
+        <?php else: ?>
+            <div class="row g-3">
+            <?php foreach ($items as $item): ?>
                 <?php
                 $itemDeductions = $deductions[$item->id] ?? [];
                 $manualDeductions = array_sum(array_map(function ($row) { return (float) $row->amount; }, $itemDeductions));
                 $itemTaxes = $tax_deductions[$item->id] ?? null;
                 $taxTotal = (float) ($itemTaxes->sss_amount ?? 0) + (float) ($itemTaxes->philhealth_amount ?? 0) + (float) ($itemTaxes->pagibig_amount ?? 0) + (float) ($itemTaxes->withholding_tax_amount ?? 0);
                 $deductionTotal = $manualDeductions + (float) $item->absence_deduction + $taxTotal;
-                $searchText = strtolower($item->teacher_name_snapshot . ' ' . $item->employee_no_snapshot);
+                $searchText = strtolower($item->employee_name_snapshot . ' ' . $item->employee_no_snapshot);
                 $periodDays = (int) (new DateTime($period->period_start))->diff(new DateTime($period->period_end))->days + 1;
                 ?>
-                <tr id="payroll-item-<?= (int) $item->id; ?>" data-payroll-employee="<?= html_escape($searchText); ?>">
-                    <td class="ps-3"><div class="fw-semibold"><?= html_escape($item->teacher_name_snapshot); ?></div><?php if ($item->position_snapshot): ?><div class="small text-secondary"><?= html_escape($item->position_snapshot); ?></div><?php endif; ?></td>
-                    <td><?= html_escape($item->employee_no_snapshot); ?></td>
-                    <td class="text-end text-nowrap">PHP <?= number_format((float) ($item->salary_type_snapshot === 'daily' ? $item->daily_salary_snapshot : $item->monthly_salary_snapshot), 2); ?> / <?= $item->salary_type_snapshot === 'daily' ? 'day' : 'month'; ?></td>
-                    <td>
-                        <div><?= html_escape($item->payable_days ?? '—'); ?> attended</div>
-                        <div><?= html_escape($item->paid_leave_days); ?> paid leave</div>
-                        <div><?= html_escape($item->absence_days); ?> unpaid absent</div>
-                        <?php if ($period->status === 'draft'): ?>
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 edit-payroll-button"
-                                data-bs-toggle="modal" data-bs-target="#employeePayrollModal"
-                                data-item-id="<?= (int) $item->id; ?>"
-                                data-employee-name="<?= html_escape($item->teacher_name_snapshot, true); ?>"
-                                data-employee-no="<?= html_escape($item->employee_no_snapshot, true); ?>"
-                                data-attended="<?= html_escape($item->payable_days ?? ''); ?>"
-                                data-paid-leave="<?= html_escape($item->paid_leave_days); ?>"
-                                data-unpaid-absence="<?= html_escape($item->absence_days); ?>"
-                                data-period-days="<?= $periodDays; ?>"
-                                data-absence-deduction="<?= number_format((float) $item->absence_deduction, 2, '.', ''); ?>"
-                                data-sss="<?= number_format((float) ($itemTaxes->sss_amount ?? 0), 2, '.', ''); ?>"
-                                data-philhealth="<?= number_format((float) ($itemTaxes->philhealth_amount ?? 0), 2, '.', ''); ?>"
-                                data-pagibig="<?= number_format((float) ($itemTaxes->pagibig_amount ?? 0), 2, '.', ''); ?>"
-                                data-withholding="<?= number_format((float) ($itemTaxes->withholding_tax_amount ?? 0), 2, '.', ''); ?>"
-                                data-deductions="<?= html_escape(json_encode(array_map(function ($row) { return ['category' => $row->category, 'description' => $row->description, 'amount' => $row->amount]; }, $itemDeductions))); ?>">
-                                <i class="fas fa-pen me-1" aria-hidden="true"></i>Edit payroll
-                            </button>
-                        <?php endif; ?>
-                    </td>
-                    <td class="text-end fw-semibold">PHP <?= number_format((float) $item->basic_pay, 2); ?></td>
-                    <td>
-                        <?php if ((float) $item->absence_deduction > 0): ?><div class="small text-danger">Absence: PHP <?= number_format((float) $item->absence_deduction, 2); ?></div><?php endif; ?>
-                        <?php if ($taxTotal > 0): ?><div class="small text-danger">Taxes &amp; contributions: PHP <?= number_format($taxTotal, 2); ?></div><?php endif; ?>
-                        <?php if ($itemDeductions): ?>
-                            <ul class="list-unstyled mb-2 small">
-                            <?php foreach ($itemDeductions as $deduction): ?>
-                                <li class="d-flex justify-content-between gap-2"><span><span class="badge text-bg-light"><?= html_escape(ucwords(str_replace('_', ' ', $deduction->category))); ?></span> <?= html_escape($deduction->description); ?></span><span>PHP <?= number_format((float) $deduction->amount, 2); ?></span>
-                                <?php if ($period->status === 'draft'): ?><form method="post" action="<?= site_url('payroll/deductions/delete'); ?>" class="ms-1"><input type="hidden" name="<?= html_escape($csrfName); ?>" value="<?= html_escape($csrfHash); ?>"><input type="hidden" name="id" value="<?= (int) $deduction->id; ?>"><button class="btn btn-sm btn-link text-danger p-0" type="submit">Remove</button></form><?php endif; ?></li>
-                            <?php endforeach; ?>
-                            </ul>
-                        <?php endif; ?>
-                    </td>
-                    <td class="text-end fw-semibold">PHP <?= number_format((float) $item->basic_pay - $deductionTotal, 2); ?></td>
-                    <td>
-                        <?php if ($period->status !== 'finalized'): ?><span class="small text-secondary">After finalization</span>
-                        <?php elseif ($item->payment_status === 'paid'): ?><span class="badge text-bg-success">Paid</span><div class="small text-secondary"><?= html_escape(ucwords(str_replace('_', ' ', $item->payment_method))); ?></div>
-                        <?php else: ?>
-                            <form method="post" action="<?= site_url('payroll/mark-paid'); ?>" class="vstack gap-1">
-                                <input type="hidden" name="<?= html_escape($csrfName); ?>" value="<?= html_escape($csrfHash); ?>"><input type="hidden" name="payroll_item_id" value="<?= (int) $item->id; ?>">
-                                <select name="payment_method" class="form-select form-select-sm" required><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="check">Check</option><option value="other">Other</option></select>
-                                <input name="payment_reference" class="form-control form-control-sm" maxlength="100" placeholder="Reference (optional)">
-                                <button type="submit" class="btn btn-sm btn-outline-success">Mark paid</button>
-                            </form>
-                        <?php endif; ?>
-                    </td>
-                    <td class="text-end pe-3"><?php if ($period->status === 'finalized'): ?><a href="<?= site_url('payroll/payslip/' . (int) $item->id); ?>" class="btn btn-sm btn-outline-primary">Payslip</a><?php else: ?><span class="small text-secondary">After finalization</span><?php endif; ?></td>
-                </tr>
-            <?php endforeach; endif; ?>
-            </tbody>
-        </table>
+                <div class="col-12" id="payroll-item-<?= (int) $item->id; ?>" data-payroll-employee="<?= html_escape($searchText); ?>">
+                    <article class="card payroll-employee-card h-100">
+                        <div class="card-body p-3 p-lg-4">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h3 class="h6 fw-bold mb-1"><?= html_escape($item->employee_name_snapshot); ?></h3>
+                                    <div class="small text-secondary">Employee no. <?= html_escape($item->employee_no_snapshot); ?><?php if ($item->position_snapshot): ?> &middot; <?= html_escape($item->position_snapshot); ?><?php endif; ?></div>
+                                    <div class="small text-secondary mt-1">Rate: PHP <?= number_format((float) ($item->salary_type_snapshot === 'daily' ? $item->daily_salary_snapshot : $item->monthly_salary_snapshot), 2); ?> / <?= $item->salary_type_snapshot === 'daily' ? 'day' : 'month'; ?></div>
+                                </div>
+                                <?php if ($period->status === 'draft'): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-primary align-self-lg-start edit-payroll-button"
+                                        data-bs-toggle="modal" data-bs-target="#employeePayrollModal"
+                                        data-item-id="<?= (int) $item->id; ?>"
+                                        data-employee-name="<?= html_escape($item->employee_name_snapshot, true); ?>"
+                                        data-employee-no="<?= html_escape($item->employee_no_snapshot, true); ?>"
+                                        data-attended="<?= html_escape($item->payable_days ?? ''); ?>"
+                                        data-paid-leave="<?= html_escape($item->paid_leave_days); ?>"
+                                        data-unpaid-absence="<?= html_escape($item->absence_days); ?>"
+                                        data-period-days="<?= $periodDays; ?>"
+                                        data-absence-deduction="<?= number_format((float) $item->absence_deduction, 2, '.', ''); ?>"
+                                        data-sss="<?= number_format((float) ($itemTaxes->sss_amount ?? 0), 2, '.', ''); ?>"
+                                        data-philhealth="<?= number_format((float) ($itemTaxes->philhealth_amount ?? 0), 2, '.', ''); ?>"
+                                        data-pagibig="<?= number_format((float) ($itemTaxes->pagibig_amount ?? 0), 2, '.', ''); ?>"
+                                        data-withholding="<?= number_format((float) ($itemTaxes->withholding_tax_amount ?? 0), 2, '.', ''); ?>"
+                                        data-deductions="<?= html_escape(json_encode(array_map(function ($row) { return ['category' => $row->category, 'description' => $row->description, 'amount' => $row->amount]; }, $itemDeductions))); ?>">
+                                        <i class="fas fa-pen me-1" aria-hidden="true"></i>Edit attendance &amp; deductions
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6 col-xl-3"><div class="payroll-summary-box"><div class="small text-secondary">Attendance</div><strong><?= html_escape($item->payable_days ?? 'Not entered'); ?></strong> days attended<div class="small text-secondary mt-1"><?= html_escape($item->paid_leave_days); ?> paid leave &middot; <?= html_escape($item->absence_days); ?> unpaid absent</div></div></div>
+                                <div class="col-12 col-md-6 col-xl-3"><div class="payroll-summary-box"><div class="small text-secondary">Gross pay</div><strong>PHP <?= number_format((float) $item->basic_pay, 2); ?></strong><div class="small text-secondary mt-1">Before deductions</div></div></div>
+                                <div class="col-12 col-md-6 col-xl-3"><div class="payroll-summary-box"><div class="small text-secondary">Total deductions</div><strong class="text-danger">PHP <?= number_format($deductionTotal, 2); ?></strong>
+                                    <?php if ((float) $item->absence_deduction > 0): ?><div class="small">Unpaid absence: PHP <?= number_format((float) $item->absence_deduction, 2); ?></div><?php endif; ?>
+                                    <?php if ($taxTotal > 0): ?><details class="small mt-1"><summary class="text-secondary">Taxes &amp; contributions (PHP <?= number_format($taxTotal, 2); ?>)</summary><div class="mt-1">SSS: PHP <?= number_format((float) ($itemTaxes->sss_amount ?? 0), 2); ?></div><div>PhilHealth: PHP <?= number_format((float) ($itemTaxes->philhealth_amount ?? 0), 2); ?></div><div>Pag-IBIG: PHP <?= number_format((float) ($itemTaxes->pagibig_amount ?? 0), 2); ?></div><div>Withholding tax: PHP <?= number_format((float) ($itemTaxes->withholding_tax_amount ?? 0), 2); ?></div></details><?php endif; ?>
+                                    <?php if ($itemDeductions): ?><details class="small mt-1"><summary class="text-primary">Other deductions (<?= count($itemDeductions); ?>)</summary><ul class="list-unstyled mb-0 mt-2">
+                                        <?php foreach ($itemDeductions as $deduction): ?><li class="d-flex justify-content-between align-items-start gap-2 py-1"><span><span class="badge text-bg-light"><?= html_escape(ucwords(str_replace('_', ' ', $deduction->category))); ?></span> <?= html_escape($deduction->description); ?><br>PHP <?= number_format((float) $deduction->amount, 2); ?></span>
+                                        <?php if ($period->status === 'draft'): ?><form method="post" action="<?= site_url('payroll/deductions/delete'); ?>"><input type="hidden" name="<?= html_escape($csrfName); ?>" value="<?= html_escape($csrfHash); ?>"><input type="hidden" name="id" value="<?= (int) $deduction->id; ?>"><button class="btn btn-sm btn-link text-danger p-0" type="submit">Remove</button></form><?php endif; ?></li><?php endforeach; ?>
+                                    </ul></details><?php endif; ?>
+                                </div></div>
+                                <div class="col-12 col-md-6 col-xl-3"><div class="payroll-net-box"><div class="small">Take-home pay</div><strong>PHP <?= number_format((float) $item->basic_pay - $deductionTotal, 2); ?></strong></div></div>
+                            </div>
+                            <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 border-top mt-3 pt-3">
+                                <div><div class="small text-secondary mb-1">Payment</div>
+                                <?php if ($period->status !== 'finalized'): ?><span class="small text-secondary">Available after payroll is finalized</span>
+                                <?php elseif ($item->payment_status === 'paid'): ?><span class="badge text-bg-success">Paid</span> <span class="small text-secondary"><?= html_escape(ucwords(str_replace('_', ' ', $item->payment_method))); ?></span>
+                                <?php else: ?>
+                                    <form method="post" action="<?= site_url('payroll/mark-paid'); ?>" class="d-flex flex-column flex-sm-row gap-2">
+                                        <input type="hidden" name="<?= html_escape($csrfName); ?>" value="<?= html_escape($csrfHash); ?>"><input type="hidden" name="payroll_item_id" value="<?= (int) $item->id; ?>">
+                                        <select name="payment_method" class="form-select form-select-sm" required aria-label="Payment method"><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="check">Check</option><option value="other">Other</option></select>
+                                        <input name="payment_reference" class="form-control form-control-sm" maxlength="100" placeholder="Reference (optional)" aria-label="Payment reference">
+                                        <button type="submit" class="btn btn-sm btn-outline-success text-nowrap">Mark as paid</button>
+                                    </form>
+                                <?php endif; ?></div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php if ($period->status === 'finalized'): ?>
+                                        <a href="<?= site_url('payroll/payslip/' . (int) $item->id); ?>" class="btn btn-sm btn-outline-primary">Download payslip</a>
+                                        <form method="post" action="<?= site_url('payroll/payslip/' . (int) $item->id . '/email'); ?>">
+                                            <input type="hidden" name="<?= html_escape($csrfName); ?>" value="<?= html_escape($csrfHash); ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="fas fa-envelope me-1" aria-hidden="true"></i>Email employee</button>
+                                        </form>
+                                    <?php else: ?><span class="small text-secondary">Payslip available after finalization</span><?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
-    <div class="card-footer bg-white small text-secondary">Monthly salary already covers scheduled days off. Only unpaid absences are deducted at monthly salary ÷ 26. Daily-paid salary counts attended days and paid leave; unpaid absences are not paid.</div>
+    <div class="card-footer bg-white small text-secondary">Monthly salary covers scheduled days off. Unpaid absences are deducted using monthly salary / 26. Daily-paid salary includes attended days and paid leave; unpaid absences are not paid.</div>
 </section>
 <?php if ($period->status === 'draft'): ?>
 <div class="modal fade" id="employeePayrollModal" tabindex="-1" aria-labelledby="employeePayrollModalLabel" aria-hidden="true">

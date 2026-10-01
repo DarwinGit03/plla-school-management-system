@@ -43,6 +43,7 @@ class Auth_service
         $this->CI->load->library('Otp_service');
         $this->CI->load->library('Mail_service');
         $this->CI->load->library('Audit_log_service');
+        $this->CI->load->library('Password_validator');
 
         /*
         |--------------------------------------------------------------------------
@@ -82,7 +83,7 @@ class Auth_service
         |--------------------------------------------------------------------------
         */
 
-        $user = $this->CI->User_model->getByEmail($email);
+        $user = $this->CI->User_model->getByLoginIdentity($email);
 
         /*
         |--------------------------------------------------------------------------
@@ -576,9 +577,16 @@ class Auth_service
         }
 
         if ($this->CI->Password_reset_model->wasRecentlySent($email, $cooldownSeconds)) {
+            // A recent OTP should take the user to verification instead of
+            // presenting the resend cooldown as a failed password reset.
+            $this->CI->session->set_userdata([
+                'reset_email' => $email,
+                'otp_verified' => false
+            ]);
             return [
-                'status' => false,
-                'message' => 'A verification code was just sent. Please wait a minute before requesting another.'
+                'status' => true,
+                'code' => 'cooldown',
+                'message' => 'A verification code was sent recently. Check your email and enter it below. You can request another code after one minute.'
             ];
         }
 
@@ -610,6 +618,8 @@ class Auth_service
 
         if(!$mail['status'])
         {
+            // Do not leave an unsent code that blocks a retry during cooldown.
+            $this->CI->otp_service->clearOTP($email);
             return [
 
                 'status'=>false,
@@ -763,6 +773,14 @@ class Auth_service
 
     public function savePassword($password)
     {
+        $passwordErrors = $this->CI->password_validator->validate($password);
+        if ($passwordErrors) {
+            return [
+                'status' => false,
+                'message' => $this->CI->password_validator->error_message($passwordErrors)
+            ];
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Verify Reset Session
@@ -894,75 +912,6 @@ class Auth_service
         return [
             'status' => true,
             'message' => 'Password changed successfully.'
-        ];
-    }
-
-    // admin access 
-    /*
-    |--------------------------------------------------------------------------
-    | Unlock Account
-    |--------------------------------------------------------------------------
-    */
-
-    public function unlockAccount($user_id)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | Find User
-        |--------------------------------------------------------------------------
-        */
-
-        $user = $this->CI->user->getById($user_id);
-
-        if(!$user)
-        {
-            return [
-                'status'=>false,
-                'message'=>'User not found.'
-            ];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Unlock
-        |--------------------------------------------------------------------------
-        */
-
-        $this->CI
-            ->user
-            ->unlockAccount(
-                $user_id
-            );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Audit Log
-        |--------------------------------------------------------------------------
-        */
-
-        $admin_id =
-            $this->CI
-                ->session
-                ->userdata(
-                    'user_id'
-                );
-
-        $this->CI
-            ->audit_log_service
-            ->log(
-                $admin_id,
-                'auth_service/unlockAccount',
-                'ACCOUNT_UNLOCKED',
-                'Unlocked account: '.$user->email
-
-            );
-
-        return [
-
-            'status'=>true,
-
-            'message'=>'Account unlocked successfully.'
-
         ];
     }
 
