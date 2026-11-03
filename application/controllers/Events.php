@@ -50,7 +50,8 @@ class Events extends MY_Controller
         if ($this->input->method() !== 'post') { show_404(); return; }
 
         $id = (int) $this->input->post('id', true);
-        if ($id && (!$this->school_event_model->get_by_id($id) || $this->school_event_model->get_by_id($id)->status !== 'active')) {
+        $existingEvent = $id ? $this->school_event_model->get_by_id($id) : null;
+        if ($id && (!$existingEvent || $existingEvent->status !== 'active')) {
             show_404(); return;
         }
         $this->form_validation->set_rules('title', 'Event title', 'trim|required|max_length[160]');
@@ -86,7 +87,16 @@ class Events extends MY_Controller
             $this->session->set_flashdata('error', 'The event could not be saved. Please try again.');
             return redirect($id ? 'events/edit/' . $id : 'events');
         }
-        $this->audit_log_service->log('events', $id ? 'EVENT_UPDATED' : 'EVENT_CREATED', $id ?: $this->db->insert_id(), 'School event saved.');
+        $eventChanges = $id ? $this->audit_log_service->get_changed_fields($existingEvent, (object) $data) : [];
+        if (!$id || $eventChanges) {
+            $this->audit_log_service->log(
+                'Events',
+                $id ? 'UPDATED' : 'CREATED',
+                $id ?: $this->db->insert_id(),
+                ($id ? 'Updated' : 'Created') . ' school event "' . $data['title'] . '" for ' . $data['starts_at'] . '.',
+                $id ? ['changes' => $eventChanges] : ['title' => $data['title'], 'starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at'], 'location' => $data['location']]
+            );
+        }
         $this->session->set_flashdata('success', $id ? 'Event updated.' : 'Event created.');
         return redirect('events');
     }
@@ -98,7 +108,9 @@ class Events extends MY_Controller
         $event = $this->school_event_model->get_by_id((int) $id);
         if (!$event) { show_404(); return; }
         if ($this->school_event_model->cancel($id, (string) $this->session->userdata('employee_no'))) {
-            $this->audit_log_service->log('events', 'EVENT_CANCELLED', (int) $id, 'School event cancelled.');
+            if ($event->status !== 'cancelled') {
+                $this->audit_log_service->log('Events', 'CANCELLED', (int) $id, 'Cancelled school event "' . $event->title . '".', ['title' => $event->title, 'starts_at' => $event->starts_at]);
+            }
             $this->session->set_flashdata('success', 'Event cancelled.');
         }
         return redirect('events');

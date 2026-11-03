@@ -35,6 +35,7 @@ class Subjects extends MY_Controller
             'content' => 'academic/subjects/index',
             'page_scripts' => ['assets/js/academic/subjects.js'],
             'years' => $years,
+            'preferred_school_year' => $this->resolve_school_year_filter($years, 'school_year'),
             'grade_options_by_year' => $gradeMap,
             'grade_labels' => $gradeLabels,
             'edit_subject' => $editSubject,
@@ -80,14 +81,15 @@ class Subjects extends MY_Controller
         }
 
         $actor = (string) ($this->session->userdata('employee_no') ?: $this->session->userdata('user_id'));
-        $result = $this->subject_model->save_subject([
+        $subjectData = [
             'school_year' => $year,
             'grade_code' => $grade,
             'subject_name' => trim((string) $this->input->post('subject_name', true)),
             'subject_code' => strtoupper(trim((string) $this->input->post('subject_code', true))),
             'description' => trim((string) $this->input->post('description', true)),
             'updated_by' => $actor
-        ], $id);
+        ];
+        $result = $this->subject_model->save_subject($subjectData, $id);
 
         if (!$result['ok']) {
             $messages = [
@@ -100,12 +102,15 @@ class Subjects extends MY_Controller
             return redirect('academic/subjects#subject-catalog');
         }
 
-        $this->audit_log_service->log('academic_subjects', $id > 0 ? 'SUBJECT_UPDATED' : 'SUBJECT_CREATED', $result['id'], 'Academic subject saved.', [
-            'school_year' => $year,
-            'grade_code' => $grade,
-            'subject_name' => $this->input->post('subject_name', true),
-            'subject_code' => $this->input->post('subject_code', true)
-        ]);
+        $subjectName = trim((string) $this->input->post('subject_name', true));
+        $gradeLabel = $this->fee_configuration_model->grade_label($grade);
+        $subjectChanges = $id > 0 ? $this->audit_log_service->get_changed_fields($existing, (object) $subjectData) : [];
+        if ($id === 0 || $subjectChanges) {
+            $this->audit_log_service->log('academic_subjects', $id > 0 ? 'SUBJECT_UPDATED' : 'SUBJECT_CREATED', $result['id'],
+                ($id > 0 ? 'Updated' : 'Created') . ' subject "' . $subjectName . '" for ' . $gradeLabel . ' in school year ' . $year . '.',
+                $id > 0 ? ['changes' => $subjectChanges] : ['school_year' => $year, 'grade_code' => $grade, 'subject_name' => $subjectName, 'subject_code' => $subjectData['subject_code']]
+            );
+        }
         $this->session->set_flashdata('success', $id > 0 ? 'Subject updated.' : 'Subject added to the catalog.');
         return redirect('academic/subjects#subject-catalog');
     }
@@ -122,7 +127,10 @@ class Subjects extends MY_Controller
         if (!$this->subject_model->update_subject_status($id, $active, $actor)) {
             $this->session->set_flashdata('error', 'The subject status could not be updated.');
         } else {
-            $this->audit_log_service->log('academic_subjects', 'SUBJECT_STATUS_CHANGED', $id, 'Academic subject status changed.', ['is_active' => $active]);
+            if ((int) $subject->is_active !== $active) {
+                $this->audit_log_service->log('Academic', 'STATUS_CHANGED', $id,
+                    'Changed subject "' . $subject->subject_name . '" to ' . ($active ? 'active' : 'inactive') . '.', ['from' => (int) $subject->is_active ? 'active' : 'inactive', 'to' => $active ? 'active' : 'inactive']);
+            }
             $this->session->set_flashdata('success', $active ? 'Subject activated.' : 'Subject deactivated.');
         }
         return redirect('academic/subjects#subject-catalog');
@@ -169,7 +177,10 @@ class Subjects extends MY_Controller
             return redirect('academic/subjects#assignments');
         }
 
-        $this->audit_log_service->log('employee_subject_assignments', 'TEACHER_SUBJECT_ASSIGNED', $result['id'], 'Subject assigned to an employee for a school year and grade.', [
+        $teacherName = trim(implode(' ', array_filter([$employee->first_name, $employee->middle_name, $employee->last_name])));
+        $gradeLabel = $this->fee_configuration_model->grade_label($subject->grade_code);
+        $this->audit_log_service->log('employee_subject_assignments', 'TEACHER_SUBJECT_ASSIGNED', $result['id'],
+            'Assigned ' . $teacherName . ' (employee no. ' . $employee->employee_no . ') to "' . $subject->subject_name . '" for ' . $gradeLabel . ' in school year ' . $subject->school_year . '.', [
             'employee_id' => $employeeId,
             'subject_id' => $subjectId,
             'school_year' => $subject->school_year,
@@ -190,7 +201,12 @@ class Subjects extends MY_Controller
         if (!$this->subject_model->update_assignment_status($id, $status)) {
             $this->session->set_flashdata('error', 'The teacher assignment could not be updated.');
         } else {
-            $this->audit_log_service->log('employee_subject_assignments', 'ASSIGNMENT_STATUS_CHANGED', $id, 'Teacher subject assignment status changed.', ['status' => $status]);
+            if ($assignment->status !== $status) {
+                $employee = $this->teacher_model->get_by_id((int) $assignment->employee_id);
+                $employeeLabel = $employee ? trim($employee->first_name . ' ' . $employee->last_name) . ' (employee no. ' . $employee->employee_no . ')' : 'the assigned employee';
+                $this->audit_log_service->log('Academic', 'STATUS_CHANGED', $id,
+                    ucfirst($status) . ' ' . $employeeLabel . ' assignment to "' . $assignment->subject_name . '" for Grade ' . $assignment->subject_grade_code . ' in school year ' . $assignment->subject_school_year . '.', ['from' => $assignment->status, 'to' => $status]);
+            }
             $this->session->set_flashdata('success', $status === 'active' ? 'Assignment reactivated.' : 'Assignment removed from the active list.');
         }
         return redirect('academic/subjects#assignments');

@@ -49,6 +49,7 @@
                 <button id="btnLogin" type="submit" class="btn auth-submit">Sign in <span aria-hidden="true">→</span></button>
             </form>
             <p class="auth-help">Need help accessing your account? Contact your school administrator.</p>
+            <p class="auth-help mt-2">Are you a parent or guardian? <a href="<?= site_url('parent-portal/login'); ?>">Sign in to the Parent Portal</a></p>
         </section>
     </div>
     <footer class="auth-page-footer">© <?= date('Y'); ?> Precious Little Lights Academy</footer>

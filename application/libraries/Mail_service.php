@@ -41,6 +41,7 @@ class Mail_service
         $fromName = trim((string) $this->setting('SMTP_FROM_NAME', 'PLLA School Management'));
         $encryption = strtolower(trim((string) $this->setting('SMTP_ENCRYPTION', 'ssl')));
         $port = (int) $this->setting('SMTP_PORT', $encryption === 'tls' ? '587' : '465');
+        $caFile = trim((string) $this->setting('SMTP_CA_FILE', (string) ini_get('openssl.cafile')));
 
         if ($host === '' || $username === '' || trim($password) === '' || $fromEmail === '') {
             return;
@@ -57,6 +58,23 @@ class Mail_service
         $this->mail->Password = $password;
         $this->mail->SMTPSecure = $encryption === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
         $this->mail->Port = $port;
+        $this->mail->Timeout = 20;
+
+        // Use an explicit CA bundle for Apache/PHP as well as CLI PHP. Never
+        // disable peer or hostname checks to work around a certificate error.
+        if ($caFile !== '' && is_file($caFile) && is_readable($caFile)) {
+            $this->mail->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                    'allow_self_signed' => false,
+                    'cafile' => $caFile
+                ]
+            ];
+        } elseif ($caFile !== '') {
+            log_message('error', 'Configured SMTP_CA_FILE is missing or unreadable; PHP default CA settings will be used.');
+        }
+
         try {
             $this->mail->setFrom($fromEmail, $fromName !== '' ? $fromName : 'PLLA School Management');
             $this->configured = true;
@@ -114,7 +132,7 @@ class Mail_service
         }
         catch(Exception $e)
         {
-            log_message('error', 'SMTP delivery failed: ' . $this->mail->ErrorInfo);
+            log_message('error', 'SMTP delivery failed for ' . $this->mail->Host . ':' . $this->mail->Port . ' (' . $this->mail->SMTPSecure . '): ' . $this->mail->ErrorInfo);
             return ['status' => false, 'message' => 'Email delivery failed. Please try again later.'];
         }
     }
@@ -144,7 +162,7 @@ class Mail_service
             return ['status' => true];
         } catch (Exception $e) {
             $this->mail->clearAttachments();
-            log_message('error', 'SMTP attachment delivery failed: ' . $this->mail->ErrorInfo);
+            log_message('error', 'SMTP attachment delivery failed for ' . $this->mail->Host . ':' . $this->mail->Port . ' (' . $this->mail->SMTPSecure . '): ' . $this->mail->ErrorInfo);
             return ['status' => false, 'message' => 'Email delivery failed. Please try again later.'];
         }
     }
@@ -193,5 +211,17 @@ class Mail_service
             $body
 
         );
+    }
+
+    public function sendParentLoginOTP($email, $otp)
+    {
+        $subject = 'Your PLLA Parent Portal sign-in code';
+        $safeCode = html_escape((string) $otp);
+        $body = "<h2>Parent Portal sign-in</h2>
+            <p>Use this one-time code to sign in to the PLLA Parent Portal:</p>
+            <p style='font-size:30px;font-weight:700;letter-spacing:8px;color:#174ea6'>{$safeCode}</p>
+            <p>This code expires in 5 minutes. If you did not request it, you can ignore this email.</p>";
+
+        return $this->send($email, $subject, $body);
     }
 }

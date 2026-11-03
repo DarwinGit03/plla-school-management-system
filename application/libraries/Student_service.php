@@ -250,52 +250,6 @@ class Student_service
 
         /*
         |--------------------------------------------------------------------------
-        | Get Updated Student For Audit
-        |--------------------------------------------------------------------------
-        */
-
-        $new_student =
-            $this->CI
-                ->Student_model
-                ->get_student(
-                    $student_id
-                );
-
-        if (!$new_student) {
-            return true;
-        }
-
-        $new_enrollment =
-            $this->CI
-                ->Student_model
-                ->get_current_enrollment(
-                    $student_id
-                );
-
-        $new_guardians =
-            $this->CI
-                ->Student_guardian_model
-                ->get_by_student(
-                    $student_id
-                );
-
-        $new_addresses =
-            $this->CI
-                ->Student_address_model
-                ->get_by_student(
-                    $student_id
-                );
-
-
-        $details = [
-            'student' => $new_student,
-            'enrollment' => $new_enrollment,
-            'guardians' => $new_guardians,
-            'addresses' => $new_addresses
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
         | Audit Log
         |--------------------------------------------------------------------------
         */
@@ -303,11 +257,19 @@ class Student_service
         $this->CI
             ->audit_log_service
             ->log(
-                'libraries/Student_service',
-                'CREATE_STUDENT',
+                'Students',
+                'CREATED',
                 $student_id,
-                'Student created.',
-                $details
+                'Created student ' . trim(implode(' ', array_filter([
+                    $student_data['first_name'] ?? '',
+                    $student_data['middle_name'] ?? '',
+                    $student_data['last_name'] ?? ''
+                ]))) . ' (student no. ' . (string) ($student_data['student_no'] ?? $student_id) . ').',
+                [
+                    'student_no' => $student_data['student_no'] ?? null,
+                    'school_year' => $enrollment_data['academic_year'] ?? null,
+                    'grade' => $enrollment_data['grade_level'] ?? null
+                ]
             );
 
 
@@ -825,6 +787,31 @@ class Student_service
         if (!empty($address_details)) {
             $details['addresses'] = $address_details;
         }
+
+        $changedParts = [];
+        if (!empty($student_details)) {
+            $changedStudentFields = array_map('strtolower', array_keys($student_details));
+            $nameFields = ['first_name', 'middle_name', 'last_name', 'suffix'];
+            $contactFields = ['phone', 'email', 'mobile', 'contact_number'];
+            if (!array_diff($changedStudentFields, $nameFields)) {
+                $changedParts[] = 'student name';
+            } elseif (!array_diff($changedStudentFields, $contactFields)) {
+                $changedParts[] = 'student contact details';
+            } else {
+                $changedParts[] = 'student profile';
+            }
+        }
+        if (!empty($address_details)) $changedParts[] = 'student address';
+        if (!empty($guardian_details)) $changedParts[] = 'guardian information';
+        if (!empty($enrollment_details)) $changedParts[] = 'enrollment';
+
+        $changedParts = array_values(array_unique($changedParts));
+        if (count($changedParts) > 1) {
+            $lastPart = array_pop($changedParts);
+            $changedDescription = implode(', ', $changedParts) . ' and ' . $lastPart;
+        } else {
+            $changedDescription = $changedParts[0] ?? 'student information';
+        }
         /*
         |--------------------------------------------------------------------------
         | Audit Log
@@ -835,10 +822,10 @@ class Student_service
             $this->CI
                 ->audit_log_service
                 ->log(
-                    'students',
-                    'UPDATE',
+                    'Students',
+                    'UPDATED',
                     $student_id,
-                    'Student information updated.',
+                    'Updated ' . $changedDescription . '.',
                     $details
                 );
         }
@@ -1016,10 +1003,10 @@ class Student_service
         $this->CI
             ->audit_log_service
             ->log(
-                'students',
-                'STATUS_CHANGE',
+                'Students',
+                'STATUS_CHANGED',
                 $student_id,
-                'Student status changed.',
+                'Changed student ' . trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')) . ' status from ' . $old_status . ' to ' . $new_status . '.',
                 [
                     'student_lrn' =>
                         $student->lrn,

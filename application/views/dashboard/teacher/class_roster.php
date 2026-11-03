@@ -11,7 +11,7 @@
                 <?php if ($assignment->subject_code): ?><span class="mx-1">·</span><?= html_escape($assignment->subject_code); ?><?php endif; ?>
             </div>
         </div>
-        <a href="<?= site_url('dashboard'); ?>" class="btn btn-outline-secondary align-self-md-start">Back to dashboard</a>
+        <div class="d-flex flex-wrap gap-2 align-self-md-start"><a href="<?= site_url('my-classes/' . (int) $assignment->id . '/attendance'); ?>" class="btn btn-primary">Take attendance</a><a href="<?= site_url('dashboard'); ?>" class="btn btn-outline-secondary">Back to dashboard</a></div>
     </div>
 </section>
 
@@ -19,7 +19,7 @@
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <div>
                 <h2 class="h6 fw-bold mb-1">Student grades</h2>
-                <p class="small text-secondary mb-0"><?= count($students); ?> active student<?= count($students) === 1 ? '' : 's'; ?>. Enter grades from 0 to 100 and save each student.</p>
+                <p class="small text-secondary mb-0"><?= count($students); ?> active student<?= count($students) === 1 ? '' : 's'; ?>. Enter grades from 0 to 100 and submit them for review.</p>
         </div>
     </div>
     <div class="table-responsive">
@@ -53,11 +53,13 @@
                             </td>
                         <?php endforeach; ?>
                         <td class="text-end pe-3">
+                            <div class="small mb-2"><?php if (!$gradeRecord): ?><span class="badge text-bg-secondary">Not entered</span><?php elseif ($gradeRecord->review_status === 'approved'): ?><span class="badge text-bg-success">Approved</span><?php elseif ($gradeRecord->review_status === 'returned'): ?><span class="badge text-bg-warning">Returned for changes</span><?php else: ?><span class="badge text-bg-info">Pending review</span><?php endif; ?></div>
                             <form id="<?= $formId; ?>" method="post" action="<?= site_url('my-classes/' . (int) $assignment->id . '/grades'); ?>">
                                 <input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">
                                 <input type="hidden" name="enrollment_id" value="<?= (int) $student->enrollment_id; ?>">
+                                <?php if ($gradeRecord && $gradeRecord->review_status === 'approved'): ?><textarea class="form-control form-control-sm mb-2" name="correction_reason" rows="2" maxlength="500" placeholder="Reason required for approved grade changes"></textarea><?php endif; ?>
                             </form>
-                            <button type="submit" form="<?= $formId; ?>" class="btn btn-sm btn-primary">Save</button>
+                            <button type="submit" form="<?= $formId; ?>" class="btn btn-sm <?= $gradeRecord && $gradeRecord->review_status === 'approved' ? 'btn-outline-primary' : 'btn-primary'; ?>"><?= $gradeRecord && $gradeRecord->review_status === 'approved' ? 'Request correction' : 'Submit for review'; ?></button>
                         </td>
                     </tr>
                 <?php endforeach; endif; ?>

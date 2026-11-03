@@ -160,8 +160,8 @@ class Payment_model extends CI_Model
             ->row();
     }
 
-    /** Return unpaid fee items belonging to the selected student. */
-    public function get_outstanding_fees_by_student($student_id, $academic_year = null)
+    /** Return all assessed fee items and posted payment totals for one student. */
+    public function get_fee_items_by_student($student_id, $academic_year = null)
     {
         $this->db->reset_query();
 
@@ -194,14 +194,14 @@ class Payment_model extends CI_Model
                 'left',
                 false
             )
-            ->where('enrollments.student_id', (int) $student_id)
-            ->where('assessed_fees.amount > COALESCE(posted_payments.amount_paid, 0)', null, false);
+            ->where('enrollments.student_id', (int) $student_id);
 
         if ($academic_year !== null && $academic_year !== '') {
             $this->db->where('enrollments.academic_year', $academic_year);
         }
 
         return $this->db
+            ->order_by('assessed_fees.fee_category', 'ASC')
             ->order_by('enrollments.academic_year', 'DESC')
             ->order_by('assessed_fees.payment_date', 'ASC')
             ->order_by('assessed_fees.payment_sequence', 'ASC')

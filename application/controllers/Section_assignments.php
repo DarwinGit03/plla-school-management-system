@@ -19,8 +19,7 @@ class Section_assignments extends MY_Controller
             return (string) $row->school_year;
         }, $this->fee_configuration_model->get_school_years());
 
-        $year = trim((string) $this->input->get('year', true));
-        if (!in_array($year, $years, true)) $year = '';
+        $year = $this->resolve_school_year_filter($years, 'year');
 
         $grades = $year !== ''
             ? array_map(function ($row) {
@@ -102,8 +101,8 @@ class Section_assignments extends MY_Controller
             'student_enrollments',
             'SECTION_ASSIGNED',
             $sectionId,
-            count($ids) . ' student enrollment(s) assigned or moved to section ' . $section->section . '.',
-            ['section_id' => $sectionId, 'enrollment_ids' => $ids]
+            count($ids) . ' student enrollment(s) assigned or moved to section "' . $section->section . '" for ' . $section->grade . ' in school year ' . $section->year . '.',
+            ['section_id' => $sectionId, 'section' => $section->section, 'grade' => $section->grade, 'school_year' => $section->year, 'enrollment_ids' => $ids]
         );
 
         $this->session->set_flashdata('success', count($ids) . ' student(s) assigned or moved to ' . $section->section . '.');

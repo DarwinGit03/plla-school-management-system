@@ -173,9 +173,9 @@ document.addEventListener(
                     |--------------------------------------------------------------------------
                     */
 
-                    const selectedYear =
-                        submittedEnrollment
-                            ?.academic_year || '';
+                    const selectedYear = submittedEnrollment?.academic_year
+                        || (typeof defaultSchoolYear !== 'undefined' ? defaultSchoolYear : '')
+                        || '';
 
 
                     if (selectedYear) {

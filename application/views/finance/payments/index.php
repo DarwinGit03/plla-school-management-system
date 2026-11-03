@@ -129,7 +129,7 @@
             <?php if (!empty($fee_balances)): ?>
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                        <strong>Outstanding fee items</strong>
+                        <div><strong>Fee items and balances</strong><div class="small text-muted">Red means overdue; yellow means an unpaid or partial balance. Paid items remain visible for reference.</div></div>
                         <span class="small text-muted"><?= number_format(count($fee_balances)); ?> items</span>
                     </div>
                     <div class="table-responsive">
@@ -137,8 +137,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th class="px-3">Category</th>
+                                    <th>School year</th>
                                     <th>Payment item</th>
                                     <th>Due date</th>
+                                    <th>Status</th>
                                     <th class="text-end">Assessed</th>
                                     <th class="text-end">Paid</th>
                                     <th class="text-end">Balance</th>
@@ -146,15 +148,29 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php $feeCategoryRowspans = []; $feeCategoryShown = []; foreach ($fee_balances as $categoryFee) { $categoryKey = strtolower(trim((string) $categoryFee->fee_category)); $feeCategoryRowspans[$categoryKey] = ($feeCategoryRowspans[$categoryKey] ?? 0) + 1; } ?>
                                 <?php foreach ($fee_balances as $fee): ?>
-                                    <tr>
-                                        <td class="px-3"><?= html_escape(ucwords(str_replace('_', ' ', $fee->fee_category))); ?></td>
+                                    <?php
+                                    $feePaid = (float) $fee->amount_paid;
+                                    $feeBalance = max((float) $fee->balance, 0);
+                                    $feeIsOverdue = $feeBalance > 0 && !empty($fee->payment_date) && $fee->payment_date < date('Y-m-d');
+                                    $feeStatus = $feeBalance <= 0 ? 'Paid' : ($feeIsOverdue ? 'Overdue' : ($feePaid > 0 ? 'Partially paid' : 'Unpaid'));
+                                    $feeStatusClass = $feeBalance <= 0 ? 'success' : ($feeIsOverdue ? 'danger' : ($feePaid > 0 ? 'warning text-dark' : 'secondary'));
+                                    $feeCategoryKey = strtolower(trim((string) $fee->fee_category));
+                                    $showFeeCategory = !isset($feeCategoryShown[$feeCategoryKey]);
+                                    if ($showFeeCategory) $feeCategoryShown[$feeCategoryKey] = true;
+                                    ?>
+                                    <tr class="<?= $feeBalance <= 0 ? '' : ($feeIsOverdue ? 'table-danger' : 'table-warning'); ?>">
+                                        <?php if ($showFeeCategory): ?><td class="px-3 align-middle" rowspan="<?= (int) $feeCategoryRowspans[$feeCategoryKey]; ?>"><?= html_escape(ucwords(str_replace('_', ' ', $fee->fee_category))); ?></td><?php endif; ?>
+                                        <td><?= html_escape($fee->academic_year); ?></td>
                                         <td><?= html_escape($fee->payment_label); ?></td>
                                         <td><?= !empty($fee->payment_date) ? html_escape($fee->payment_date) : '—'; ?></td>
+                                        <td><span class="badge text-bg-<?= $feeStatusClass; ?>"><?= html_escape($feeStatus); ?></span></td>
                                         <td class="text-end">₱<?= number_format((float) $fee->amount_due, 2); ?></td>
                                         <td class="text-end">₱<?= number_format((float) $fee->amount_paid, 2); ?></td>
                                         <td class="text-end fw-semibold">₱<?= number_format((float) $fee->balance, 2); ?></td>
                                         <td class="text-end px-3">
+                                            <?php if ($feeBalance > 0): ?>
                                             <button
                                                 type="button"
                                                 class="btn btn-sm btn-primary js-record-payment"
@@ -168,6 +184,7 @@
                                                 <i class="fas fa-cash-register me-1" aria-hidden="true"></i>
                                                 Record payment
                                             </button>
+                                            <?php else: ?><span class="badge text-bg-success">Paid</span><?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

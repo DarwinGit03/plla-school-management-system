@@ -141,17 +141,22 @@ class Administration_model extends CI_Model
         return ['ok' => true, 'user_id' => $id, 'role_name' => $role->role_name, 'employee_id' => $isEmployee ? (int) $employee->id : null];
     }
 
-    public function count_audit_logs($search = '')
+    public function count_audit_logs($search = '', $dateFrom = '', $dateTo = '')
     {
         $this->apply_audit_search($search);
-        return (int) $this->db->count_all_results('audit_logs AS logs');
+        $this->apply_audit_date_filter($dateFrom, $dateTo);
+        return (int) $this->db
+            ->from('audit_logs AS logs')
+            ->join('users AS users', 'users.id = logs.user_id', 'left')
+            ->count_all_results();
     }
 
-    public function get_audit_logs($search = '', $limit = 25, $offset = 0)
+    public function get_audit_logs($search = '', $dateFrom = '', $dateTo = '', $limit = 25, $offset = 0)
     {
         $this->apply_audit_search($search);
+        $this->apply_audit_date_filter($dateFrom, $dateTo);
         return $this->db
-            ->select('logs.id, logs.user_id, logs.employee_no, logs.module, logs.action, logs.record_id, logs.description, logs.details, logs.ip_address, logs.created_at, users.first_name, users.last_name')
+            ->select('logs.id, logs.user_id, logs.employee_no, logs.session_id, logs.module, logs.action, logs.record_id, logs.description, logs.details, logs.ip_address, logs.user_agent, logs.created_at, users.username, users.first_name, users.last_name')
             ->from('audit_logs AS logs')
             ->join('users AS users', 'users.id = logs.user_id', 'left')
             ->order_by('logs.id', 'DESC')
@@ -169,7 +174,19 @@ class Administration_model extends CI_Model
             ->or_like('logs.description', $search)
             ->or_like('logs.employee_no', $search)
             ->or_like('logs.ip_address', $search)
+            ->or_like('users.username', $search)
+            ->or_like('users.first_name', $search)
+            ->or_like('users.last_name', $search)
             ->group_end();
+    }
+
+    private function apply_audit_date_filter($dateFrom, $dateTo)
+    {
+        if ($dateFrom !== '') $this->db->where('logs.created_at >=', $dateFrom . ' 00:00:00');
+        if ($dateTo !== '') {
+            $exclusiveEnd = date('Y-m-d', strtotime($dateTo . ' +1 day'));
+            $this->db->where('logs.created_at <', $exclusiveEnd . ' 00:00:00');
+        }
     }
 
     public function get_overview()

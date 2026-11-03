@@ -78,7 +78,7 @@ class Payroll extends MY_Controller
                     : 'Payroll deduction settings could not be saved.');
             $this->session->set_flashdata('error', $message);
         } else {
-            $this->audit_log_service->log('payroll_deduction_settings', 'PAYROLL_DEDUCTION_POLICY_CREATED', $result['id'], 'Effective-dated organization payroll deduction policy created.', ['effective_from' => $date]);
+            $this->audit_log_service->log('Payroll', 'CREATED', $result['id'], 'Saved statutory payroll deduction rates effective ' . $date . '.', $values);
             $this->session->set_flashdata('success', 'Payroll deduction rules saved. New payroll runs will use this policy from its effective date.');
         }
         return redirect('payroll/settings');
@@ -159,7 +159,7 @@ class Payroll extends MY_Controller
             'payroll_periods',
             'PAYROLL_PERIOD_CREATED',
             $result['id'],
-            'Draft teacher payroll period created.',
+            'Created ' . $data['frequency'] . ' payroll for ' . $data['period_start'] . ' to ' . $data['period_end'] . ', payable ' . $data['pay_date'] . ' (' . $result['item_count'] . ' employees).',
             $data + ['item_count' => $result['item_count']]
         );
         $this->session->set_flashdata('success', 'Draft payroll created for ' . $result['item_count'] . ' teacher(s).');
@@ -321,7 +321,7 @@ class Payroll extends MY_Controller
                 'payroll_deductions',
                 'PAYROLL_DEDUCTION_ADDED',
                 $result['id'],
-                'Manual payroll deduction added.',
+                'Added PHP ' . number_format((float) $this->input->post('amount', true), 2) . ' deduction "' . trim((string) $this->input->post('description', true)) . '" for ' . $item->employee_name_snapshot . ' (employee no. ' . $item->employee_no_snapshot . ').',
                 ['payroll_item_id' => $itemId, 'category' => $this->input->post('category', true), 'description' => $this->input->post('description', true), 'amount' => $this->input->post('amount', true)]
             );
             $this->session->set_flashdata('success', 'Deduction added.');
@@ -349,6 +349,14 @@ class Payroll extends MY_Controller
             $this->session->set_flashdata('error', strip_tags(validation_errors(' ', ' ')));
             return redirect('payroll/period/' . $item->payroll_period_id . '#payroll-item-' . $itemId);
         }
+        $newAttendance = [
+            'attended_days' => (float) $this->input->post('payable_days', true),
+            'paid_leave_days' => (float) $this->input->post('paid_leave_days', true),
+            'unpaid_absence_days' => (float) $this->input->post('absence_days', true)
+        ];
+        $attendanceChanged = (float) $item->payable_days !== $newAttendance['attended_days']
+            || (float) $item->paid_leave_days !== $newAttendance['paid_leave_days']
+            || (float) $item->absence_days !== $newAttendance['unpaid_absence_days'];
         $result = $this->payroll_model->set_payable_days(
             $itemId,
             $this->input->post('payable_days', true),
@@ -363,6 +371,17 @@ class Payroll extends MY_Controller
                     : 'Paid days can only be updated while the payroll is a draft.');
             $this->session->set_flashdata('error', $message);
         } else {
+            if ($attendanceChanged) $this->audit_log_service->log(
+                'Payroll', 'ATTENDANCE_UPDATED', $itemId,
+                'Updated attendance and leave for ' . $item->employee_name_snapshot . ' (employee no. ' . $item->employee_no_snapshot . ') for ' . $item->period_start . ' to ' . $item->period_end . '.',
+                [
+                    'employee_id' => (int) $item->employee_id,
+                    'payroll_period_id' => (int) $item->payroll_period_id,
+                    'attended_days' => $newAttendance['attended_days'],
+                    'paid_leave_days' => $newAttendance['paid_leave_days'],
+                    'unpaid_absence_days' => $newAttendance['unpaid_absence_days']
+                ]
+            );
             $this->session->set_flashdata('success', 'Attendance, paid leave, and salary updated.');
         }
         return redirect('payroll/period/' . $item->payroll_period_id . '#payroll-item-' . $itemId);
@@ -383,12 +402,13 @@ class Payroll extends MY_Controller
         }
         $ok = $this->payroll_model->delete_deduction($id);
         if ($ok) {
+            $deductionItem = $this->payroll_model->get_item((int) $deduction->payroll_item_id);
             $this->audit_log_service->log(
                 'payroll_deductions',
                 'PAYROLL_DEDUCTION_REMOVED',
                 $id,
-                'Manual payroll deduction removed from a draft.',
-                ['payroll_item_id' => (int) $deduction->payroll_item_id]
+                'Removed the PHP ' . number_format((float) $deduction->amount, 2) . ' deduction "' . $deduction->description . '"' . ($deductionItem ? ' for ' . $deductionItem->employee_name_snapshot . ' (employee no. ' . $deductionItem->employee_no_snapshot . ')' : '') . '.',
+                ['payroll_item_id' => (int) $deduction->payroll_item_id, 'amount' => (float) $deduction->amount, 'description' => $deduction->description]
             );
         }
         $this->session->set_flashdata($ok ? 'success' : 'error', $ok ? 'Deduction removed.' : 'Only draft payroll deductions can be removed.');
@@ -426,7 +446,7 @@ class Payroll extends MY_Controller
                 'payroll_periods',
                 'PAYROLL_PERIOD_FINALIZED',
                 $id,
-                'Teacher payroll period finalized.',
+                'Finalized payroll for ' . $period->period_start . ' to ' . $period->period_end . ' (' . $result['count'] . ' employees).',
                 ['teacher_count' => $result['count']]
             );
             $this->session->set_flashdata('success', 'Payroll finalized. Payslips are ready to download.');
@@ -475,8 +495,8 @@ class Payroll extends MY_Controller
                 'payroll_items',
                 'TEACHER_PAYROLL_MARKED_PAID',
                 $itemId,
-                'Finalized teacher payroll payment recorded as paid.',
-                ['payment_method' => $method, 'payment_reference' => $reference]
+                'Marked payment as paid for ' . $item->employee_name_snapshot . ' (employee no. ' . $item->employee_no_snapshot . ') for ' . $item->period_start . ' to ' . $item->period_end . '.',
+                ['payment_method' => $method, 'payment_reference' => $reference, 'employee_id' => (int) $item->employee_id, 'payroll_period_id' => (int) $item->payroll_period_id]
             );
             $this->session->set_flashdata('success', 'Employee payment recorded.');
         }
@@ -544,7 +564,7 @@ class Payroll extends MY_Controller
         if (!$sent['status']) {
             $this->session->set_flashdata('error', 'The payslip email could not be sent: ' . ($sent['message'] ?? 'Please try again later.'));
         } else {
-            $this->audit_log_service->log('payroll_items', 'PAYSLIP_EMAILED', (int) $item->id, 'Payroll administrator emailed a finalized payslip to the employee.');
+            $this->audit_log_service->log('Payroll', 'PAYSLIP_EMAILED', (int) $item->id, 'Emailed the finalized payslip for ' . $item->employee_name_snapshot . ' (employee no. ' . $item->employee_no_snapshot . ') covering ' . $item->period_start . ' to ' . $item->period_end . '.', ['employee_id' => (int) $item->employee_id, 'payroll_period_id' => (int) $item->payroll_period_id]);
             $message = 'Payslip sent to ' . $employee->work_email . '.';
             if ($cc) $message .= ' A copy was sent to your account email.';
             $this->session->set_flashdata('success', $message);

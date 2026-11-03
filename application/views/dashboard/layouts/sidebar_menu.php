@@ -33,6 +33,7 @@ $isAcademicSections =
     ($currentController === 'sections');
 $isAcademicSubjects = ($currentController === 'subjects');
 $isMyClasses = ($currentController === 'my_classes');
+$isAcademicRecords = ($currentController === 'academic_records');
 
 
 $isStudents =
@@ -125,7 +126,7 @@ $isEnrollment =
             class="nav-link text-white d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse"
             role="button"
-            aria-expanded="<?= ($isAcademicSections || $isAcademicSubjects || $isMyClasses || $isEvents) ? 'true' : 'false'; ?>"
+            aria-expanded="<?= ($isAcademicSections || $isAcademicSubjects || $isMyClasses || $isEvents || $isAcademicRecords) ? 'true' : 'false'; ?>"
             aria-controls="<?= $academicMenuId; ?>">
 
             <span>
@@ -142,7 +143,7 @@ $isEnrollment =
 
 
         <div
-            class="collapse <?= ($isAcademicSections || $isAcademicSubjects || $isMyClasses || $isEvents) ? 'show' : ''; ?>"
+            class="collapse <?= ($isAcademicSections || $isAcademicSubjects || $isMyClasses || $isEvents || $isAcademicRecords) ? 'show' : ''; ?>"
             id="<?= $academicMenuId; ?>">
 
             <ul class="nav flex-column ms-3">
@@ -173,6 +174,16 @@ $isEnrollment =
                 <li class="nav-item">
                     <a href="<?= site_url('my-classes'); ?>" class="nav-link text-secondary <?= $isMyClasses ? 'submenu-active' : ''; ?>">My classes</a>
                 </li>
+                <?php endif; ?>
+
+                <?php if (has_permission('academic.grades.review') || has_permission('academic.attendance.review')): ?>
+                <li class="nav-item"><a href="<?= site_url('academic/review'); ?>" class="nav-link text-secondary <?= $isAcademicRecords && $currentMethod === 'review' ? 'submenu-active' : ''; ?>">Academic review</a></li>
+                <?php endif; ?>
+                <?php if (has_permission('academic.report_cards.view')): ?>
+                <li class="nav-item"><a href="<?= site_url('academic/report-cards'); ?>" class="nav-link text-secondary <?= $isAcademicRecords && in_array($currentMethod, ['report_cards', 'report_card'], true) ? 'submenu-active' : ''; ?>">Report cards</a></li>
+                <?php endif; ?>
+                <?php if (has_permission('academic.promotion.manage')): ?>
+                <li class="nav-item"><a href="<?= site_url('academic/promotions'); ?>" class="nav-link text-secondary <?= $isAcademicRecords && in_array($currentMethod, ['promotions', 'save_promotion'], true) ? 'submenu-active' : ''; ?>">Promotion history</a></li>
                 <?php endif; ?>
 
 

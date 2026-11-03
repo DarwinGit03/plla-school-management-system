@@ -5,6 +5,7 @@
         Your login is not linked to a teacher profile yet. Please contact the school administrator to link your account.
     </div>
 <?php else: ?>
+    <?php $employeeDisplayName = trim(implode(' ', array_filter([$teacher->first_name, $teacher->middle_name, $teacher->last_name]))); ?>
     <section class="mb-4" id="account-settings">
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-3">
             <div>
@@ -23,6 +24,7 @@
         <section class="card border-0 shadow-sm">
             <div class="card-body d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center">
                 <div>
+                    <div class="fw-semibold mb-1"><?= html_escape($employeeDisplayName); ?></div>
                     <div class="fw-semibold"><?= html_escape($account->username); ?></div>
                     <div class="small text-secondary"><?= html_escape($account->email); ?></div>
                 </div>

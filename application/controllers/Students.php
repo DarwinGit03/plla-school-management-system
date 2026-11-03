@@ -189,7 +189,7 @@
             $filters = [
                 'search' => trim((string) $this->input->get('search', true)),
                 'status' => trim((string) $status),
-                'academic_year' => trim((string) $this->input->get('academic_year', true)),
+                'academic_year' => $this->resolve_school_year_filter($this->fee_school_year_options(), 'academic_year'),
                 'grade_level' => trim((string) $this->input->get('grade_level', true)),
                 'section' => trim((string) $this->input->get('section', true))
             ];
@@ -392,7 +392,7 @@
             $filters = [
                 'search' => trim((string) $this->input->get('search', true)),
                 'status' => trim((string) $this->input->get('status', true)),
-                'academic_year' => trim((string) $this->input->get('academic_year', true)),
+                'academic_year' => $this->resolve_school_year_filter($this->fee_school_year_options(), 'academic_year'),
                 'grade_level' => trim((string) $this->input->get('grade_level', true)),
                 'section' => trim((string) $this->input->get('section', true)),
                 'payment_mode' => trim((string) $this->input->get('payment_mode', true))
@@ -471,6 +471,20 @@
                     $result['ok'] ? 'success' : 'error',
                     $result['message']
                 );
+                if ($result['ok']) {
+                    $this->audit_log_service->log(
+                        'Students',
+                        $is_admin_edit ? 'UPDATED' : 'ENROLLMENT_CREATED',
+                        (int) $result['enrollment_id'],
+                        ($is_admin_edit ? 'Updated' : 'Created') . ' enrollment for student #' . (int) $student_id . ' in ' . $this->fee_configuration_model->grade_label($enrollment_input['grade_code']) . ' for school year ' . (string) $enrollment_input['academic_year'] . '.',
+                        [
+                            'student_id' => (int) $student_id,
+                            'school_year' => (string) $enrollment_input['academic_year'],
+                            'grade' => (string) $enrollment_input['grade_code'],
+                            'payment_mode' => (string) $enrollment_input['payment_mode']
+                        ]
+                    );
+                }
 
                 $return_params = [];
                 foreach (['academic_year', 'grade_code', 'payment_mode', 'uniform_size', 'flow'] as $key) {
@@ -526,7 +540,8 @@
             }
             $year = trim((string) $this->input->get('academic_year', true));
             if ($initial_flow_requested && $year === '') {
-                $year = (string) ($student->academic_year ?? '');
+                $year = $this->resolve_school_year_filter($years, 'academic_year');
+                if ($year === '') $year = (string) ($student->academic_year ?? '');
             }
 
             $valid_years = array_map(function ($item) {
@@ -1156,7 +1171,6 @@
                     ]);
                 }
 
-
                 /*
                 |--------------------------------------------------------------------------
                 | Creation Successful
@@ -1667,7 +1681,6 @@
                     );
                 }
 
-
                 /*
                 |--------------------------------------------------------------------------
                 | Success
@@ -1881,6 +1894,8 @@
 
                     'content' =>
                         'students/create',
+
+                    'preferred_school_year' => $this->resolve_school_year_filter($this->fee_school_year_options(true), 'academic_year'),
 
                     'guardians' =>
                         []

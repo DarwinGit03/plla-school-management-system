@@ -131,7 +131,13 @@ class Administration extends MY_Controller
             ]);
         }
 
-        $this->audit_log_service->log('administration', 'USER_CREATED', $result['user_id'], 'User account created.', ['role_id' => (int) $this->input->post('role_id', true)]);
+        $username = trim((string) $this->input->post('username', true));
+        $employeeNo = trim((string) $this->input->post('employee_no', true));
+        $this->audit_log_service->log(
+            'Administration', 'CREATED', $result['user_id'],
+            'Created login account @' . $username . ' with the ' . $result['role_name'] . ' role' . ($employeeNo !== '' ? ' for employee no. ' . $employeeNo : '') . '.',
+            ['username' => $username, 'role' => $result['role_name'], 'employee_no' => $employeeNo ?: null]
+        );
         $this->session->set_flashdata('success', 'Account created. Configure individual permissions below.');
         if (strtolower($result['role_name']) === 'teacher') {
             $this->session->set_flashdata('success', 'Employee login created and linked to the existing profile.');
@@ -202,7 +208,13 @@ class Administration extends MY_Controller
             $this->session->set_flashdata('error', $message);
             return redirect('admin/users/' . (int) $user_id . '/access');
         }
-        $this->audit_log_service->log('administration', 'USER_ACCESS_UPDATED', (int) $user_id, 'User role and permission overrides updated.', ['role_id' => $role_id, 'overrides' => array_filter($overrides, function ($effect) { return $effect !== 'inherit'; }), 'reason' => $reason]);
+        $targetUser = $this->User_model->getById((int) $user_id);
+        $role = $this->db->select('role_name')->where('id', $role_id)->get('roles')->row();
+        $this->audit_log_service->log(
+            'Administration', 'UPDATED', (int) $user_id,
+            'Updated access for ' . ($targetUser ? '@' . $targetUser->username : 'user account #' . (int) $user_id) . ' using the ' . ($role->role_name ?? ('role #' . $role_id)) . ' role.',
+            ['role_id' => $role_id, 'role_name' => $role->role_name ?? null, 'permission_overrides' => array_filter($overrides, function ($effect) { return $effect !== 'inherit'; }), 'reason' => $reason]
+        );
         $this->session->set_flashdata('success', 'User access updated.');
         return redirect('admin/users/' . (int) $user_id . '/access');
     }
@@ -262,7 +274,13 @@ class Administration extends MY_Controller
             $this->session->set_flashdata('error', $message);
             return redirect($role_id > 0 ? 'admin/roles/' . $role_id . '/edit' : 'admin/roles/create');
         }
-        $this->audit_log_service->log('administration', $role_id > 0 ? 'ROLE_UPDATED' : 'ROLE_CREATED', $result['role_id'], 'Role and permission grants saved.', ['role_name' => trim((string) $this->input->post('role_name', true)), 'permission_ids' => array_values(array_unique(array_map('intval', $permissions)))]);
+        $roleName = trim((string) $this->input->post('role_name', true));
+        $permissionIds = array_values(array_unique(array_map('intval', $permissions)));
+        $this->audit_log_service->log(
+            'Administration', $role_id > 0 ? 'UPDATED' : 'CREATED', $result['role_id'],
+            ($role_id > 0 ? 'Updated permissions for role "' : 'Created role "') . $roleName . '" (' . count($permissionIds) . ' permissions).',
+            ['role_name' => $roleName, 'permission_ids' => $permissionIds]
+        );
         $this->session->set_flashdata('success', 'Role permissions saved.');
         return redirect('admin/roles');
     }
@@ -271,15 +289,51 @@ class Administration extends MY_Controller
     {
         $this->requirePermission('administration.audit.view');
         $search = trim((string) $this->input->get('q', true));
+        $dateFrom = trim((string) $this->input->get('date_from', true));
+        $dateTo = trim((string) $this->input->get('date_to', true));
+        foreach (['dateFrom', 'dateTo'] as $dateField) {
+            $dateValue = $$dateField;
+            if ($dateValue !== '') {
+                $parts = explode('-', $dateValue);
+                if (count($parts) !== 3 || !checkdate((int) $parts[1], (int) $parts[2], (int) $parts[0]) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateValue)) $$dateField = '';
+            }
+        }
+        $dateError = '';
+        if ($dateFrom !== '' && $dateTo !== '' && $dateFrom > $dateTo) {
+            $dateError = 'The start date must be on or before the end date.';
+            $dateFrom = '';
+            $dateTo = '';
+        }
         $page = max(1, (int) $this->input->get('page'));
-        $total = $this->administration_model->count_audit_logs($search);
+        $total = $this->administration_model->count_audit_logs($search, $dateFrom, $dateTo);
+        $logs = $this->administration_model->get_audit_logs($search, $dateFrom, $dateTo, $this->page_size, ($page - 1) * $this->page_size);
+        $this->load->library('audit_log_service');
+        foreach ($logs as $log) {
+            $logDetails = json_decode((string) ($log->details ?? ''), true);
+            $log->record_context = $this->audit_log_service->get_record_context(
+                $log->module,
+                $log->action,
+                $log->record_id,
+                json_last_error() === JSON_ERROR_NONE ? $logDetails : null
+            );
+            if (is_array($log->record_context) && !empty($log->record_context['name'])) {
+                $log->record_context['name'] = ucwords(trim((string) $log->record_context['name']));
+            }
+            $log->display_description = $this->audit_log_service->humanize_description(
+                $log->description,
+                is_array($log->record_context) ? $log->record_context : []
+            );
+        }
         $this->render_page('administration/audit_logs', [
             'title' => 'Audit logs',
             'page_title' => 'Audit logs',
             'page_subtitle' => 'Review recorded account and system activity.',
             'breadcrumb' => ['Administration', 'Audit Logs'],
-            'logs' => $this->administration_model->get_audit_logs($search, $this->page_size, ($page - 1) * $this->page_size),
+            'logs' => $logs,
             'search' => $search,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'date_error' => $dateError,
             'current_page' => $page,
             'total_pages' => max(1, (int) ceil($total / $this->page_size)),
             'total_logs' => $total

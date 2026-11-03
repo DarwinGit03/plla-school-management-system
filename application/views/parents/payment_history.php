@@ -1,4 +1,20 @@
 <div class="container-fluid">
+    <form method="get" action="<?= site_url('parent-portal/payments'); ?>" class="card border-0 shadow-sm mb-3">
+        <div class="card-body d-flex flex-wrap align-items-end gap-3">
+            <div class="flex-grow-1" style="min-width:220px;max-width:420px">
+                <label for="student_id" class="form-label fw-semibold">Filter by child</label>
+                <select class="form-select" name="student_id" id="student_id">
+                    <option value="">All linked children</option>
+                    <?php foreach ($students as $student): ?>
+                        <?php $studentName = trim(implode(' ', array_filter([$student->first_name, $student->middle_name, $student->last_name, $student->suffix], function ($part) { return trim((string) $part) !== ''; }))); ?>
+                        <option value="<?= (int) $student->id; ?>" <?= (int) $selected_student_id === (int) $student->id ? 'selected' : ''; ?>><?= html_escape($studentName . ' · ' . $student->student_no); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <button class="btn btn-primary" type="submit">Show payments</button>
+            <?php if ($selected_student_id): ?><a class="btn btn-outline-secondary" href="<?= site_url('parent-portal/payments'); ?>">Clear filter</a><?php endif; ?>
+        </div>
+    </form>
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
             <strong>Recorded payments</strong>
@@ -48,7 +64,7 @@
                                         <div class="small text-muted mt-1"><?= html_escape($payment->void_reason); ?></div>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-end px-3 fw-semibold">₱<?= number_format((float) $payment->amount_paid, 2); ?></td>
+                                <td class="text-end px-3 fw-semibold">PHP <?= number_format((float) $payment->amount_paid, 2); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>

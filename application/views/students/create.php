@@ -1336,6 +1336,8 @@
             ); ?>
     };
 
+    const defaultSchoolYear = <?= json_encode($preferred_school_year ?? ''); ?>;
+
     const BASE_URL =
         <?= json_encode(base_url()); ?>;
 </script>

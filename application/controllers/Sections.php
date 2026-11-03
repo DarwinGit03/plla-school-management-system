@@ -17,8 +17,7 @@ class Sections extends MY_Controller
     public function index()
     {
         $years = $this->school_year_values();
-        $requestedYear = trim((string) $this->input->get('year', true));
-        $year = in_array($requestedYear, $years, true) ? $requestedYear : '';
+        $year = $this->resolve_school_year_filter($years, 'year');
         $gradeOptions = $this->grade_options_by_year();
 
         $requestedGrade = trim((string) $this->input->get('grade', true));
@@ -140,13 +139,16 @@ class Sections extends MY_Controller
         }
 
         $recordId = $id > 0 ? $id : (int) $saved;
-        $this->audit_log_service->log(
-            'academic_sections',
-            $id > 0 ? 'SECTION_UPDATED' : 'SECTION_CREATED',
-            $recordId,
-            $id > 0 ? 'Academic section updated.' : 'Academic section created.',
-            $data
-        );
+        $sectionChanges = $id > 0 ? $this->audit_log_service->get_changed_fields($existing, (object) $data) : [];
+        if ($id === 0 || $sectionChanges) {
+            $this->audit_log_service->log(
+                'Academic',
+                $id > 0 ? 'UPDATED' : 'CREATED',
+                $recordId,
+                ($id > 0 ? 'Updated' : 'Created') . ' section "' . $section . '" for ' . $grade . ' in school year ' . $year . '.',
+                $id > 0 ? ['changes' => $sectionChanges] : $data
+            );
+        }
 
         $this->session->set_flashdata('success', $id > 0 ? 'Section updated.' : 'Section created.');
         return redirect('academic/sections?year=' . rawurlencode($year));
@@ -174,13 +176,13 @@ class Sections extends MY_Controller
         )) {
             $this->session->set_flashdata('error', 'The section status could not be updated.');
         } else {
-            $this->audit_log_service->log(
-                'academic_sections',
-                'SECTION_STATUS_CHANGED',
-                $id,
-                'Academic section status changed.',
-                ['from' => $record->status, 'to' => $status]
-            );
+            if (strcasecmp($record->status, $status) !== 0) {
+                $this->audit_log_service->log(
+                    'Academic', 'STATUS_CHANGED', $id,
+                    'Changed section "' . $record->section . '" status from ' . $record->status . ' to ' . $status . ' for ' . $record->grade . ' in school year ' . $record->year . '.',
+                    ['from' => $record->status, 'to' => $status]
+                );
+            }
             $this->session->set_flashdata('success', 'Section status updated to ' . $status . '.');
         }
 

@@ -208,6 +208,30 @@ class MY_Controller extends CI_Controller
         return isset($this->effective_permissions[(string) $permission]);
     }
 
+    /** Use the dashboard's saved school year as the default for year-filtered pages. */
+    protected function resolve_school_year_filter(array $years, $queryKey = 'school_year')
+    {
+        $yearValues = [];
+        foreach ($years as $year) {
+            if (is_object($year)) $year = $year->school_year ?? $year->year ?? '';
+            if (is_scalar($year) && (string) $year !== '') $yearValues[] = (string) $year;
+        }
+        $yearValues = array_values(array_unique($yearValues));
+
+        $query = $this->input->get(null, true);
+        if (is_array($query) && array_key_exists($queryKey, $query)) {
+            $requested = trim((string) $this->input->get($queryKey, true));
+            return in_array($requested, $yearValues, true) ? $requested : '';
+        }
+
+        if (!$yearValues || !$this->session->userdata('user_id')) return $yearValues[0] ?? '';
+        $this->load->model('system/Dashboard_model', 'dashboard_school_year_model');
+        $preferred = $this->dashboard_school_year_model->get_dashboard_school_year_preference(
+            (int) $this->session->userdata('user_id')
+        );
+        return in_array($preferred, $yearValues, true) ? $preferred : $yearValues[0];
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Load Current User

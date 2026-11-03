@@ -147,26 +147,36 @@ class Teachers extends MY_Controller
         }
 
         $recordId = $id > 0 ? $id : (int) $saved;
-        $this->audit_log_service->log(
-            'teachers',
-            $id > 0 ? 'TEACHER_UPDATED' : 'TEACHER_CREATED',
-            $recordId,
-            $id > 0 ? 'Teacher profile updated.' : 'Teacher profile created.',
-            [
-                'employee_no' => $employeeNo,
-                'position_title' => $data['position_title'],
-                'employment_type' => $data['employment_type'],
-                'status' => $data['status']
-            ]
-        );
+        $employeeName = trim(implode(' ', array_filter([
+            $data['first_name'], $data['middle_name'], $data['last_name']
+        ])));
+        $savedEmployee = $this->teacher_model->get_by_id($recordId);
+        $profileChanges = $id > 0 && $teacher && $savedEmployee
+            ? $this->audit_log_service->get_changed_fields($teacher, $savedEmployee)
+            : [];
+        if ($id === 0 || !empty($profileChanges)) {
+            $this->audit_log_service->log(
+                'Employees',
+                $id > 0 ? 'UPDATED' : 'CREATED',
+                $recordId,
+                ($id > 0 ? 'Updated employee profile for ' : 'Created employee profile for ')
+                    . $employeeName . ' (employee no. ' . $employeeNo . ').',
+                $id > 0 ? ['changes' => $profileChanges] : [
+                    'employee_no' => $employeeNo,
+                    'position_title' => $data['position_title'],
+                    'employment_type' => $data['employment_type'],
+                    'status' => $data['status']
+                ]
+            );
+        }
 
         if ($id === 0 && $salaryId > 0) {
             $this->audit_log_service->log(
                 'employee_salary_history',
                 'TEACHER_SALARY_RATE_ADDED',
                 $salaryId,
-                'Initial teacher salary rate added during registration.',
-                ['employee_id' => $recordId, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'change_reason' => trim((string) $this->input->post('salary_change_reason', true))]
+                'Added initial ' . $salaryType . ' salary rate of PHP ' . number_format((float) $this->input->post('salary_amount', true), 2) . ' for employee no. ' . $employeeNo . ', effective ' . trim((string) $this->input->post('salary_effective_from', true)) . '.',
+                ['employee_id' => $recordId, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'amount' => (float) $this->input->post('salary_amount', true), 'effective_from' => trim((string) $this->input->post('salary_effective_from', true)), 'change_reason' => trim((string) $this->input->post('salary_change_reason', true))]
             );
         }
 
@@ -253,8 +263,8 @@ class Teachers extends MY_Controller
             'employee_salary_history',
             'TEACHER_SALARY_RATE_ADDED',
             $result['id'],
-            'Teacher salary rate added.',
-            ['employee_id' => (int) $teacher->id, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'effective_from' => $effectiveFrom, 'change_reason' => trim((string) $this->input->post('change_reason', true))]
+            'Set a PHP ' . number_format($amount, 2) . ' ' . $salaryType . ' salary rate for employee no. ' . $teacher->employee_no . ', effective ' . $effectiveFrom . '.',
+            ['employee_id' => (int) $teacher->id, 'salary_type' => $salaryType, 'pay_frequency' => $payFrequency, 'amount' => $amount, 'effective_from' => $effectiveFrom, 'change_reason' => trim((string) $this->input->post('change_reason', true))]
         );
         $this->session->set_flashdata('success', ucfirst($salaryType) . ' salary rate saved.');
         return redirect('payroll');
@@ -285,13 +295,13 @@ class Teachers extends MY_Controller
         if (!$saved) {
             $this->session->set_flashdata('error', 'Teacher status could not be updated.');
         } else {
-            $this->audit_log_service->log(
-                'teachers',
-                'TEACHER_STATUS_CHANGED',
-                $id,
-                'Teacher status changed.',
-                ['from' => $teacher->status, 'to' => $status]
-            );
+            if ($teacher->status !== $status) {
+                $this->audit_log_service->log(
+                    'Employees', 'STATUS_CHANGED', $id,
+                    'Changed employee status for ' . trim($teacher->first_name . ' ' . $teacher->last_name) . ' (employee no. ' . $teacher->employee_no . ') from ' . $teacher->status . ' to ' . $status . '.',
+                    ['from' => $teacher->status, 'to' => $status]
+                );
+            }
             $this->session->set_flashdata('success', 'Teacher status updated.');
         }
 

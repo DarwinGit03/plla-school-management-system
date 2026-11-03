@@ -117,11 +117,10 @@ class Auth_service
             $this->CI
                 ->audit_log_service
                 ->log(
-
-                    $user->id,
-                    'auth_service/login',
+                    'Authentication',
                     'ACCOUNT_UNLOCKED',
-                    'Lock expired automatically.'
+                    (int) $user->id,
+                    'Account lock expired and was cleared automatically.'
 
                 );
 
@@ -268,10 +267,10 @@ class Auth_service
                 $this->CI
                     ->audit_log_service
                     ->log(
-                        $user->id,
-                        'auth/login',
+                        'Authentication',
                         'ACCOUNT_LOCKED',
-                        'Too many failed login attempts.'
+                        (int) $user->id,
+                        'Account locked after too many failed login attempts.'
                     );
 
                 return [
@@ -347,6 +346,13 @@ class Auth_service
 
         $this->logLogin(
             $user, 'SUCCESS', $sessionId
+        );
+
+        $this->CI->audit_log_service->log(
+            'Authentication',
+            'LOGIN',
+            (int) $user->id,
+            'User signed in successfully.'
         );
 
         /*
@@ -651,11 +657,10 @@ class Auth_service
         $this->CI
             ->audit_log_service
             ->log(
-                $user->id,
-                'auth/forgot-password',
-                'PASSWORD_RESET_REQUEST',
-                null,
-                'User requested password reset.'
+                'Authentication',
+                'PASSWORD_RESET_REQUESTED',
+                (int) $user->id,
+                'Password reset code requested for this account.'
 
             );
 
@@ -739,15 +744,10 @@ class Auth_service
             $this->CI
                 ->audit_log_service
                 ->log(
-
-                    $user->id,
-
-                    'auth/verify-otp',
-
+                    'Authentication',
                     'OTP_VERIFIED',
-
-                    'User successfully verified OTP.'
-
+                    (int) $user->id,
+                    'Password reset verification code was confirmed.'
                 );
         }
 
@@ -870,14 +870,10 @@ class Auth_service
         */
 
         $this->CI->audit_log_service->log(
-
-            $user->id,
-
-            'auth/reset-password',
-
+            'Authentication',
             'PASSWORD_RESET',
-
-            'User successfully reset password.'
+            (int) $user->id,
+            'Password was reset successfully.'
 
         );
 

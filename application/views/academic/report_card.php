@@ -1,0 +1,2 @@
+<div class="d-flex justify-content-end gap-2 mb-3"><a class="btn btn-outline-secondary" href="<?= site_url('academic/report-cards'); ?>">Back to list</a><a class="btn btn-primary" target="_blank" rel="noopener" href="<?= site_url('academic/report-cards/' . (int) $card['enrollment']->id . '/print'); ?>"><i class="fas fa-print me-1"></i> Print / Save as PDF</a></div>
+<?php $this->load->view('academic/report_card_document', ['card' => $card, 'grade_label' => $grade_label]); ?>

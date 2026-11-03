@@ -19,9 +19,8 @@ class Finance extends MY_Controller
     {
         $this->requirePermission('finance.fees.manage');
         $years = $this->fee_configuration_model->get_school_years();
-        $requested_year = trim((string) $this->input->get('school_year', true));
         $year_values = array_map(function ($year) { return (string) $year->school_year; }, $years);
-        $school_year = in_array($requested_year, $year_values, true) ? $requested_year : '';
+        $school_year = $this->resolve_school_year_filter($year_values, 'school_year');
         $selected_year_deletion = $school_year !== ''
             ? $this->fee_configuration_model->check_draft_school_year_deletable($school_year)
             : ['ok' => false, 'message' => ''];
@@ -129,7 +128,7 @@ class Finance extends MY_Controller
     {
         $filterError = '';
         $filters = [
-            'school_year' => trim((string) $this->input->get('school_year', true)),
+            'school_year' => $this->resolve_school_year_filter(array_map(function ($year) { return (string) $year->school_year; }, $this->fee_configuration_model->get_school_years()), 'school_year'),
             'grade' => trim((string) $this->input->get('grade', true)),
             'section' => trim((string) $this->input->get('section', true)),
             'date_from' => trim((string) $this->input->get('date_from', true)),
@@ -196,6 +195,11 @@ class Finance extends MY_Controller
                 'fees' => $this->input->post('fees'),
                 'uniforms' => $this->input->post('uniforms')
             ]);
+            if ($saved) {
+                $this->audit_log_service->log('Finance', 'UPDATED', (int) $configuration_id,
+                    'Updated fee configuration for ' . $configuration->school_year . ', ' . $configuration->grade_code . '.',
+                    ['school_year' => $configuration->school_year, 'grade' => $configuration->grade_code, 'payment_mode' => $configuration->payment_mode, 'status' => $this->input->post('status', true)]);
+            }
             $this->session->set_flashdata($saved ? 'success' : 'error', $saved
                 ? 'Fee configuration updated.'
                 : 'The configuration could not be updated. Check the submitted fee values.');
@@ -225,6 +229,7 @@ class Finance extends MY_Controller
             $result = $this->fee_configuration_model->duplicate_school_year($source_year, $target_year, $configuration_status);
         }
         $this->session->set_flashdata($result['ok'] ? 'success' : 'error', $result['message']);
+        if ($result['ok']) $this->audit_log_service->log('Finance', 'SCHOOL_YEAR_DUPLICATED', null, 'Duplicated fee configurations to school year ' . $target_year . '.', ['source_school_year' => $source_year, 'target_school_year' => $target_year, 'status' => $configuration_status]);
         return redirect('finance?school_year=' . rawurlencode($result['ok'] ? $target_year : $source_year));
     }
 
@@ -241,6 +246,7 @@ class Finance extends MY_Controller
             $result = $this->fee_configuration_model->delete_draft_school_year($school_year);
         }
         $this->session->set_flashdata($result['ok'] ? 'success' : 'error', $result['message']);
+        if ($result['ok']) $this->audit_log_service->log('Finance', 'SCHOOL_YEAR_DELETED', null, 'Deleted draft fee configurations for school year ' . $school_year . '.', ['school_year' => $school_year]);
         return redirect('finance' . ($result['ok'] ? '' : '?school_year=' . rawurlencode($school_year)));
     }
 
@@ -256,6 +262,7 @@ class Finance extends MY_Controller
             $result = $this->fee_configuration_model->update_school_year_status($school_year, $status);
         }
         $this->session->set_flashdata($result['ok'] ? 'success' : 'error', $result['message']);
+        if ($result['ok']) $this->audit_log_service->log('Finance', 'SCHOOL_YEAR_STATUS_CHANGED', null, 'Changed fee configuration status for school year ' . $school_year . ' to ' . $status . '.', ['school_year' => $school_year, 'status' => $status]);
         return redirect('finance?school_year=' . rawurlencode($school_year));
     }
 
@@ -295,10 +302,7 @@ class Finance extends MY_Controller
         $school_year_values = array_map(function ($year) {
             return (string) $year->school_year;
         }, $school_years);
-        $requested_year = trim((string) $this->input->get('academic_year', true));
-        $academic_year = in_array($requested_year, $school_year_values, true)
-            ? $requested_year
-            : '';
+        $academic_year = $this->resolve_school_year_filter($school_year_values, 'academic_year');
         $grade_levels = $academic_year !== ''
             ? $this->fee_configuration_model->get_grade_codes_by_year($academic_year)
             : [];
@@ -330,7 +334,9 @@ class Finance extends MY_Controller
         $section = in_array($requested_section, $section_values, true)
             ? $requested_section
             : '';
-        $has_search = $search !== '' || $academic_year !== '' || $grade_level !== '' || $section !== '';
+        $queryFilters = $this->input->get(null, true);
+        $explicitYearFilter = is_array($queryFilters) && !empty($queryFilters['academic_year']);
+        $has_search = $search !== '' || $student_id > 0 || $grade_level !== '' || $section !== '' || $explicitYearFilter;
 
         if ($this->input->method() === 'post') {
             $this->load->library('Payment_service');
@@ -349,6 +355,14 @@ class Finance extends MY_Controller
                 $result['ok'] ? 'success' : 'error',
                 $result['message']
             );
+            if ($result['ok']) {
+                $amount = number_format((float) $this->input->post('amount_paid'), 2, '.', '');
+                $this->audit_log_service->log(
+                    'Finance', 'PAYMENT_RECORDED', (int) $result['payment_id'],
+                    'Recorded PHP ' . $amount . ' payment for student #' . (int) $this->input->post('student_id') . '.',
+                    ['student_id' => (int) $this->input->post('student_id'), 'enrollment_fee_id' => (int) $this->input->post('enrollment_fee_id'), 'amount' => $amount, 'payment_method' => trim((string) $this->input->post('payment_method', true))]
+                );
+            }
 
             $search = trim((string) $this->input->post('search', true));
             $student_id = (int) $this->input->post('student_id');
@@ -415,7 +429,7 @@ class Finance extends MY_Controller
             'students' => $students,
             'selected_student' => $selected_student,
             'fee_balances' => $selected_student
-                ? $this->payment_model->get_outstanding_fees_by_student($student_id, $academic_year)
+                ? $this->payment_model->get_fee_items_by_student($student_id, $academic_year)
                 : [],
             'payment_history' => $payment_history,
             'payment_audit' => $this->payment_model->get_payment_audit_by_payment_ids($payment_ids),
@@ -437,6 +451,9 @@ class Finance extends MY_Controller
             $this->input->post('reason'),
             $this->session->userdata('user_id')
         );
+        if ($result['ok']) {
+            $this->audit_log_service->log('Finance', 'PAYMENT_VOIDED', (int) $this->input->post('payment_id'), 'Voided payment for student #' . $student_id . '.', ['student_id' => $student_id, 'reason' => trim((string) $this->input->post('reason', true))]);
+        }
         $this->session->set_flashdata($result['ok'] ? 'success' : 'error', $result['message']);
         return $this->redirect_to_payment_student($student_id);
     }
@@ -457,6 +474,9 @@ class Finance extends MY_Controller
             ],
             $this->session->userdata('user_id')
         );
+        if ($result['ok']) {
+            $this->audit_log_service->log('Finance', 'PAYMENT_CORRECTED', (int) $this->input->post('payment_id'), 'Corrected payment details for student #' . $student_id . '.', ['student_id' => $student_id, 'payment_method' => trim((string) $this->input->post('payment_method', true)), 'reason' => trim((string) $this->input->post('reason', true))]);
+        }
         $this->session->set_flashdata($result['ok'] ? 'success' : 'error', $result['message']);
         return $this->redirect_to_payment_student($student_id);
     }

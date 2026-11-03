@@ -57,14 +57,15 @@ class My_payroll extends MY_Controller
             return redirect('my-payroll#edit-account');
         }
 
-        $result = $this->employee_portal_model->update_profile($userId, $teacher->id, [
+        $profileData = [
             'first_name' => $this->input->post('first_name', true),
             'middle_name' => $this->input->post('middle_name', true),
             'last_name' => $this->input->post('last_name', true),
             'username' => $this->input->post('username', true),
             'email' => $this->input->post('email', true),
             'phone' => $this->input->post('phone', true)
-        ]);
+        ];
+        $result = $this->employee_portal_model->update_profile($userId, $teacher->id, $profileData);
         if (!$result['ok']) {
             $messages = [
                 'duplicate_username' => 'That username is already in use. Choose another one.',
@@ -77,7 +78,34 @@ class My_payroll extends MY_Controller
         }
 
         $this->session->set_userdata('email', $this->input->post('email', true));
-        $this->audit_log_service->log('account', 'PROFILE_UPDATED', $userId, 'Employee updated their own account details.');
+        $oldProfile = (object) [
+            'first_name' => $account->first_name,
+            'middle_name' => $account->middle_name,
+            'last_name' => $account->last_name,
+            'username' => $account->username,
+            'email' => $account->email,
+            'phone' => $teacher->phone
+        ];
+        $profileChanges = $this->audit_log_service->get_changed_fields($oldProfile, (object) $profileData);
+        if ($profileChanges) {
+            $fieldLabels = [
+                'first_name' => 'name', 'middle_name' => 'name', 'last_name' => 'name',
+                'username' => 'username', 'email' => 'email address', 'phone' => 'phone number'
+            ];
+            $changedLabels = array_values(array_unique(array_map(function ($field) use ($fieldLabels) {
+                return $fieldLabels[$field] ?? str_replace('_', ' ', $field);
+            }, array_keys($profileChanges))));
+            $this->audit_log_service->log(
+                'Account', 'UPDATED', $userId,
+                'Updated own account ' . implode(', ', $changedLabels) . '.',
+                [
+                    'employee_id' => (int) $teacher->id,
+                    'employee_no' => (string) $teacher->employee_no,
+                    'username' => (string) $profileData['username'],
+                    'changes' => $profileChanges
+                ]
+            );
+        }
         $this->session->set_flashdata('success', 'Your account details were updated.');
         return redirect('my-payroll#account-settings');
     }
@@ -183,7 +211,9 @@ class My_payroll extends MY_Controller
         if (!$sent['status']) {
             $this->session->set_flashdata('error', 'The payslip email could not be sent: ' . ($sent['message'] ?? 'Please try again later.'));
         } else {
-            $this->audit_log_service->log('payroll_items', 'PAYSLIP_EMAILED', (int) $item->id, 'Employee emailed a finalized payslip to their own account email.');
+            $this->audit_log_service->log('Payroll', 'PAYSLIP_EMAILED', (int) $item->id,
+                'Emailed own finalized payslip for ' . $item->period_start . ' to ' . $item->period_end . '.',
+                ['employee_id' => (int) $item->employee_id, 'payroll_period_id' => (int) $item->payroll_period_id]);
             $this->session->set_flashdata('success', 'Payslip sent to ' . $account->email . '.');
         }
         return redirect('my-payroll');
